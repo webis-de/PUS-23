@@ -29,6 +29,7 @@ class Bibentry:
         self.source = row[3].lower()
         self.page_start = row[4]
         self.page_end = row[5]
+        self.issue = row[6]
         self.volume = row[7]
         self.year = int(row[8])
         self.doi = row[9].lower()
