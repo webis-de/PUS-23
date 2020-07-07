@@ -64,7 +64,7 @@ class Article:
         Generates tracks of all phrases provided.
 
         Args:
-            phrases: A list of phrases.
+            phrases: A list of phrase lists.
             
         Returns:
             The dictionary of phrases and their occurances:
