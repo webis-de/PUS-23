@@ -16,6 +16,7 @@ class Revision:
             revision: The revision as extracted from the revision history.
             index: The 0-indexed position in the revision history.
         """
+        self.id = revision["id"]
         try:
             self.text = revision["text"]["#text"]
         except:

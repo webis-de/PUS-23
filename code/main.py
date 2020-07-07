@@ -20,6 +20,6 @@ bibkey_tracks = article.track_bibkeys_in_article(["titles", "dois", "authors"], 
 
 #write and plot results to file
 for track in bibkey_tracks.items():
-    article.write_track_to_file(bibkey_tracks, output_directory)
+    article.write_track_to_file(track, output_directory)
     article.plot_track_to_file(track, output_directory)
 

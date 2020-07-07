@@ -1,4 +1,5 @@
 from xmltodict import parse
+from json import loads
 from datetime import datetime
 from json import dump
 from revision import Revision
@@ -17,17 +18,22 @@ class Article:
         revisions: The individual revisions in the XML tree.
         timestamps: The timestamps of all revisions.
     """
-    def __init__(self, xml_filepath):
+    def __init__(self, filepath):
         """
         Args:
-            xml_filepath: The path to the XML file.
+            filepath: The path to the XML or JSON file.
         """
-        with open(xml_filepath) as xml_file:
-            self.article = parse(xml_file.read())
-        self.filename = basename(xml_filepath)
-        self.name = self.filename.split(".")[0]
-        self.revisions = [Revision(revision[1], revision[0]) for revision in enumerate(self.article["mediawiki"]["page"]["revision"])]
-        self.timestamps = [revision.timestamp.string for revision in self.revisions]
+        self.filename = basename(filepath)
+        self.name = self.filename.replace(".","_")
+        if "xml" in filepath:
+            with open(filepath) as xml_file:
+                self.article = parse(xml_file.read())
+            self.revisions = [Revision(revision[1], revision[0]) for revision in enumerate(self.article["mediawiki"]["page"]["revision"])]
+            self.timestamps = [revision.timestamp.string for revision in self.revisions]
+        if "json" in filepath:
+            with open(filepath) as json_file:
+                self.revisions = [Revision(loads(revision[1]), revision[0]) for revision in enumerate(json_file.readlines())]
+            self.timestamps = [revision.timestamp.string for revision in self.revisions]                    
 
     def track_bibkeys_in_article(self, bibkeys, bibliography):
         """
@@ -114,7 +120,7 @@ class Article:
         """
         bibkey = track[0]
         bibkey_value_dictionary = track[1]
-        plt.figure(figsize=(int(len(self.timestamps) * 0.15) + 10, 10), dpi=150)
+        plt.figure(figsize=(int(len(self.timestamps) * 0.15) + 10, 10), dpi=100)
         plt.title("Timeline of " + bibkey[0].upper() + bibkey[1:])
         plt.xticks(list(range(len(self.timestamps))), self.timestamps, rotation='vertical')
         plt.xlim((0, len(self.timestamps)))
