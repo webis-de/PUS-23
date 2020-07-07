@@ -16,6 +16,9 @@ class Revision:
             revision: The revision as extracted from the revision history.
             index: The 0-indexed position in the revision history.
         """
-        self.text = revision["text"]["#text"]
+        try:
+            self.text = revision["text"]["#text"]
+        except:
+            self.text = ""
         self.timestamp = Timestamp(revision["timestamp"], index)
     
