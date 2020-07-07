@@ -1,5 +1,3 @@
-from timestamp import Timestamp
-
 class Revision:
     """
     Wrapper class for revision
@@ -8,7 +6,7 @@ class Revision:
         text: The raw full text of the revision.
         timestamp: The Timestamp object pertaining to the revision.
     """
-    def __init__(self, revision, index):
+    def __init__(self, ID, text, timestamp, index):
         """
         Intialises the revision from the revision dictionary entry provided.
 
@@ -16,10 +14,8 @@ class Revision:
             revision: The revision as extracted from the revision history.
             index: The 0-indexed position in the revision history.
         """
-        self.id = revision["id"]
-        try:
-            self.text = revision["text"]["#text"]
-        except:
-            self.text = ""
-        self.timestamp = Timestamp(revision["timestamp"], index)
+        self.id = ID
+        self.text = text
+        self.timestamp = timestamp
+        self.index = index
     

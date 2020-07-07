@@ -1,3 +1,4 @@
+from revision import Revision
 from requests import get
 from json import dump
 from os.path import exists, sep
@@ -8,12 +9,13 @@ class Scraper:
     Scrape revision history from Wikipedia page.
 
     Attributes:
-        url: url of the Wikipedia article.
+        url: URL of the Wikipedia article.
+        parameters: Parameters for the get request.
         title: The title of the Wikipedia page.
         language: he language of the Wikipedia page.
         page_id: ID of the Wikipedia page.
-        rv_continue: Holds value of starting ID of next batch to scrape.
-        revisions: Revisions of this Wikipedia page.
+        current_revision: The latest revision of the Wikipedia article.
+        revisions: Deserialised revisions of this Wikipedia page.
     """
 
     def __init__(self, title, language):
@@ -25,39 +27,32 @@ class Scraper:
             language: The language of the Wikipedia page to scrape.
         """
 
-        self.url = "https://" + language + ".wikipedia.org/w/api.php?format=json&action=query&prop=revisions&titles=" + title + "&rvlimit=1&&rvslots=*&rvprop=content|ids|timestamp"
+        self.url = "https://" + language + ".wikipedia.org/w/api.php"
+        self.parameters = {"format":"json","action":"query","prop":"revisions","titles":title,"rvlimit":"1","rvdir":"newer","rvslots":"*","rvprop":"content|ids|timestamp"}
         self.title = title
         self.language= language
-        current_revision = get(self.url).json()
+        current_revision = get(self.url, self.parameters).json()
         
         self.page_id = list(current_revision["query"]["pages"].keys())[0]
-        self.rv_continue = current_revision["continue"]["rvcontinue"]
+        self.parameters["rvcontinue"] = current_revision["continue"]["rvcontinue"]
 
         current_revision = current_revision["query"]["pages"][self.page_id]["revisions"][0]
-        rev_id = current_revision["revid"]
-        rev_text = current_revision["slots"]["main"]["*"]
-        rev_timestamp = current_revision["timestamp"]
+        self.current_revision = Revision(current_revision["revid"],current_revision.get("slots",{}).get("main",{}).get("*",""),current_revision["timestamp"], 0)
         
-        self.revisions = [{"id":rev_id,"text":rev_text,"timestamp":rev_timestamp}]
+        self.revisions = [self.current_revision]
 
     def scrape(self):
-        """Scrape the Wikipedia page and collect revisions."""        
-        while self.rv_continue:
-            url = "https://" + self.language + ".wikipedia.org/w/api.php?format=json&action=query&prop=revisions&titles=" + self.title + "&rvlimit=50&rvslots=*&rvprop=content|ids|timestamp&rvcontinue=" + self.rv_continue
-            response = get(url).json()
-            try:
-                self.rv_continue = response["continue"]["rvcontinue"]
-            except:
-                self.rv_continue = ""
+        """Scrape the Wikipedia page and collect revisions."""
+        self.parameters["rvlimit"] = "50"
+        index = 1
+        while self.parameters["rvcontinue"]:            
+            response = get(self.url, self.parameters).json()
+            self.parameters["rvcontinue"] = response.get("continue",{}).get("rvcontinue",None)
             for revision in response["query"]["pages"][self.page_id]["revisions"]:
-                rev_id = revision["revid"]
-                try:
-                    rev_text = revision["slots"]["main"]["*"]
-                except:
-                    rev_text = ""
-                rev_timestamp = revision["timestamp"]
-                self.revisions.append({"id":rev_id,"text":rev_text,"timestamp":rev_timestamp})
-            print(len(self.revisions))
+                self.revisions.append(Revision(revision["revid"],revision.get("slots",{}).get("main",{}).get("*",""),revision["timestamp"], index))
+                index += 1
+        for index in range(len(self.revisions)):
+            self.revisions[index].index = index
 
     def save(self, directory):
         """
@@ -68,12 +63,12 @@ class Scraper:
         """
         if not exists(directory): makedirs(directory)
         with open(directory + sep + self.title + "_" + self.language + ".json", "w") as output_file:
-            for revision in self.revisions[::-1]:
-                dump({"id":revision["id"],"text":{"#text":revision["text"]},"timestamp":revision["timestamp"]}, output_file)
+            for revision in self.revisions:
+                dump({"id":revision.id,"text":{"#text":revision.text},"timestamp":revision.timestamp}, output_file)
                 output_file.write("\n")
 
 if __name__ == "__main__":
-    article = Scraper("CRISPR", "de")
+    article = Scraper("CRISPR", "en")
     article.scrape()
     article.save("../data")
 

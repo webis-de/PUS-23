@@ -11,7 +11,7 @@ class Timestamp:
         index: Timestamp as 0-indexed position in revision history.
     """    
     
-    def __init__(self, timestamp_string, index):
+    def __init__(self, timestamp_string):
         """
         Initialises the timestamp.
 
@@ -22,7 +22,6 @@ class Timestamp:
 
         self.datetime = datetime.strptime(timestamp_string, "%Y-%m-%dT%H:%M:%SZ")
         self.string = str(self.datetime)
-        self.index = index
 
     def __str__(self):
         return pformat(self.__dict__)

@@ -3,6 +3,7 @@ from json import loads
 from datetime import datetime
 from json import dump
 from revision import Revision
+from timestamp import Timestamp
 from os.path import basename, exists, sep
 from os import makedirs
 import matplotlib.pyplot as plt
@@ -25,14 +26,21 @@ class Article:
         """
         self.filename = basename(filepath)
         self.name = self.filename.replace(".","_")
-        if "xml" in filepath:
+        if ".xml" in filepath:
             with open(filepath) as xml_file:
-                self.article = parse(xml_file.read())
-            self.revisions = [Revision(revision[1], revision[0]) for revision in enumerate(self.article["mediawiki"]["page"]["revision"])]
+                self.revisions = [Revision(revision[1].get("id"),
+                                           revision[1].get("text",{}).get("#text",""),
+                                           Timestamp(revision[1].get("timestamp")),
+                                           revision[0])
+                                  for revision in enumerate(parse(xml_file.read())["mediawiki"]["page"]["revision"])]
             self.timestamps = [revision.timestamp.string for revision in self.revisions]
-        if "json" in filepath:
+        if ".json" in filepath:
             with open(filepath) as json_file:
-                self.revisions = [Revision(loads(revision[1]), revision[0]) for revision in enumerate(json_file.readlines())]
+                self.revisions = [Revision(revision[1].get("id"),
+                                           revision[1].get("text",{}).get("#text",""),
+                                           Timestamp(revision[1].get("timestamp")),
+                                           revision[0])
+                                  for revision in enumerate([loads(line) for line in json_file.readlines()])]
             self.timestamps = [revision.timestamp.string for revision in self.revisions]                    
 
     def track_bibkeys_in_article(self, bibkeys, bibliography):
@@ -126,7 +134,7 @@ class Article:
         plt.xlim((0, len(self.timestamps)))
         for bibkey_value in bibkey_value_dictionary:
             timestamps = bibkey_value_dictionary[bibkey_value]
-            plt.plot([timestamp.index for timestamp in timestamps], [bibkey_value[:30] + "(...)" * (bibkey_value[30:] != "")] * len(timestamps), "o")
+            plt.plot([self.timestamps.index(timestamp.string) for timestamp in timestamps], [bibkey_value[:30] + "(...)" * (bibkey_value[30:] != "")] * len(timestamps), "o")
         plt.subplots_adjust(bottom=0.175, top=0.95, left=0.1, right=0.995)
         filename = self.name.lower() + "_wikipedia_revision_history_" + bibkey + ".png"
         if not exists(directory): makedirs(directory)

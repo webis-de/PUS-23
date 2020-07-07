@@ -11,7 +11,7 @@ bibliography = Bibliography(".." + sep + "data" + sep + "Referenzen_crispr_cas.c
 bibliography.plot_publication_distribution_to_file(output_directory)
 
 #read revisions from wikipedia revision history
-article = Article(".." + sep + "data" + sep + "CRISPR_en.xml")
+article = Article(".." + sep + "data" + sep + "CRISPR_en.json")
 article.plot_revision_distribution_to_file(output_directory)
 
 #extract tracks of bibkey values in article
