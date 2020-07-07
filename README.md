@@ -20,6 +20,7 @@ This repository contains information and code concerning Science Analytics Wikip
 - write results to file and plot timelines
 - plot revision and bibliography distribution
 - read timeline csv (timeline subdirectory; deprecated)
+- scraper to get all revisions of an article from wikipedia as line JSON
 
 ### data
 

@@ -7,6 +7,7 @@ from timestamp import Timestamp
 from os.path import basename, exists, sep
 from os import makedirs
 import matplotlib.pyplot as plt
+import lzma
 
 class Article:
     """
@@ -26,22 +27,33 @@ class Article:
         """
         self.filename = basename(filepath)
         self.name = self.filename.replace(".","_")
+        if ".xz" in filepath:
+            file = lzma.open(filepath, mode="r")
+        else:
+            file = open(filepath)
         if ".xml" in filepath:
-            with open(filepath) as xml_file:
-                self.revisions = [Revision(revision[1].get("id"),
-                                           revision[1].get("text",{}).get("#text",""),
-                                           Timestamp(revision[1].get("timestamp")),
-                                           revision[0])
-                                  for revision in enumerate(parse(xml_file.read())["mediawiki"]["page"]["revision"])]
+            self.revisions = [Revision(revision[1].get("id"),
+                                       revision[1].get("contributor").get("username"),
+                                       revision[1].get("contributor").get("id"),
+                                       Timestamp(revision[1].get("timestamp")),
+                                       revision[1].get("size"),
+                                       revision[1].get("text",{}).get("#text",""),
+                                       revision[1].get("comment"),
+                                       revision[0])
+                              for revision in enumerate(parse(file.read())["mediawiki"]["page"]["revision"])]
             self.timestamps = [revision.timestamp.string for revision in self.revisions]
         if ".json" in filepath:
-            with open(filepath) as json_file:
-                self.revisions = [Revision(revision[1].get("id"),
-                                           revision[1].get("text",{}).get("#text",""),
-                                           Timestamp(revision[1].get("timestamp")),
-                                           revision[0])
-                                  for revision in enumerate([loads(line) for line in json_file.readlines()])]
-            self.timestamps = [revision.timestamp.string for revision in self.revisions]                    
+            self.revisions = [Revision(revision[1]["revid"],
+                                       revision[1]["user"],
+                                       revision[1]["userid"],
+                                       Timestamp(revision[1]["timestamp"]),
+                                       revision[1]["size"],
+                                       revision[1]["text"],
+                                       revision[1]["comment"],
+                                       revision[0])
+                              for revision in enumerate([loads(line) for line in file.readlines()])]
+            self.timestamps = [revision.timestamp.string for revision in self.revisions]
+        file.close()
 
     def track_bibkeys_in_article(self, bibkeys, bibliography):
         """
@@ -166,3 +178,18 @@ class Article:
         if not exists(directory): makedirs(directory)
         plt.savefig(directory + sep + filename)
         
+if __name__ == "__main__":
+
+    article = Article("../data/CRISPR_en.xml.xz")
+    print(article.revisions[6].revid)
+    print(article.revisions[6].timestamp.string)
+    print(article.revisions[6].user)
+    print(article.revisions[6].userid)
+    print(article.revisions[6].comment)
+
+    article = Article("../data/CRISPR_en.json.xz")
+    print(article.revisions[6].revid)
+    print(article.revisions[6].timestamp.string)
+    print(article.revisions[6].user)
+    print(article.revisions[6].userid)
+    print(article.revisions[6].comment)
