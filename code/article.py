@@ -59,6 +59,29 @@ class Article:
                         tracks[bibkey][bibkey_value].append(revision.timestamp)
         return tracks
 
+    def track_phrases_in_article(self, phrase_lists):
+        """
+        Generates tracks of all phrases provided.
+
+        Args:
+            phrases: A list of phrases.
+            
+        Returns:
+            The dictionary of phrases and their occurances:
+            {"phrase1, phrase2, ...":
+                {'phrase1':[timestamp1,timestamp2,timestamp3,...],
+                 'phrase2':[timestamp2,timestamp3,timestamp7,...]
+                 "..."},
+            }
+        """
+        tracks = {"(" + ",".join(phrase_list) + ")":{phrase:[] for phrase in phrase_list} for phrase_list in phrase_lists}
+        for revision in self.revisions:
+            for phrase_list in tracks:
+                for phrase in tracks[phrase_list]:
+                    if phrase in revision.text.lower():
+                        tracks[phrase_list][phrase].append(revision.timestamp)
+        return tracks
+
     def write_track_to_file(self, track, directory):
         """
         Write track to JSON file.

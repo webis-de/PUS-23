@@ -15,10 +15,11 @@ article = Article(".." + sep + "data" + sep + "CRISPR_en.xml")
 article.plot_revision_distribution_to_file(output_directory)
 
 #extract tracks of bibkey values in article
-tracks = article.track_bibkeys_in_article(["titles", "dois", "authors"], bibliography)
+bibkey_tracks = article.track_bibkeys_in_article(["titles", "dois", "authors"], bibliography)
+#phrase_tracks = article.track_phrases_in_article([["gene editing", "crispr cas", "medicine", "cancer", "science"]])
 
 #write and plot results to file
-for track in tracks.items():
-    article.write_track_to_file(track, output_directory)
+for track in bibkey_tracks.items():
+    article.write_track_to_file(bibkey_tracks, output_directory)
     article.plot_track_to_file(track, output_directory)
 
