@@ -11,7 +11,7 @@ bibliography = Bibliography(".." + sep + "data" + sep + "Referenzen_crispr_cas.c
 bibliography.plot_publication_distribution_to_file(output_directory)
 
 #read revisions from wikipedia revision history
-article = Article(".." + sep + "data" + sep + "CRISPR_en.xml.xz")
+article = Article(".." + sep + "data" + sep + "CRISPR_en.json.xz")
 article.plot_revision_distribution_to_file(output_directory)
 
 phrases = ["adaptive_immunity","agriculture","application","bolotin","broad_institute","cas_9","controversy",

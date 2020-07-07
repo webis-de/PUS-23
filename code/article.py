@@ -100,7 +100,7 @@ class Article:
                  "..."},
             }
         """
-        tracks = {"(" + ",".join(phrase_list) + ")":{phrase:[] for phrase in phrase_list} for phrase_list in phrase_lists}
+        tracks = {"(" + ",".join(phrase_list)[:20] + "(...)" * (",".join(phrase_list)[10:] != "") + ")":{phrase:[] for phrase in phrase_list} for phrase_list in phrase_lists}
         for revision in self.revisions:
             for phrase_list in tracks:
                 for phrase in tracks[phrase_list]:
