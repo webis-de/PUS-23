@@ -11,16 +11,14 @@ class Scraper:
     Scrape revision history from Wikipedia page.
 
     Attributes:
-        url: URL of the Wikipedia article.
-        parameters: Parameters for the get request.
         title: The title of the Wikipedia page.
         language: he language of the Wikipedia page.
+        url: URL of Wikipedia as per language.
+        parameters: Parameters for the get request to the Wikipedia REST API.
         page_id: ID of the Wikipedia page.
-        parameters: Parameters of the get request to the Wikipedia REST API.
-        current_revision: The latest revision of the Wikipedia article.
         revisions: Deserialised revisions of this Wikipedia page.
+        revision_count: The number of revisions of this Wikipedia page.
     """
-
     def __init__(self, title, language):
         """
         Initialise scraper.
@@ -29,11 +27,10 @@ class Scraper:
             title: The title of the Wikipedia page to scrape.
             language: The language of the Wikipedia page to scrape.
         """
-
-        self.url = "https://" + language + ".wikipedia.org/w/api.php"
-        self.parameters = {"format":"json","action":"query","prop":"revisions","titles":title,"rvlimit":"50","rvdir":"newer","rvslots":"*","rvprop":"ids|timestamp|user|userid|size|comment|content"}
         self.title = title
         self.language= language
+        self.url = "https://" + language + ".wikipedia.org/w/api.php"
+        self.parameters = {"format":"json","action":"query","prop":"revisions","titles":title,"rvlimit":"50","rvdir":"newer","rvslots":"*","rvprop":"ids|timestamp|user|userid|size|comment|content"}
         self.page_id = None
         self.revisions = []
         self.revision_count = 0
