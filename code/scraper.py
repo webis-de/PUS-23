@@ -39,8 +39,8 @@ class Scraper:
         self.revision_count = 0
 
     def scrape(self):
+        """Scrape the Wikipedia page."""
         start = datetime.now()
-        """Scrape the Wikipedia page and collect revisions."""
         response = get(self.url, self.parameters).json()
         self.page_id = list(response["query"]["pages"].keys())[0]
         self.collect_revisions(response) 
@@ -49,6 +49,12 @@ class Scraper:
         print(datetime.now() - start)
 
     def collect_revisions(self, response):
+        """
+        Collect the revisions in the response.
+
+        Args:
+            response: The response of the Wikipedia REST API.
+        """
         for revision in response["query"]["pages"][self.page_id]["revisions"]:
             self.revisions.append(Revision(revision["revid"],
                                            revision["user"],
