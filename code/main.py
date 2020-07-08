@@ -21,8 +21,8 @@ phrases = ["adaptive_immunity","agriculture","application","bolotin","broad_inst
            "technical","technique","technology","tool","tracrrna","type_ii","u_california","u_vienna","upstream","van_der_oost","zhang","zinc"]
 
 #extract tracks of bibkey values or phrase lists in article
-#tracks = article.track_bibkeys_in_article(["titles", "dois", "authors"], bibliography)
-tracks = article.track_phrases_in_article([phrases])
+tracks = article.track_bibkeys_in_article(["titles", "dois", "authors"], bibliography)
+#tracks = article.track_phrases_in_article([phrases])
 
 #write and plot results to file
 for track in tracks.items():

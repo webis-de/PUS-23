@@ -4,6 +4,7 @@ from utils import lzma_and_remove
 from json import dump
 from os.path import exists, sep
 from os import makedirs
+from datetime import datetime
 
 class Scraper:
     """
@@ -33,28 +34,35 @@ class Scraper:
         self.parameters = {"format":"json","action":"query","prop":"revisions","titles":title,"rvlimit":"50","rvdir":"newer","rvslots":"*","rvprop":"ids|timestamp|user|userid|size|comment|content"}
         self.title = title
         self.language= language
+        self.page_id = None
         self.revisions = []
+        self.revision_count = 0
 
     def scrape(self):
+        start = datetime.now()
         """Scrape the Wikipedia page and collect revisions."""
-        index = 0
         response = get(self.url, self.parameters).json()
         page_id = list(response["query"]["pages"].keys())[0]
-        while True:            
-            for revision in response["query"]["pages"][page_id]["revisions"]:
-                self.revisions.append(Revision(revision["revid"],
-                                               revision["user"],
-                                               revision["userid"],
-                                               revision["timestamp"],
-                                               revision["size"],
-                                               revision.get("slots",{}).get("main",{}).get("*",""),
-                                               revision["comment"],
-                                               index))
-                index += 1
+        while True:
+            self.collect_revisions(response["query"]["pages"][page_id]["revisions"])
+            response = get(self.url, self.parameters).json()
             self.parameters["rvcontinue"] = response.get("continue",{}).get("rvcontinue",None)
             if not self.parameters["rvcontinue"]:
+                self.collect_revisions(response["query"]["pages"][page_id]["revisions"])
                 break
-            response = get(self.url, self.parameters).json()
+        print(datetime.now() - start)
+
+    def collect_revisions(self, revisions):
+        for revision in revisions:
+            self.revisions.append(Revision(revision["revid"],
+                                           revision["user"],
+                                           revision["userid"],
+                                           revision["timestamp"],
+                                           revision["size"],
+                                           revision.get("slots",{}).get("main",{}).get("*",""),
+                                           revision["comment"],
+                                           self.revision_count))
+            self.revision_count += 1
 
     def save(self, directory, compress = False):
         """
@@ -74,7 +82,7 @@ class Scraper:
                             directory + sep + self.title + "_" + self.language + ".json.xz")
 
 if __name__ == "__main__":
-    article = Scraper("CRISPR", "de")
+    article = Scraper("CRISPR", "en")
     article.scrape()
     #article.save("../data", True)
 
