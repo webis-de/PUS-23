@@ -42,18 +42,14 @@ class Scraper:
         start = datetime.now()
         """Scrape the Wikipedia page and collect revisions."""
         response = get(self.url, self.parameters).json()
-        page_id = list(response["query"]["pages"].keys())[0]
-        while True:
-            self.collect_revisions(response["query"]["pages"][page_id]["revisions"])
-            response = get(self.url, self.parameters).json()
-            self.parameters["rvcontinue"] = response.get("continue",{}).get("rvcontinue",None)
-            if not self.parameters["rvcontinue"]:
-                self.collect_revisions(response["query"]["pages"][page_id]["revisions"])
-                break
+        self.page_id = list(response["query"]["pages"].keys())[0]
+        self.collect_revisions(response) 
+        while self.parameters["rvcontinue"]:
+            self.collect_revisions(get(self.url, self.parameters).json())
         print(datetime.now() - start)
 
-    def collect_revisions(self, revisions):
-        for revision in revisions:
+    def collect_revisions(self, response):
+        for revision in response["query"]["pages"][self.page_id]["revisions"]:
             self.revisions.append(Revision(revision["revid"],
                                            revision["user"],
                                            revision["userid"],
@@ -63,6 +59,7 @@ class Scraper:
                                            revision["comment"],
                                            self.revision_count))
             self.revision_count += 1
+        self.parameters["rvcontinue"] = response.get("continue",{}).get("rvcontinue",None)
 
     def save(self, directory, compress = False):
         """
