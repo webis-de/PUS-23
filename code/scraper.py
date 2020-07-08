@@ -1,7 +1,7 @@
 from revision import Revision
 from requests import get
 from utils import lzma_and_remove
-from json import dump, dumps
+from json import dump
 from os.path import exists, sep
 from os import makedirs
 
@@ -30,34 +30,18 @@ class Scraper:
         """
 
         self.url = "https://" + language + ".wikipedia.org/w/api.php"
-        self.parameters = {"format":"json","action":"query","prop":"revisions","titles":title,"rvlimit":"1","rvdir":"newer","rvslots":"*","rvprop":"ids|timestamp|user|userid|size|comment|content"}
+        self.parameters = {"format":"json","action":"query","prop":"revisions","titles":title,"rvlimit":"50","rvdir":"newer","rvslots":"*","rvprop":"ids|timestamp|user|userid|size|comment|content"}
         self.title = title
         self.language= language
-        current_revision = get(self.url, self.parameters).json()
-        
-        self.page_id = list(current_revision["query"]["pages"].keys())[0]
-        self.parameters["rvcontinue"] = current_revision["continue"]["rvcontinue"]
-
-        current_revision = current_revision["query"]["pages"][self.page_id]["revisions"][0]
-        self.current_revision = Revision(current_revision["revid"],
-                                         current_revision["user"],
-                                         current_revision["userid"],
-                                         current_revision["timestamp"],
-                                         current_revision["size"],
-                                         current_revision.get("slots",{}).get("main",{}).get("*",""),
-                                         current_revision["comment"],
-                                         0)
-        
-        self.revisions = [self.current_revision]
+        self.revisions = []
 
     def scrape(self):
         """Scrape the Wikipedia page and collect revisions."""
-        self.parameters["rvlimit"] = "50"
-        index = 1
-        while self.parameters["rvcontinue"]:            
-            response = get(self.url, self.parameters).json()
-            self.parameters["rvcontinue"] = response.get("continue",{}).get("rvcontinue",None)
-            for revision in response["query"]["pages"][self.page_id]["revisions"]:
+        index = 0
+        response = get(self.url, self.parameters).json()
+        page_id = list(response["query"]["pages"].keys())[0]
+        while True:            
+            for revision in response["query"]["pages"][page_id]["revisions"]:
                 self.revisions.append(Revision(revision["revid"],
                                                revision["user"],
                                                revision["userid"],
@@ -67,8 +51,10 @@ class Scraper:
                                                revision["comment"],
                                                index))
                 index += 1
-        for index in range(len(self.revisions)):
-            self.revisions[index].index = index
+            self.parameters["rvcontinue"] = response.get("continue",{}).get("rvcontinue",None)
+            if not self.parameters["rvcontinue"]:
+                break
+            response = get(self.url, self.parameters).json()
 
     def save(self, directory, compress = False):
         """
@@ -90,5 +76,5 @@ class Scraper:
 if __name__ == "__main__":
     article = Scraper("CRISPR", "de")
     article.scrape()
-    article.save("../data", True)
+    #article.save("../data", True)
 
