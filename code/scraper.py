@@ -98,7 +98,7 @@ class Scraper:
             compress: Compress file using lzma and delete json if set to True.
         """
         if not exists(directory): makedirs(directory)
-        with open(directory + sep + self.title + "_" + self.language + ".json", "w") as output_file:
+        with open(directory + sep + self.title.replace("/","-") + "_" + self.language + ".json", "w") as output_file:
             for revision in self.revisions:
                 dump(revision.__dict__, output_file)
                 output_file.write("\n")
