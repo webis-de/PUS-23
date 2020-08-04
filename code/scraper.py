@@ -116,7 +116,6 @@ if __name__ == "__main__":
     
     logger.start("Scraping " + ", ".join(articles))
     for article in articles:
-        if article == "CRISPR":continue
         with Scraper(logger = logger, title = article, language = "en") as scraper:
             scraper.scrape(html = True)
             scraper.save(directory = "../test", compress = False)
