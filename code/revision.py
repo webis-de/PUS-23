@@ -16,10 +16,11 @@ class Revision:
         text: The raw full text of the revision.
         html: The HTML of this revision.
         comment: The comment the user left.
+        minor: Flag for minor revision.
         self.index: The 0-indexed position in the revision history.
         
     """
-    def __init__(self, revid, parentid, url, user, userid, timestamp, size, text, html, comment, index):
+    def __init__(self, revid, parentid, url, user, userid, timestamp, size, text, html, comment, minor, index):
         """
         Intialises the revision from the revision dictionary entry provided.
 
@@ -34,6 +35,7 @@ class Revision:
             text: The raw full text of the revision.
             html: The HTML of this revision.
             comment: The comment the user left.
+            minor: Flag for minor revision.
             index: The 0-indexed position in the revision history.
         """
         self.revid = revid
@@ -46,6 +48,7 @@ class Revision:
         self.text = text
         self.html = html
         self.comment = comment
+        self.minor = minor
         self.index = index
 
     def get_html(self):

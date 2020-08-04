@@ -41,6 +41,7 @@ class Article:
                                    revision["text"],
                                    revision["html"],
                                    revision["comment"],
+                                   revision["minor"],
                                    revision["index"])
                           for revision in [loads(line) for line in file.readlines()]]
         self.timestamps = [revision.timestamp.string for revision in self.revisions]

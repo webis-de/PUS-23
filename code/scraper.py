@@ -7,6 +7,7 @@ from os import makedirs
 from datetime import datetime
 from multiprocessing import Pool
 from logger import Logger
+from pprint import pprint
 
 class Scraper:
     """
@@ -84,7 +85,8 @@ class Scraper:
                                       revision["size"],
                                       revision.get("slots",{}).get("main",{}).get("*",""),
                                       "",
-                                      revision["comment"],
+                                      revision.get("comment",""),
+                                      revision.get("minor",""),
                                       self.revision_count))
             self.revision_count += 1
         self.parameters["rvcontinue"] = response.get("continue",{}).get("rvcontinue",None)
@@ -113,7 +115,7 @@ if __name__ == "__main__":
         wikipedia_articles = load(articles_file)
 
     articles = [article for values in wikipedia_articles.values() for article in values]
-    
+
     logger.start("Scraping " + ", ".join(articles))
     for article in articles:
         with Scraper(logger = logger, title = article, language = "en") as scraper:
