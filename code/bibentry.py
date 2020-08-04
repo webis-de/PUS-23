@@ -3,7 +3,7 @@ from author import Author
 
 class Bibentry:
     """
-    Wrapper class for author.
+    Wrapper class for bibentry in bibliography CSV.
 
     Attributes:
         wos: Wos extracted from bibentry.
