@@ -1,11 +1,12 @@
 from revision import Revision
 from requests import get
 from utils import lzma_and_remove
-from json import dump
+from json import dump, load
 from os.path import exists, sep
 from os import makedirs
 from datetime import datetime
 from multiprocessing import Pool
+from logger import Logger
 
 class Scraper:
     """
@@ -20,7 +21,7 @@ class Scraper:
         revisions: Deserialised revisions of this Wikipedia page.
         revision_count: The number of revisions of this Wikipedia page.
     """
-    def __init__(self, title, language):
+    def __init__(self, logger, title, language):
         """
         Initialise scraper.
 
@@ -28,6 +29,7 @@ class Scraper:
             title: The title of the Wikipedia page to scrape.
             language: The language of the Wikipedia page to scrape.
         """
+        self.logger = logger
         self.title = title
         self.language= language
         self.api_url = "https://" + language + ".wikipedia.org/w/api.php"
@@ -38,9 +40,17 @@ class Scraper:
         self.revisions = []
         self.revision_count = 0
 
+    def __enter__(self):
+        """Makes the API autoclosable."""
+        return self
+
+    def __exit__(self, type, value, traceback):
+        """Closes the log when the resource this API uses is closed."""
+        pass
+
     def scrape(self, html = True):
         """Scrape the Wikipedia page."""
-        start = datetime.now()
+        self.logger.start_check("Scraping " + self.title)
         response = get(self.api_url, self.parameters).json()
         self.page_id = list(response["query"]["pages"].keys())[0]
         self.collect_revisions(response) 
@@ -51,7 +61,7 @@ class Scraper:
             self.revisions = pool.map(self.html, self.revisions)
             pool.close()
             pool.join()
-        print(datetime.now() - start)
+        self.logger.end_check("Done. Number of revisions: " + str(self.revision_count))
 
     def html(self, revision):
         revision.get_html()
@@ -97,8 +107,19 @@ class Scraper:
                             directory + sep + self.title + "_" + self.language + ".json.xz")
 
 if __name__ == "__main__":
-    article = Scraper(title = "CRISPR", language = "de")
-    article.scrape(html = False)
-    print(len(article.revisions))
-    article.save(directory = "../test", compress = False)
+    logger = Logger()
+    
+    with open("../data/wikipedia_articles.json") as articles_file:
+        wikipedia_articles = load(articles_file)
+
+    articles = [article for values in wikipedia_articles.values() for article in values]
+    
+    logger.start("Scraping " + ", ".join(articles))
+    for article in articles:
+        if article == "CRISPR":continue
+        with Scraper(logger = logger, title = article, language = "en") as scraper:
+            scraper.scrape(html = True)
+            scraper.save(directory = "../test", compress = False)
+    logger.stop("Done.")
+    logger.close()
 
