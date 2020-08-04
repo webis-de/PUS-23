@@ -15,15 +15,15 @@ class Article:
     allows tracking, saving and plotting of bibentry value occurances.
 
     Attributes:
-        filename: The name of the XML file.
+        filename: The name of the JSON file.
         name: The name of the article.
-        revisions: The individual revisions in the XML tree.
+        revisions: The individual revisions of the article.
         timestamps: The timestamps of all revisions.
     """
     def __init__(self, filepath):
         """
         Args:
-            filepath: The path to the XML or JSON file.
+            filepath: The path to the JSON file.
         """
         self.filename = basename(filepath)
         self.name = self.filename.replace(".","_")
@@ -31,28 +31,19 @@ class Article:
             file = lzma.open(filepath, mode="r")
         else:
             file = open(filepath)
-        if ".xml" in filepath:
-            self.revisions = [Revision(revision[1].get("id"),
-                                       revision[1].get("contributor").get("username"),
-                                       revision[1].get("contributor").get("id"),
-                                       Timestamp(revision[1].get("timestamp")),
-                                       revision[1].get("size"),
-                                       revision[1].get("text",{}).get("#text",""),
-                                       revision[1].get("comment"),
-                                       revision[0])
-                              for revision in enumerate(parse(file.read())["mediawiki"]["page"]["revision"])]
-            self.timestamps = [revision.timestamp.string for revision in self.revisions]
-        if ".json" in filepath:
-            self.revisions = [Revision(revision[1]["revid"],
-                                       revision[1]["user"],
-                                       revision[1]["userid"],
-                                       Timestamp(revision[1]["timestamp"]),
-                                       revision[1]["size"],
-                                       revision[1]["text"],
-                                       revision[1]["comment"],
-                                       revision[0])
-                              for revision in enumerate([loads(line) for line in file.readlines()])]
-            self.timestamps = [revision.timestamp.string for revision in self.revisions]
+        self.revisions = [Revision(revision["revid"],
+                                   revision["parentid"],
+                                   revision["url"],
+                                   revision["user"],
+                                   revision["userid"],
+                                   Timestamp(revision["timestamp"]),
+                                   revision["size"],
+                                   revision["text"],
+                                   revision["html"],
+                                   revision["comment"],
+                                   revision["index"])
+                          for revision in [loads(line) for line in file.readlines()]]
+        self.timestamps = [revision.timestamp.string for revision in self.revisions]
         file.close()
 
     def track_bibkeys_in_article(self, bibkeys, bibliography):
@@ -180,14 +171,14 @@ class Article:
         
 if __name__ == "__main__":
 
-    article = Article("../data/CRISPR_en.xml.xz")
+    article = Article("../data/CRISPR_en.json.xz")
     print(article.revisions[6].revid)
     print(article.revisions[6].timestamp.string)
     print(article.revisions[6].user)
     print(article.revisions[6].userid)
     print(article.revisions[6].comment)
 
-    article = Article("../data/CRISPR_en.json.xz")
+    article = Article("../data/CRISPR_de.json.xz")
     print(article.revisions[6].revid)
     print(article.revisions[6].timestamp.string)
     print(article.revisions[6].user)

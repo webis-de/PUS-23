@@ -5,6 +5,7 @@ from json import dump
 from os.path import exists, sep
 from os import makedirs
 from datetime import datetime
+from multiprocessing import Pool
 
 class Scraper:
     """
@@ -13,7 +14,7 @@ class Scraper:
     Attributes:
         title: The title of the Wikipedia page.
         language: he language of the Wikipedia page.
-        url: URL of Wikipedia as per language.
+        api_url: URL of Wikimedia API as per language.
         parameters: Parameters for the get request to the Wikipedia REST API.
         page_id: ID of the Wikipedia page.
         revisions: Deserialised revisions of this Wikipedia page.
@@ -29,21 +30,32 @@ class Scraper:
         """
         self.title = title
         self.language= language
-        self.url = "https://" + language + ".wikipedia.org/w/api.php"
-        self.parameters = {"format":"json","action":"query","prop":"revisions","titles":title,"rvlimit":"50","rvdir":"newer","rvslots":"*","rvprop":"ids|timestamp|user|userid|size|comment|content"}
+        self.api_url = "https://" + language + ".wikipedia.org/w/api.php"
+        self.article_url = "https://" + language + ".wikipedia.org/w/index.php?title=" + title
+        rvprops = "comment|content|contentmodel|flagged|flags|ids|oresscores|parsedcomment|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid"
+        self.parameters = {"format":"json","action":"query","prop":"revisions","titles":title,"rvlimit":"50","rvdir":"newer","rvslots":"*","rvprop":rvprops}
         self.page_id = None
         self.revisions = []
         self.revision_count = 0
 
-    def scrape(self):
+    def scrape(self, html = True):
         """Scrape the Wikipedia page."""
         start = datetime.now()
-        response = get(self.url, self.parameters).json()
+        response = get(self.api_url, self.parameters).json()
         self.page_id = list(response["query"]["pages"].keys())[0]
         self.collect_revisions(response) 
         while self.parameters["rvcontinue"]:
-            self.collect_revisions(get(self.url, self.parameters).json())
+            self.collect_revisions(get(self.api_url, self.parameters).json())
+        if html:
+            pool = Pool()
+            self.revisions = pool.map(self.html, self.revisions)
+            pool.close()
+            pool.join()
         print(datetime.now() - start)
+
+    def html(self, revision):
+        revision.get_html()
+        return revision
 
     def collect_revisions(self, response):
         """
@@ -54,16 +66,19 @@ class Scraper:
         """
         for revision in response["query"]["pages"][self.page_id]["revisions"]:
             self.revisions.append(Revision(revision["revid"],
-                                           revision["user"],
-                                           revision["userid"],
-                                           revision["timestamp"],
-                                           revision["size"],
-                                           revision.get("slots",{}).get("main",{}).get("*",""),
-                                           revision["comment"],
-                                           self.revision_count))
+                                      revision["parentid"],
+                                      self.article_url + "&oldid=" + str(revision["revid"]),
+                                      revision["user"],
+                                      revision["userid"],
+                                      revision["timestamp"],
+                                      revision["size"],
+                                      revision.get("slots",{}).get("main",{}).get("*",""),
+                                      "",
+                                      revision["comment"],
+                                      self.revision_count))
             self.revision_count += 1
         self.parameters["rvcontinue"] = response.get("continue",{}).get("rvcontinue",None)
-
+    
     def save(self, directory, compress = False):
         """
         Save revisions to directory.
@@ -82,7 +97,8 @@ class Scraper:
                             directory + sep + self.title + "_" + self.language + ".json.xz")
 
 if __name__ == "__main__":
-    article = Scraper("CRISPR", "en")
-    article.scrape()
-    #article.save("../data", True)
+    article = Scraper(title = "CRISPR", language = "de")
+    article.scrape(html = False)
+    print(len(article.revisions))
+    article.save(directory = "../test", compress = False)
 
