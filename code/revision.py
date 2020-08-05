@@ -53,7 +53,7 @@ class Revision:
 
     def get_html(self):
         """Retrieves HTML via GET request."""
-        self.html = get(self.url + "&oldid=" + str(self.revid)).text[:20]
+        self.html = get(self.url + "&oldid=" + str(self.revid)).text
 
     def __str__(self):
         return pformat(self.__dict__)
