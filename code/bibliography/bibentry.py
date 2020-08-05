@@ -1,5 +1,5 @@
+from bibliography.author import Author
 from pprint import pformat
-from author import Author
 
 class Bibentry:
     """
@@ -35,11 +35,26 @@ class Bibentry:
         self.doi = row[9].lower()
 
     def __str__(self):
-        string_representation = self.__dict__
+        string_representation = self.__dict__.copy()
         string_representation["author"] = self.author.__dict__
         return pformat(string_representation)
+
+    def to_bibtex(self):
+        string = ""
+        string += "@article{" + self.author.surname.lower() + ":" + str(self.year) + "\n"
+        dictionary_representation = self.__dict__.copy()
+        dictionary_representation["author"] = self.author.surname + ", " + self.author.firstname
+        dictionary_representation["pages"] = self.page_start + "-" + self.page_end
+        del dictionary_representation["page_start"]
+        del dictionary_representation["page_end"]
+        l = max([len(key) for key in dictionary_representation.keys()])
+        for item in dictionary_representation.items():
+            string += "\t" + item[0].ljust(l, " ") + " = " + "{" + str(item[1]) + "}" + "," + "\n"
+        string = string[:-2] + "\n" + "}" + "\n"
+        return string
 
 if __name__ == "__main__":
     
         bibentry = Bibentry("WOS:000227707100005	CRISPR ELEMENTS IN YERSINIA PESTIS ACQUIRE NEW REPEATS BY PREFERENTIAL UPTAKE OF BACTERIOPHAGE DNA, AND PROVIDE ADDITIONAL TOOLS FOR EVOLUTIONARY STUDIES	POURCEL,C	MICROBIOLOGY-SGM	653	663		151	2005	10.1099/MIC.0.27437-0".split("\t"))
         print(bibentry)
+        print(bibentry.to_bibtex())

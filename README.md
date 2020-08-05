@@ -20,21 +20,24 @@ This repository contains information and code concerning Science Analytics Wikip
 
 ### code
 
-- read xml file of revision history of Wikipedia article
-- read bibliography csv
+- read CSV file of revision history of Wikipedia article
+- read bibliography CSV
 - track bibentry value occurance in revision history
+- track phrase occurance in revision history
 - write results to file and plot timelines
 - plot revision and bibliography distribution
-- read timeline csv (timeline subdirectory; deprecated)
-- scraper to get all revisions of an article from wikipedia as line JSON
+- scrape all revisions of an article from Wikipedia as line JSON
 
 ### data
 
-- CRISPR_en.xml: revision history of English Wikipedia article on CRISPR
-- CRISPR_de.xml: revision history of German Wikipedia article on CRISPR
-- Referenzen_crispr_cas.csv: bibliography related to Crispr Cas
-- Timeline_Crispr_Cas.ods: ODS version of Crispr Cas timeline by Marion
-- Timeline_Crispr_Cas.csv: CSV version of Crispr Cas timeline by Marion
+- Referenzen_crispr_cas.csv: bibliography related to Crispr Cas (CSV)
+- Referenzen_crispr_cas.bib: bibliography related to Crispr Cas (BibTex)
+- wikipedia_articles.json: relevant Wikipedia article titles as selected by Arno
+
+### extractions
+
+- default directoy for extractions
+- LZMA compressed CRISPR article (DE and EN) from Wikipedia
 
 ### results
 

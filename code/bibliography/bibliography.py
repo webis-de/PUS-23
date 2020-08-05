@@ -1,7 +1,7 @@
-from csv import reader
-from bibentry import Bibentry
-from os.path import exists, sep
+from bibliography.bibentry import Bibentry
+from os.path import exists, basename, dirname, sep
 from os import makedirs
+from csv import reader
 import matplotlib.pyplot as plt
 
 class Bibliography:
@@ -9,6 +9,7 @@ class Bibliography:
     Wrapper class for bibliography CSV.
 
     Attributes:
+        filepath: Path to the CSV file.
         bibentries: A list of Bibentry objects deserialised from CSV rows.
         titles: A list of all titles in the bibliography.
         authors: A list of all authors in the bibliography.
@@ -22,6 +23,7 @@ class Bibliography:
         Args:
             filepath: The path to the bibliohgraphy CSV.
         """
+        self.filepath = filepath
         self.bibentries = []
         with open(filepath) as file:
             csv_reader = reader(file, delimiter="\t")
@@ -41,6 +43,17 @@ class Bibliography:
             return self.dois
         if bibkey == "years":
             return self.years
+
+    def write_bibtex_file(self, filepath = None):
+        if filepath:
+            if not exists(dirname(filepath)): makedirs(dirname(filepath))
+        else:
+            filepath = dirname(self.filepath) + sep + basename(self.filepath).split(".")[0] + "." + "bib"
+        print(filepath)
+        with open(filepath, "w") as file:
+            for bibentry in self.bibentries:
+                print(bibentry.to_bibtex())
+                file.write(bibentry.to_bibtex())
 
     def plot_publication_distribution_to_file(self, directory):
         """
@@ -70,4 +83,4 @@ if __name__ == "__main__":
     bibliography = Bibliography("../data/Referenzen_crispr_cas.csv")
     for bibentry in bibliography.bibentries:
         print(bibentry)
-    
+    bibliography.write_bibtex_file()

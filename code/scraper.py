@@ -1,13 +1,11 @@
+from utility.utils import lzma_and_remove
+from utility.logger import Logger
 from revision import Revision
 from requests import get
-from utils import lzma_and_remove
 from json import dump, load
 from os.path import exists, sep
 from os import makedirs
-from datetime import datetime
 from multiprocessing import Pool
-from logger import Logger
-from pprint import pprint
 
 class Scraper:
     """
@@ -119,8 +117,8 @@ if __name__ == "__main__":
     logger.start("Scraping " + ", ".join(articles))
     for article in articles:
         with Scraper(logger = logger, title = article, language = "en") as scraper:
-            scraper.scrape(html = True)
-            scraper.save(directory = "../test", compress = False)
+            scraper.scrape(html = False)
+            scraper.save(directory = "../extractions", compress = True)
     logger.stop("Done.")
     logger.close()
 
