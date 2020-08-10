@@ -98,14 +98,14 @@ class Scraper:
             compress: Compress file using lzma and delete json if set to True.
         """
         if not exists(directory): makedirs(directory)
-        title = self.title.replace("/","-")
-        with open(directory + sep + title + "_" + self.language + ".json", "w") as output_file:
+        filename = self.title.replace("/","-") + "_" + self.language
+        with open(directory + sep + filename + ".json", "w") as output_file:
             for revision in self.revisions:
                 dump(revision.__dict__, output_file)
                 output_file.write("\n")
         if compress:
-            lzma_and_remove(directory + sep + title + "_" + self.language + ".json",
-                            directory + sep + title + "_" + self.language + ".json.xz")
+            lzma_and_remove(directory + sep + filename + ".json",
+                            directory + sep + filename + ".json.xz")
 
 if __name__ == "__main__":
     logger = Logger()
