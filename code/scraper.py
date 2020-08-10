@@ -98,13 +98,14 @@ class Scraper:
             compress: Compress file using lzma and delete json if set to True.
         """
         if not exists(directory): makedirs(directory)
-        with open(directory + sep + self.title.replace("/","-") + "_" + self.language + ".json", "w") as output_file:
+        title = self.title.replace("/","-")
+        with open(directory + sep + title + "_" + self.language + ".json", "w") as output_file:
             for revision in self.revisions:
                 dump(revision.__dict__, output_file)
                 output_file.write("\n")
         if compress:
-            lzma_and_remove(directory + sep + self.title + "_" + self.language + ".json",
-                            directory + sep + self.title + "_" + self.language + ".json.xz")
+            lzma_and_remove(directory + sep + title + "_" + self.language + ".json",
+                            directory + sep + title + "_" + self.language + ".json.xz")
 
 if __name__ == "__main__":
     logger = Logger()
@@ -115,7 +116,7 @@ if __name__ == "__main__":
     articles = [article for values in wikipedia_articles.values() for article in values]
 
     logger.start("Scraping " + ", ".join(articles))
-    for article in articles:
+    for article in articles[1:]:
         with Scraper(logger = logger, title = article, language = "en") as scraper:
             scraper.scrape(html = False)
             scraper.save(directory = "../extractions", compress = True)
