@@ -1,6 +1,6 @@
 from datetime import datetime
-from os.path import isdir, sep
-from os import mkdir
+from os.path import exists, sep
+from os import makedirs
 
 class Logger:
         """
@@ -12,14 +12,14 @@ class Logger:
                 checkpoint: The timestamp record used to measure intermediate process durations.
                 file_name: The name of the file the log is saved to.
         """
-        def __init__(self):
+        def __init__(self, directory = "logs"):
                 """Initialises a new instance."""
                 self.timestamp = datetime.now()
                 self.begin = self.timestamp
                 self.stopwatch = self.timestamp
                 self.checkpoint = self.timestamp
-                if not isdir("logs"): mkdir("logs")
-                self.file_name = "logs" + sep + str(self.timestamp)[:-7].replace(":","_").replace("-","_").replace(" ","_") + ".log"
+                if not exists(directory): makedirs(directory)
+                self.file_name = directory + sep + str(self.timestamp)[:-7].replace(":","_").replace("-","_").replace(" ","_") + ".log"
                 print(self.timestamp.strftime("%d %b %Y %H:%M:%S"))
 
         def log(self, message, line_breaks = 0):

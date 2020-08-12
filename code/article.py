@@ -172,14 +172,7 @@ class Article:
         
 if __name__ == "__main__":
 
-    article = Article("../extractions/CRISPR_de_NO_HTML.json.xz")
-    print(article.revisions[6].revid)
-    print(article.revisions[6].timestamp.string)
-    print(article.revisions[6].user)
-    print(article.revisions[6].userid)
-    print(article.revisions[6].comment)
-
-    article = Article("../extractions/CRISPR_en_NO_HTML.json.xz")
+    article = Article("../extractions/CRISPR_en.json")
     print(article.revisions[6].revid)
     print(article.revisions[6].timestamp.string)
     print(article.revisions[6].user)
