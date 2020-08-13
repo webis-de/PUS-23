@@ -20,13 +20,10 @@ This repository contains information and code concerning Science Analytics Wikip
 
 ### code
 
-- read CSV file of revision history of Wikipedia article
-- read bibliography CSV
-- track bibentry value occurance in revision history
-- track phrase occurance in revision history
-- write results to file and plot timelines
+- read bibliography CSV, convert to BibTex and plot publication distribution
+- scrape all revisions of article from Wikipedia as line JSON, update existing revision extractions
+- track bibentry value and phrase occurance in revision history and write results to file and plot timelines
 - plot revision and bibliography distribution
-- scrape all revisions of an article from Wikipedia as line JSON
 
 ### data
 
@@ -37,7 +34,7 @@ This repository contains information and code concerning Science Analytics Wikip
 ### extractions
 
 - default directoy for extractions
-- LZMA compressed CRISPR article (DE and EN) from Wikipedia
+- on gitignore
 
 ### results
 
@@ -46,4 +43,5 @@ This repository contains information and code concerning Science Analytics Wikip
 ### notes
 
 - revision histories of up to 1000 edits can be extracted via https://en.wikipedia.org/wiki/Special:Export and https://de.wikipedia.org/wiki/Spezial:Exportieren respectively
+- scraper uses official Wikimedia API
 

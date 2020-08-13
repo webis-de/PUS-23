@@ -35,6 +35,15 @@ class Bibliography:
         self.years = [bibentry.year for bibentry in self.bibentries]
 
     def bibkey_values(self, bibkey):
+        """
+        Getter for bibkey values.
+
+        Args:
+            bibkey: The bibkey for which values are required.
+
+        Returns:
+            List of values behind each bibkey in the Bibliography.
+        """
         if bibkey == "titles":
             return self.titles
         if bibkey == "authors":
@@ -45,14 +54,19 @@ class Bibliography:
             return self.years
 
     def write_bibtex_file(self, filepath = None):
+        """
+        Convert bibentries to BibText and write to file.
+
+        Args:
+            filepath: The path to the file to which the bibvalues will be written.
+                      Defaults to directory and name of source file of Bibliography.
+        """
         if filepath:
             if not exists(dirname(filepath)): makedirs(dirname(filepath))
         else:
             filepath = dirname(self.filepath) + sep + basename(self.filepath).split(".")[0] + "." + "bib"
-        print(filepath)
         with open(filepath, "w") as file:
             for bibentry in self.bibentries:
-                print(bibentry.to_bibtex())
                 file.write(bibentry.to_bibtex())
 
     def plot_publication_distribution_to_file(self, directory):
@@ -77,10 +91,3 @@ class Bibliography:
         plt.subplots_adjust(bottom=0.1, top=0.95, left=0.03, right=0.995)
         if not exists(directory): makedirs(directory)
         plt.savefig(directory + sep + "publication_distribution.png")
-
-if __name__ == "__main__":
-
-    bibliography = Bibliography("../data/Referenzen_crispr_cas.csv")
-    for bibentry in bibliography.bibentries:
-        print(bibentry)
-    bibliography.write_bibtex_file()

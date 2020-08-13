@@ -62,7 +62,7 @@ class Scraper:
             html: Scrape HTML code of each revision.
             number: Number of revisions to scrape.
         """
-        self.logger.start_check("Scraping " + self.title + " and extract html." * html)
+        self.logger.start_check("Scraping " + self.title + " and extracting html" * html + ".")
         filename = self.title.replace("/","-") + "_" + self.language
         if exists(directory + sep + filename):
             self.get_rvstartid(directory + sep + filename)

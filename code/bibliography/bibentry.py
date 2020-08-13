@@ -41,7 +41,7 @@ class Bibentry:
 
     def to_bibtex(self):
         string = ""
-        string += "@article{" + self.author.surname.lower() + ":" + str(self.year) + "\n"
+        string += "@article{" + self.author.surname.lower() + ":" + str(self.year) + "," + "\n"
         dictionary_representation = self.__dict__.copy()
         dictionary_representation["author"] = self.author.surname + ", " + self.author.firstname
         dictionary_representation["pages"] = self.page_start + "-" + self.page_end
@@ -53,8 +53,3 @@ class Bibentry:
         string = string[:-2] + "\n" + "}" + "\n"
         return string
 
-if __name__ == "__main__":
-    
-        bibentry = Bibentry("WOS:000227707100005	CRISPR ELEMENTS IN YERSINIA PESTIS ACQUIRE NEW REPEATS BY PREFERENTIAL UPTAKE OF BACTERIOPHAGE DNA, AND PROVIDE ADDITIONAL TOOLS FOR EVOLUTIONARY STUDIES	POURCEL,C	MICROBIOLOGY-SGM	653	663		151	2005	10.1099/MIC.0.27437-0".split("\t"))
-        print(bibentry)
-        print(bibentry.to_bibtex())
