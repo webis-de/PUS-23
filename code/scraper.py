@@ -45,6 +45,8 @@ class Scraper:
         self.rvcontinue = None
         self.revisions = []
         self.revision_count = 0
+        self.updating = False
+        self.update_count = 0
 
     def __enter__(self):
         """Makes the API autoclosable."""
@@ -53,7 +55,7 @@ class Scraper:
     def __exit__(self, type, value, traceback):
         pass
 
-    def scrape(self, directory, html, number = float("inf")):
+    def scrape(self, directory, html = True, number = float("inf")):
         """
         Scrape the Wikipedia page.
 
@@ -66,6 +68,7 @@ class Scraper:
         filename = self.title.replace("/","-") + "_" + self.language
         if exists(directory + sep + filename):
             self.get_rvstartid(directory + sep + filename)
+            self.updating = True
             mode = "a"
         else:
             self.collect_revisions(number) 
@@ -74,6 +77,7 @@ class Scraper:
             self.collect_revisions(number)
         if html:
             self.collect_html()
+        if self.updating: self.logger.log("Number of updates: " + str(self.update_count))
         self.logger.end_check("Done. Number of revisions: " + str(self.revision_count))
         self.save(directory, mode)
 
@@ -122,6 +126,7 @@ class Scraper:
                                       revision.get("minor",""),
                                       self.revision_count))
             self.revision_count += 1
+            if self.updating: self.update_count += 1
         self.rvcontinue = response.get("continue",{}).get("rvcontinue",None)
         if self.rvcontinue:
             self.parameters["rvstartid"] = self.rvcontinue.split("|")[1]
