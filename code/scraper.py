@@ -160,14 +160,3 @@ class Scraper:
             for revision in self.revisions:
                 output_file.write(json.dumps(revision.__dict__) + "\n")
 
-if __name__ == "__main__":
-    LOGGER = Logger()
-    DIRECTORY = ".." + sep + "test" + sep + "test_single_scrape_with_html"
-    TITLE = "CRISPR"
-    LANGUAGE = "de"
-    filename = TITLE + "_" + LANGUAGE
-    filepath = DIRECTORY + sep + filename
-    
-    #scrape article with HTML
-    with Scraper(logger = LOGGER, title = TITLE, language = LANGUAGE) as scraper:
-        scraper.scrape(DIRECTORY, html=True)

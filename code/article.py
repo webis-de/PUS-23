@@ -1,13 +1,12 @@
-from xmltodict import parse
-from json import loads
-from datetime import datetime
-from json import dump
 from revision import Revision
 from timestamp import Timestamp
 from os.path import basename, exists, sep
 from os import makedirs
 import matplotlib.pyplot as plt
-import lzma
+from xmltodict import parse
+from json import loads
+from datetime import datetime
+from json import dump
 
 class Article:
     """
@@ -27,25 +26,21 @@ class Article:
         """
         self.filename = basename(filepath)
         self.name = self.filename.replace(".","_")
-        if ".xz" in filepath:
-            file = lzma.open(filepath, mode="r")
-        else:
-            file = open(filepath)
-        self.revisions = [Revision(revision["revid"],
-                                   revision["parentid"],
-                                   revision["url"],
-                                   revision["user"],
-                                   revision["userid"],
-                                   Timestamp(revision["timestamp"]),
-                                   revision["size"],
-                                   revision["text"],
-                                   revision["html"],
-                                   revision["comment"],
-                                   revision["minor"],
-                                   revision["index"])
-                          for revision in [loads(line) for line in file.readlines()]]
+        with open(filepath) as file:
+            self.revisions = [Revision(revision["revid"],
+                                       revision["parentid"],
+                                       revision["url"],
+                                       revision["user"],
+                                       revision["userid"],
+                                       Timestamp(revision["timestamp"]),
+                                       revision["size"],
+                                       revision["text"],
+                                       revision["html"],
+                                       revision["comment"],
+                                       revision["minor"],
+                                       revision["index"])
+                              for revision in [loads(line) for line in file.readlines()]]
         self.timestamps = [revision.timestamp.string for revision in self.revisions]
-        file.close()
 
     def track_bibkeys_in_article(self, bibkeys, bibliography):
         """
@@ -169,12 +164,3 @@ class Article:
         filename = self.name.lower() + "_wikipedia_revision_distribution" + ".png"
         if not exists(directory): makedirs(directory)
         plt.savefig(directory + sep + filename)
-        
-if __name__ == "__main__":
-
-    article = Article("../extractions/CRISPR_en.json")
-    print(article.revisions[6].revid)
-    print(article.revisions[6].timestamp.string)
-    print(article.revisions[6].user)
-    print(article.revisions[6].userid)
-    print(article.revisions[6].comment)
