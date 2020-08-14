@@ -1,17 +1,14 @@
-from revision import Revision
-from timestamp import Timestamp
+from entity.revision import Revision
+from entity.timestamp import Timestamp
 from os.path import basename, exists, sep
 from os import makedirs
 import matplotlib.pyplot as plt
-from xmltodict import parse
-from json import loads
-from datetime import datetime
-from json import dump
+from json import loads, dump
 
 class Article:
     """
-    Reads XML file of revision history of Wikipedia article and
-    allows tracking, saving and plotting of bibentry value occurances.
+    Reads line JSON file of revision history of Wikipedia article and
+    allows tracking, saving and plotting of bibentry value and phrase occurances.
 
     Attributes:
         filename: The name of the JSON file.

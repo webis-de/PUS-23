@@ -1,6 +1,6 @@
-from scraper import Scraper
-from article import Article
-from bibliography import Bibliography
+from scraper.scraper import Scraper
+from entity.article import Article
+from entity.bibliography import Bibliography
 from utility.logger import Logger
 from os import popen, remove, rename, rmdir
 from os.path import sep

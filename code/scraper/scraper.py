@@ -1,8 +1,7 @@
-from utility.logger import Logger
-from article import Article
-from revision import Revision
+from entity.article import Article
+from entity.revision import Revision
 from requests import get
-import json
+from json import dumps
 from os.path import exists, sep
 from os import makedirs
 from multiprocessing import Pool
@@ -93,7 +92,6 @@ class Scraper:
 
         Args:
             filepath: Path to the revisions file.
-
         """
         article = Article(filepath)
         self.revision_count = len(article.revisions)
@@ -163,5 +161,5 @@ class Scraper:
         filename = self.title.replace("/","-") + "_" + self.language
         with open(directory + sep + filename, mode) as output_file:
             for revision in self.revisions:
-                output_file.write(json.dumps(revision.__dict__) + "\n")
+                output_file.write(dumps(revision.__dict__) + "\n")
 

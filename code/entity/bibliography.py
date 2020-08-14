@@ -10,14 +10,14 @@ class Bibliography:
     Attributes:
         filepath: Path to BIB file.
         bibentries: A list of Bibentry objects deserialised from BIB file.
-        titles: A list of all titles in the bibliography.
-        authors: A list of all authors in the bibliography.
-        dois: A list of all dois in the bibliography.
+        titles: A list of all titles in the bibliography (lowered).
+        authors: A list of all authors in the bibliography (first author, surname).
+        dois: A list of all dois in the bibliography (lowered).
         years: A list of all years in the bibliography.
     """
     def __init__(self, filepath):
         """
-        Intitialises the bibliography from the file provided.
+        Intitialises the bibliography from the file provided using Pybtex.
 
         Args:
             filepath: The path to the bibliohgraphy file.
@@ -56,12 +56,7 @@ class Bibliography:
         Args:
             directory: The directory to save the plot to.
         """
-        distribution = {}
-        for year in self.years:
-            if int(year) not in distribution:
-                distribution[int(year)] = 0
-            distribution[int(year)] += 1
-        distribution = {year:distribution[year] for year in sorted(distribution.keys())}
+        distribution = {year:self.years.count(year) for year in set(sorted(self.years))}
 
         plt.figure(figsize=(25,10), dpi=150)
         plt.title("Publication Distribition")
