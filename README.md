@@ -20,20 +20,18 @@ This repository contains information and code concerning Science Analytics Wikip
 
 ### code
 
-- read bibliography CSV, convert to BibTex and plot publication distribution
 - scrape all revisions of article from Wikipedia as line JSON, update existing revision extractions
 - track bibentry value and phrase occurance in revision history and write results to file and plot timelines
 - plot revision and bibliography distribution
 
 ### data
 
-- Referenzen_crispr_cas.csv: bibliography related to Crispr Cas (CSV)
-- Referenzen_crispr_cas.bib: bibliography related to Crispr Cas (BibTex)
-- wikipedia_articles.json: relevant Wikipedia article titles as selected by Arno
+- bibliography_marion.bib: bibliography related to Crispr Cas (BibTex) as compiled by Marion
+- wikipedia_articles.json: relevant Wikipedia article titles as compiled by Arno
 
 ### extractions
 
-- default directoy for extractions
+- default directory for extractions
 - on gitignore
 
 ### results
@@ -43,5 +41,5 @@ This repository contains information and code concerning Science Analytics Wikip
 ### notes
 
 - revision histories of up to 1000 edits can be extracted via https://en.wikipedia.org/wiki/Special:Export and https://de.wikipedia.org/wiki/Spezial:Exportieren respectively
-- scraper uses official Wikimedia API
+- Scraper uses Wikimedia API
 

@@ -1,0 +1,75 @@
+from os.path import exists, sep
+from os import makedirs
+from pybtex.database import parse_file
+import matplotlib.pyplot as plt
+
+class Bibliography:
+    """
+    Wrapper class for bibliography.
+
+    Attributes:
+        filepath: Path to BIB file.
+        bibentries: A list of Bibentry objects deserialised from BIB file.
+        titles: A list of all titles in the bibliography.
+        authors: A list of all authors in the bibliography.
+        dois: A list of all dois in the bibliography.
+        years: A list of all years in the bibliography.
+    """
+    def __init__(self, filepath):
+        """
+        Intitialises the bibliography from the file provided.
+
+        Args:
+            filepath: The path to the bibliohgraphy file.
+        """
+        self.filepath = filepath
+        self.bibentries = parse_file(filepath).entries
+        self.titles = [bibentry.fields.get("title").lower() for bibentry in self.bibentries.values()]
+        self.authors = [bibentry.persons.get("author")[0].last_names[0] for bibentry in self.bibentries.values()]
+        self.dois = [bibentry.fields.get("doi").lower() for bibentry in self.bibentries.values()]
+        self.years = [int(bibentry.fields.get("year")) for bibentry in self.bibentries.values()]        
+
+    def bibkey_values(self, bibkey):
+        """
+        Getter for bibkey values.
+
+        Args:
+            bibkey: The bibkey for which values are required.
+
+        Returns:
+            List of values behind each bibkey in the Bibliography.
+        """
+        if bibkey == "titles":
+            return self.titles
+        if bibkey == "authors":
+            return self.authors
+        if bibkey == "dois":
+            return self.dois
+        if bibkey == "years":
+            return self.years    
+
+    def plot_publication_distribution_to_file(self, directory):
+        """
+        Plot the distribution of publications across the entire bibliography to file.
+        Revisions are accumulated per year.
+
+        Args:
+            directory: The directory to save the plot to.
+        """
+        distribution = {}
+        for year in self.years:
+            if int(year) not in distribution:
+                distribution[int(year)] = 0
+            distribution[int(year)] += 1
+        distribution = {year:distribution[year] for year in sorted(distribution.keys())}
+
+        plt.figure(figsize=(25,10), dpi=150)
+        plt.title("Publication Distribition")
+        plt.margins(x=0.01,y=0.1)
+        plt.xlabel('year')
+        plt.ylabel('number of publications')
+        plt.bar(list(range(len(distribution))), list(distribution.values()))
+        plt.xticks(list(range(len(distribution))), list(distribution.keys()), rotation='vertical')
+        plt.subplots_adjust(bottom=0.1, top=0.95, left=0.03, right=0.995)
+        if not exists(directory): makedirs(directory)
+        plt.savefig(directory + sep + "publication_distribution.png")
