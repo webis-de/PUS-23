@@ -2,6 +2,11 @@ from bibliography.bibentry import Bibentry
 from os.path import exists, basename, dirname, sep
 from os import makedirs
 from csv import reader
+from bibtexparser import load
+from bibtexparser.bparser import BibTexParser
+from bibtexparser.customization import homogenize_latex_encoding
+from bibtexparser.bwriter import BibTexWriter
+from bibtexparser.bibdatabase import BibDatabase
 import matplotlib.pyplot as plt
 
 class Bibliography:
@@ -21,18 +26,48 @@ class Bibliography:
         Intitialises the bibliography from the file provided.
 
         Args:
-            filepath: The path to the bibliohgraphy CSV.
+            filepath: The path to the bibliohgraphy file.
         """
         self.filepath = filepath
         self.bibentries = []
-        with open(filepath) as file:
-            csv_reader = reader(file, delimiter="\t")
+
+    def from_csv(self):
+        columns = ["wos","title","author","source","page_start","page_end","issue","volume","year","doi"]
+        with open(self.filepath) as csv_file:
+            csv_reader = reader(csv_file, delimiter="\t")
             for row in csv_reader:
-                self.bibentries.append(Bibentry(row))
+                data = {columns[i]:row[i] for i in range(len(row))}
+                data["pages"] = data["page_start"] + "-" + data["page_end"]
+                del data["page_start"]
+                del data["page_end"]
+                self.bibentries.append(Bibentry(data))
+            self.bibentries = sorted(self.bibentries, key = lambda bibentry: bibentry.author.surname)
+        self.load_bibkey_values()
+        return self
+
+    def from_bib(self):
+        with open(self.filepath) as bib_file:
+            parser = BibTexParser()
+            parser.customization = homogenize_latex_encoding
+            bib_database = load(bib_file, parser=parser)
+            self.bibentries = [Bibentry([entry["wos"],
+                                        entry["title"],
+                                        entry["author"],
+                                        entry["source"],
+                                        entry["pages"].split("-")[0],
+                                        entry["pages"].split("-")[1],
+                                        entry["issue"],
+                                        entry["volume"],
+                                        entry["year"],
+                                        entry["doi"]]) for entry in bib_database.get_entry_dict().values()]
+        self.load_bibkey_values()
+        return self
+
+    def load_bibkey_values(self):
         self.titles = [bibentry.title.lower() for bibentry in self.bibentries]
         self.authors = [bibentry.author.surname for bibentry in self.bibentries]
         self.dois = [bibentry.doi.lower() for bibentry in self.bibentries]
-        self.years = [bibentry.year for bibentry in self.bibentries]
+        self.years = [bibentry.year for bibentry in self.bibentries]        
 
     def bibkey_values(self, bibkey):
         """
@@ -61,13 +96,16 @@ class Bibliography:
             filepath: The path to the file to which the bibvalues will be written.
                       Defaults to directory and name of source file of Bibliography.
         """
+        db = BibDatabase()
+        db.entries = [bibentry.bibtex() for bibentry in self.bibentries]
+
         if filepath:
             if not exists(dirname(filepath)): makedirs(dirname(filepath))
         else:
             filepath = dirname(self.filepath) + sep + basename(self.filepath).split(".")[0] + "." + "bib"
-        with open(filepath, "w") as file:
-            for bibentry in self.bibentries:
-                file.write(bibentry.to_bibtex())
+        with open(filepath, "w") as bibfile:
+            writer = BibTexWriter()
+            bibfile.write(writer.write(db))    
 
     def plot_publication_distribution_to_file(self, directory):
         """

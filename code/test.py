@@ -38,11 +38,11 @@ def test_full_and_updated_scrape(logger):
     remove(FILEPATH)
     logger.end_check("Done.")
 
-    logger.stop("Singlescraping test finished.", 1)
-
     #assert full and update scrape match
     assert full_scrape_checksum == update_scrape_checksum
     assert number_of_full_scraped_revisions == number_of_updated_scraped_revisions
+
+    logger.stop("Singlescraping test successful.", 1)
     
 def test_multi_scrape_with_5_revisions(logger):
     DIRECTORY = ".." + sep + "test" + sep + "test_multi_scrape"
@@ -58,7 +58,7 @@ def test_multi_scrape_with_5_revisions(logger):
     for article in ARTICLES:
         with Scraper(logger = LOGGER, title = article, language = "en") as scraper:
             scraper.scrape(DIRECTORY, html=False, number=5)
-    logger.stop("Multiscraping test finished.", 1)
+    logger.stop("Multiscraping test successful.", 1)
 
 def test_pipeline(logger):
     DIRECTORY = ".." + sep + "test" + sep + "test_pipeline"
@@ -74,7 +74,7 @@ def test_pipeline(logger):
     article.plot_revision_distribution_to_file(DIRECTORY)
 
     #load bibliography
-    bibliography = Bibliography(".." + sep + "data" + sep + "Referenzen_crispr_cas.csv")
+    bibliography = Bibliography(".." + sep + "data" + sep + "Referenzen_crispr_cas.csv").from_csv()
     bibliography.plot_publication_distribution_to_file(DIRECTORY)
 
     #track bibkeys and print/plot
@@ -83,8 +83,6 @@ def test_pipeline(logger):
         article.write_track_to_file(track, DIRECTORY)
         article.plot_track_to_file(track, DIRECTORY)
 
-    logger.stop("Pipeline test finished.", 1)
-
     #assert revision information
     assert article.revisions[0].revid == 69137443
     assert article.revisions[0].timestamp.string == "2010-01-11 02:11:54"
@@ -92,54 +90,56 @@ def test_pipeline(logger):
     assert article.revisions[0].userid == 92881
     assert article.revisions[0].comment == "neu, wird noch erweitert"
 
+    logger.stop("Pipeline test successfull.", 1)
+
 def test_bibentry_conversion(logger):
 
     logger.start("Testing bibentry conversion...")
     
-    bibentry = Bibentry(("WOS:000227707100005	" + \
-                        "CRISPR ELEMENTS IN YERSINIA PESTIS	" + \
-                        "POURCEL,C	" + \
-                        "MICROBIOLOGY-SGM	" + \
-                        "653	" + \
-                        "663	" + \
-                        "	" + \
+    bibentry = Bibentry(("WOS:0123456789	" + \
+                        "UNNECESSARY LONG TITLE & IT HAS A WEIRD CHARACTER	" + \
+                        "SURNAME,FN.	" + \
+                        "A PUBLISHER	" + \
+                        "15	" + \
+                        "25	" + \
+                        "42	" + \
                         "151	" + \
                         "2005	" + \
-                        "10.1099/MIC.0.27437-0").split("\t"))
+                        "00.1111/FOO.0.11111-2").split("\t"))
     bibentry_as_pprint = str(bibentry)
-    bibentry_as_bibtex = bibentry.to_bibtex()
-
-    logger.stop("Bibentry conversion test finished.", 1)
+    print(bibentry_as_pprint)
 
     #sanity-check bibentry pprint
     assert bibentry_as_pprint == \
-           "{'author': {'firstname': 'C',\n" + \
-           "            'fullname': 'POURCEL,C',\n" + \
-           "            'names': ['POURCEL', 'C'],\n" + \
-           "            'surname': 'Pourcel'},\n" + \
-           " 'doi': '10.1099/mic.0.27437-0',\n" + \
-           " 'issue': '',\n" + \
-           " 'page_end': '663',\n" + \
-           " 'page_start': '653',\n" + \
-           " 'source': 'microbiology-sgm',\n" + \
-           " 'title': 'crispr elements in yersinia pestis',\n" + \
+           "{'author': {'firstname': 'Fn.',\n" + \
+           "            'fullname': 'Surname,Fn.',\n" + \
+           "            'surname': 'Surname'},\n" + \
+           " 'doi': '00.1111/foo.0.11111-2',\n" + \
+           " 'issue': '42',\n" + \
+           " 'page_end': '25',\n" + \
+           " 'page_start': '15',\n" + \
+           " 'source': 'a publisher',\n" + \
+           " 'title': 'unnecessary long title & it has a weird character',\n" + \
            " 'volume': '151',\n" + \
-           " 'wos': 'wos:000227707100005',\n" + \
+           " 'wos': 'wos:0123456789',\n" + \
            " 'year': 2005}"
+
+    bibentry_as_bibtex = str(bibentry.bibtex())
+    print(bibentry_as_bibtex)
 
     #sanity-check bibentry bibtext
     assert bibentry_as_bibtex == \
-           "@article{pourcel:2005,\n" + \
-           "	wos    = {wos:000227707100005},\n" + \
-           "	title  = {crispr elements in yersinia pestis},\n" + \
-           "	author = {Pourcel, C},\n" + \
-           "	source = {microbiology-sgm},\n" + \
-           "	issue  = {},\n" + \
-           "	volume = {151},\n" + \
-           "	year   = {2005},\n" + \
-           "	doi    = {10.1099/mic.0.27437-0},\n" + \
-           "	pages  = {653-663}\n" + \
-           "}\n"
+           "{'wos': 'wos:0123456789', " + \
+           "'title': 'unnecessary long title & it has a weird character', " + \
+           "'author': 'Surname,Fn.', " + \
+           "'source': 'a publisher', " + \
+           "'issue': '42', " + \
+           "'volume': '151', " + \
+           "'year': 2005, " + \
+           "'doi': '00.1111/foo.0.11111-2', " + \
+           "'pages': '15-25'}"
+
+    logger.stop("Bibentry conversion test successfull.", 1)
 
 def test_bibliography_conversion(logger):
     DIRECTORY = ".." + sep + "test" + sep + "test_bibliography_conversion"
@@ -149,14 +149,15 @@ def test_bibliography_conversion(logger):
     logger.start("Testing bibliography conversion...")
 
     #load bibliography csv and covert to BibTex
-    bibliography = Bibliography(".." + sep + "data" + sep + "Referenzen_crispr_cas.csv")
-    bibliography.write_bibtex_file(FILEPATH)
+    bibliography_csv = Bibliography(".." + sep + "data" + sep + "Referenzen_crispr_cas.csv").from_csv()
+    bibliography_csv.write_bibtex_file(FILEPATH)
 
-    logger.stop("Bibliography conversion test finished.", 1)
+
+    logger.stop("Bibliography conversion test successful.", 1)
 
 with Logger(".." + sep + "test" + sep + "logs") as LOGGER:
-    test_full_and_updated_scrape(LOGGER)
-    test_multi_scrape_with_5_revisions(LOGGER)
-    test_pipeline(LOGGER)
-    test_bibentry_conversion(LOGGER)
+##    test_full_and_updated_scrape(LOGGER)
+##    test_multi_scrape_with_5_revisions(LOGGER)
+##    test_pipeline(LOGGER)
+##    test_bibentry_conversion(LOGGER)
     test_bibliography_conversion(LOGGER)

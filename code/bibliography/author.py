@@ -11,22 +11,22 @@ class Author:
                  upper case, rest to lower case.
         firstname: Second element in names.
     """
-    def __init__(self, fullname):
+    def __init__(self, name):
         """
         Initialises author.
 
         Args:
             fullname: Full name as extracted from bibentry.
         """
-        self.fullname = fullname
-        self.names = fullname.split(",")
-        self.surname = self.names[0][0].upper() + self.names[0][1:].lower()
-        self.firstname = self.names[1]
-
+        nameparts = [part.strip() for part in name.split(",")]
+        self.surname = nameparts[0][0].upper() + nameparts[0][1:].lower()
+        self.firstname = nameparts[1][0].upper() + nameparts[1][1:].lower()
+        self.fullname = self.surname + "," + self.firstname
+        
     def __str__(self):
         return pformat(self.__dict__)
 
 if __name__ == "__main__":
 
-    author = Author("MOJICA,F")
+    author = Author("MOJICA, F.")
     print(author)
