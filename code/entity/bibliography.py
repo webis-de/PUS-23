@@ -24,7 +24,7 @@ class Bibliography:
         """
         self.filepath = filepath
         self.bibentries = parse_file(filepath).entries
-        self.titles = [bibentry.fields.get("title").lower() for bibentry in self.bibentries.values()]
+        self.titles = [bibentry.fields.get("title").lower().replace("{","").replace("}","") for bibentry in self.bibentries.values()]
         self.authors = [bibentry.persons.get("author")[0].last_names[0] for bibentry in self.bibentries.values()]
         self.dois = [bibentry.fields.get("doi").lower() for bibentry in self.bibentries.values()]
         self.years = [int(bibentry.fields.get("year")) for bibentry in self.bibentries.values()]        
