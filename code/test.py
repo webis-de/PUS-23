@@ -83,7 +83,7 @@ def test_pipeline(logger):
     article.plot_revision_distribution_to_file(DIRECTORY)
 
     #load bibliography from file
-    bibliography = Bibliography(".." + sep + "data" + sep + "bibliography_marion.bib")
+    bibliography = Bibliography(".." + sep + "data" + sep + "tracing-innovations-lit.bib")
     bibliography.plot_publication_distribution_to_file(DIRECTORY)
 
     #track bibkeys and print/plot
