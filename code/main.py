@@ -7,7 +7,7 @@ from os.path import sep
 output_directory = ".." + sep + "results"
 
 #read bibliography from CSV
-bibliography = Bibliography(".." + sep + "data" + sep + "bibliography_marion.bib")
+bibliography = Bibliography(".." + sep + "data" + sep + "tracing-innovations-lit.bib")
 bibliography.plot_publication_distribution_to_file(output_directory)
 
 #read revisions from wikipedia revision history (scrape CRISPR article if not present)
