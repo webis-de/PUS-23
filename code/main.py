@@ -10,6 +10,13 @@ output_directory = ".." + sep + "results"
 bibliography = Bibliography(".." + sep + "data" + sep + "tracing-innovations-lit.bib")
 bibliography.plot_publication_distribution_to_file(output_directory)
 
+#relevant phrases as collected by Arno
+phrases = ["adaptive immunity","agriculture","application","bolotin","broad institute","cas 9","controversy",
+           "create new species","crispr","crispr cas","crispr cas 9","crispr locus","crispr rnas","crrnas","disease",
+           "dna","double-stranded","doudna","e. coli","embryos","ethics","gene edit","gmos","guide rna","human","marraffini",
+           "max planck institute","medicine","moineau","mojica","pam","patent","patient","s. thermophilus","sontheimer","talens",
+           "technical","technique","technology","tool","tracrrna","type ii","u california","u vienna","upstream","van der oost","zhang","zinc"]
+
 #read revisions from wikipedia revision history (scrape CRISPR article if not present)
 try:
     article = Article(".." + sep + "extractions" + sep + "CRISPR_en")
@@ -18,12 +25,6 @@ except FileNotFoundError:
         scraper.scrape(".." + sep + "extractions", False)
     article = Article(".." + sep + "extractions" + sep + "CRISPR_en")
 article.plot_revision_distribution_to_file(output_directory)
-
-phrases = ["adaptive immunity","agriculture","application","bolotin","broad institute","cas 9","controversy",
-           "create new species","crispr","crispr cas","crispr cas 9","crispr locus","crispr rnas","crrnas","disease",
-           "dna","double-stranded","doudna","e. coli","embryos","ethics","gene edit","gmos","guide rna","human","marraffini",
-           "max planck institute","medicine","moineau","mojica","pam","patent","patient","s. thermophilus","sontheimer","talens",
-           "technical","technique","technology","tool","tracrrna","type ii","u california","u vienna","upstream","van der oost","zhang","zinc"]
 
 #extract tracks of field values for each bibentry in bibliography from article
 tracks = article.track_field_values_in_article(["titles", "dois", "authors"], bibliography)
