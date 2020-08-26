@@ -24,8 +24,8 @@ class Bibliography:
         """
         self.filepath = filepath
         self.bibentries = parse_file(filepath).entries
-        self.titles = [bibentry.fields.get("title").lower().replace("{","").replace("}","") for bibentry in self.bibentries.values()]
-        self.authors = [bibentry.persons.get("author")[0].last_names[0] for bibentry in self.bibentries.values()]
+        self.titles = [self.replace_braces(value) for value in [bibentry.fields.get("title").lower() for bibentry in self.bibentries.values()]]
+        self.authors = [self.replace_braces(value) for value in [bibentry.persons.get("author")[0].last_names[0] for bibentry in self.bibentries.values()]]
         self.dois = [bibentry.fields.get("doi").lower() for bibentry in self.bibentries.values()]
         self.years = [int(bibentry.fields.get("year")) for bibentry in self.bibentries.values()]        
 
@@ -46,7 +46,10 @@ class Bibliography:
         if field == "dois":
             return self.dois
         if field == "years":
-            return self.years    
+            return self.years
+
+    def replace_braces(self, value):
+        return value.replace("{","").replace("}","")
 
     def plot_publication_distribution_to_file(self, directory):
         """
