@@ -39,16 +39,16 @@ class Article:
                               for revision in [loads(line) for line in file.readlines()]]
         self.timestamps = [revision.timestamp.string for revision in self.revisions]
 
-    def track_bibkeys_in_article(self, bibkeys, bibliography):
+    def track_field_values_in_article(self, fields, bibliography):
         """
-        Generates tracks of all bibkey values of all bibkeys in bibliography provided.
+        Generates tracks of all field values of all bibentries in bibliography provided.
 
         Args:
-            bibkeys: A list of bibkeys.
+            fields: A list of fields.
             bibliography: A bibliography object.
 
         Returns:
-            The dictionary of bibkey tracks with below format:
+            The dictionary of field value tracks with the below format:
             {'authors':
                 {'author1':[timestamp1,timestamp2,timestamp3,...],
                  'author2':[timestamp2,timestamp3,timestamp7,...]},
@@ -57,16 +57,16 @@ class Article:
                  'title2':[timestamp3,timestamp4,timestamp8,...]},
              ...}
         """
-        tracks = {bibkey:{bibkey_value:[] for bibkey_value in bibliography.bibkey_values(bibkey) if bibkey_value} for bibkey in bibkeys}
+        tracks = {field:{field_value:[] for field_value in bibliography.field_values(field) if field_value} for field in fields}
         for revision in self.revisions:
-            for bibkey in tracks:
-                if bibkey is "authors":
+            for field in tracks:
+                if field is "authors":
                     text = revision.text
                 else:
                     text = revision.text.lower()
-                for bibkey_value in tracks[bibkey]:
-                    if bibkey_value in text:
-                        tracks[bibkey][bibkey_value].append(revision.timestamp)
+                for field_value in tracks[field]:
+                    if field_value in text:
+                        tracks[field][field_value].append(revision.timestamp)
         return tracks
 
     def track_phrases_in_article(self, phrase_lists):

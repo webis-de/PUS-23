@@ -29,23 +29,23 @@ class Bibliography:
         self.dois = [bibentry.fields.get("doi").lower() for bibentry in self.bibentries.values()]
         self.years = [int(bibentry.fields.get("year")) for bibentry in self.bibentries.values()]        
 
-    def bibkey_values(self, bibkey):
+    def field_values(self, field):
         """
-        Getter for bibkey values.
+        Get field values for all entries.
 
         Args:
-            bibkey: The bibkey for which values are required.
+            field: The field for which values are required.
 
         Returns:
-            List of values behind each bibkey in the Bibliography.
+            List of values behind the field of each entry in the Bibliography.
         """
-        if bibkey == "titles":
+        if field == "titles":
             return self.titles
-        if bibkey == "authors":
+        if field == "authors":
             return self.authors
-        if bibkey == "dois":
+        if field == "dois":
             return self.dois
-        if bibkey == "years":
+        if field == "years":
             return self.years    
 
     def plot_publication_distribution_to_file(self, directory):

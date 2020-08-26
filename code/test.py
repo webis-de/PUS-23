@@ -87,7 +87,7 @@ def test_pipeline(logger):
     bibliography.plot_publication_distribution_to_file(DIRECTORY)
 
     #track bibkeys and print/plot
-    tracks = article.track_bibkeys_in_article(["titles", "dois", "authors"], bibliography)
+    tracks = article.track_field_values_in_article(["titles", "dois", "authors"], bibliography)
     for track in tracks.items():
         article.write_track_to_file(track, DIRECTORY)
         article.plot_track_to_file(track, DIRECTORY)
