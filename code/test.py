@@ -2,9 +2,8 @@ from scraper.scraper import Scraper
 from entity.article import Article
 from entity.bibliography import Bibliography
 from utility.logger import Logger
-from os import popen, remove, rename, rmdir
+from os import remove, rename, rmdir
 from os.path import sep
-from json import load
 from hashlib import sha256
 
 TITLE = "CRISPR"
@@ -18,11 +17,40 @@ def checksum(filepath):
             sha256_hash.update(byte_block)
     return sha256_hash.hexdigest()
 
+def test_single_scrape(logger):
+    DIRECTORY = ".." + sep + "test" + sep + "test_single_scrape"
+    FILEPATH = DIRECTORY + sep + FILENAME
+    logger.start("Testing single scrape")
+
+    #scrape first five revisions
+    logger.start_check("Singlescraping...")
+    with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
+        scraper.scrape(DIRECTORY, html=False, number=5)
+
+    #load article from file
+    article = Article(FILEPATH)
+
+    #assert attributes of first revision
+    assert article.revisions[0].revid == 69137443
+    assert article.revisions[0].parentid == 0
+    assert "Cas-Komplexes in Einzelteile zerlegt" in article.revisions[0].text
+    assert article.revisions[0].user == "Tinz"
+    assert article.revisions[0].timestamp.string == '2010-01-11 02:11:54'
+
+    #assert attributes of fifth revision
+    assert article.revisions[4].revid == 71287221
+    assert article.revisions[4].parentid == 70862725
+    assert "Cas-Komplexes (''Cascade'') in Einzelteile zerlegt" in article.revisions[4].text
+    assert article.revisions[4].user == "Hydro"
+    assert article.revisions[4].timestamp.string == '2010-03-01 09:04:35'
+
+    logger.stop("Single scrape test successful.", 1)
+
 def test_full_and_updated_scrape(logger):    
     DIRECTORY = ".." + sep + "test" + sep + "test_full_and_updated_scrape"
     FILEPATH = DIRECTORY + sep + FILENAME
 
-    logger.start("Testing singlescraping full and update")
+    logger.start("Testing full and updated scrape")
 
     #scrape article in full
     logger.start_check("Singlescraping (full)...")
@@ -49,9 +77,9 @@ def test_full_and_updated_scrape(logger):
     assert full_scrape_checksum == update_scrape_checksum
     assert number_of_full_scraped_revisions == number_of_updated_scraped_revisions
 
-    logger.stop("Singlescraping test successful.", 1)
+    logger.stop("Full and updated scrape test successful.", 1)
     
-def test_multi_scrape_with_5_revisions(logger):
+def test_multi_scrape(logger):
     DIRECTORY = ".." + sep + "test" + sep + "test_multi_scrape"
 
     ARTICLES = {"CRISPR":"ad28f439c90e4ef8767be2d5547920333207ccd17d75a48e1576eedce637d7d1",
@@ -60,7 +88,7 @@ def test_multi_scrape_with_5_revisions(logger):
                 "Trans-activating crRNA":"3604eb62fd31d03b491496bea65b41c577f5a18c6dca1b11f8ebfd45c62523c9",
                 "CRISPR/Cpf1":"fc6856822f8681f9fb02fd45eaf3fdf7963a2e40f58da9b17ac9f5f1e3028767"}
     
-    #scrape first five revisions of each article and assert checksum code state 14 August 2020
+    #scrape first five revisions of each article and assert checksum code state 31 August 2020
     logger.start("Testing multiscraping " + ", ".join(ARTICLES) + "...")
     for article in ARTICLES:
         with Scraper(logger = LOGGER, title = article, language = "en") as scraper:
@@ -83,7 +111,7 @@ def test_pipeline(logger):
     article.plot_revision_distribution_to_file(DIRECTORY)
 
     #load bibliography from file
-    bibliography = Bibliography(".." + sep + "data" + sep + "tracing-innovations-lit.bib")
+    bibliography = Bibliography(".." + sep + "data" + sep + "data_tracing-innovations-lit_names_grouped_ms.bib")
     bibliography.plot_publication_distribution_to_file(DIRECTORY)
 
     #track bibkeys and print/plot
@@ -102,6 +130,7 @@ def test_pipeline(logger):
     logger.stop("Pipeline test successfull.", 1)
 
 with Logger(".." + sep + "test" + sep + "logs") as LOGGER:
+    test_single_scrape(LOGGER)
     test_full_and_updated_scrape(LOGGER)
-    test_multi_scrape_with_5_revisions(LOGGER)
+    test_multi_scrape(LOGGER)
     test_pipeline(LOGGER)

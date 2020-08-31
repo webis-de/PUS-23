@@ -14,15 +14,20 @@ class Scraper:
         logger: The logger this Scraper uses.
         title: The title of the Wikipedia page.
         language: The language of the Wikipedia article.
+        filename: The name of the file under which the revisions will be saved,
+                  which is a concatenation of <title>_<language>
+                  To avoid path issues, '/' is replaced with '-'.
         api_url: The URL of Wikimedia API as per language.
         page_id: ID of the Wikipedia page.
         article_url: The URL of the Wikipedia article.
+        rvprops: The revision properties that will be requested from the REST API.
         parameters: Parameters for the get request to the Wikipedia REST API.
         revisions: Deserialised revisions of this Wikipedia page.
         rvcontinue: Concatenation of timestamp, pipe (|) and revid of the next revision,
                     if available; else None.
-        revision_count: The number of revisions of this Wikipedia page.
         revision_count: The number of revisions extracted by this Scraper.
+        self.updating: Flag for update mode.
+        self.update_count: Number of revisions scraped if updating.
     """
     def __init__(self, logger, title, language):
         """
@@ -36,11 +41,12 @@ class Scraper:
         self.logger = logger
         self.title = title
         self.language= language
+        self.filename = self.title.replace("/","-") + "_" + self.language
         self.api_url = "https://" + language + ".wikipedia.org/w/api.php"
         self.page_id = list(get(self.api_url, {"format":"json","action":"query","titles":title}).json()["query"]["pages"].keys())[0]
         self.article_url = "https://" + language + ".wikipedia.org/w/index.php?title=" + title
-        rvprops = "comment|content|contentmodel|flagged|flags|ids|oresscores|parsedcomment|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid"
-        self.parameters = {"format":"json","action":"query","titles":title,"prop":"revisions","rvlimit":"50","rvdir":"newer","rvslots":"*","rvprop":rvprops}
+        self.rvprops = "comment|content|contentmodel|flagged|flags|ids|oresscores|parsedcomment|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid"
+        self.parameters = {"format":"json","action":"query","titles":title,"prop":"revisions","rvlimit":"50","rvdir":"newer","rvslots":"*","rvprop":self.rvprops}
         self.rvcontinue = None
         self.revisions = []
         self.revision_count = 0
@@ -64,9 +70,8 @@ class Scraper:
             number: Number of revisions to scrape.
         """
         self.logger.start_check("Scraping " + self.title + " and extracting html" * html + ".")
-        filename = self.title.replace("/","-") + "_" + self.language
-        if exists(directory + sep + filename):
-            self.get_rvstartid(directory + sep + filename)
+        if exists(directory + sep + self.filename):
+            self.get_rvstartid(directory + sep + self.filename)
             self.updating = True
             mode = "a"
         else:
@@ -112,17 +117,17 @@ class Scraper:
         for revision in response["query"]["pages"][self.page_id]["revisions"]:
             if self.revision_count >= number: break
             self.revisions.append(Revision(revision["revid"],
-                                      revision["parentid"],
-                                      self.article_url + "&oldid=" + str(revision["revid"]),
-                                      revision["user"],
-                                      revision["userid"],
-                                      revision["timestamp"],
-                                      revision["size"],
-                                      revision.get("slots",{}).get("main",{}).get("*",""),
-                                      "",
-                                      revision.get("comment",""),
-                                      revision.get("minor",""),
-                                      self.revision_count))
+                                           revision["parentid"],
+                                           self.article_url + "&oldid=" + str(revision["revid"]),
+                                           revision["user"],
+                                           revision["userid"],
+                                           revision["timestamp"],
+                                           revision["size"],
+                                           revision.get("slots",{}).get("main",{}).get("*",""),
+                                           "",
+                                           revision.get("comment",""),
+                                           revision.get("minor",""),
+                                           self.revision_count))
             self.revision_count += 1
             if self.updating: self.update_count += 1
         self.rvcontinue = response.get("continue",{}).get("rvcontinue",None)
@@ -158,8 +163,7 @@ class Scraper:
             mode: Write or append mode, depending on first or update scrape.
         """
         if not exists(directory): makedirs(directory)
-        filename = self.title.replace("/","-") + "_" + self.language
-        with open(directory + sep + filename, mode) as output_file:
+        with open(directory + sep + self.filename, mode) as output_file:
             for revision in self.revisions:
                 output_file.write(dumps(revision.__dict__) + "\n")
 
