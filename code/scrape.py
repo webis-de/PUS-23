@@ -51,8 +51,7 @@ if __name__ == "__main__":
     which contains small articles of a few kilobyte each (including HTML).
     """
     #ARTICLES = wikipedia_articles
-    ARTICLES = ["Zinc-finger nuclease",
-                "The CRISPR Journal",
+    ARTICLES = ["The CRISPR Journal",
                 "Trans-activating crRNA",
                 "Francisco Mojica",
                 "Yoshizumi Ishino"]
