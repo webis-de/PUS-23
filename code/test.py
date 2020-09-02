@@ -143,7 +143,7 @@ def test_pipeline(logger):
 
     #assert revision information
     assert article.revisions[0].revid == 69137443
-    assert article.revisions[0].timestamp.string == "2010-01-11 02:11:54"
+    assert article.revisions[0].timestamp_pretty_string() == "2010-01-11 02:11:54"
     assert article.revisions[0].user == "Tinz"
     assert article.revisions[0].userid == 92881
     assert article.revisions[0].comment == "neu, wird noch erweitert"

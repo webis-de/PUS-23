@@ -29,7 +29,7 @@ class Article:
                                        revision["url"],
                                        revision["user"],
                                        revision["userid"],
-                                       Timestamp(revision["timestamp"]),
+                                       revision["timestamp"],
                                        revision["size"],
                                        revision["text"],
                                        revision["html"],
@@ -37,7 +37,7 @@ class Article:
                                        revision["minor"],
                                        revision["index"])
                               for revision in [loads(line) for line in file.readlines()]]
-        self.timestamps = [revision.timestamp.string for revision in self.revisions]
+        self.timestamps = [revision.timestamp_pretty_string() for revision in self.revisions]
 
     def track_field_values_in_article(self, fields, bibliography):
         """
@@ -66,7 +66,7 @@ class Article:
                     text = revision.text.lower()
                 for field_value in tracks[field]:
                     if field_value in text:
-                        tracks[field][field_value].append(revision.timestamp)
+                        tracks[field][field_value].append(revision.timestamp_pretty_string())
         return tracks
 
     def track_phrases_in_article(self, phrase_lists):
@@ -89,7 +89,7 @@ class Article:
             for phrase_list in tracks:
                 for phrase in tracks[phrase_list]:
                     if phrase in revision.text.lower():
-                        tracks[phrase_list][phrase].append(revision.timestamp)
+                        tracks[phrase_list][phrase].append(revision.timestamp_pretty_string())
         return tracks
 
     def write_track_to_file(self, track, directory):
@@ -106,7 +106,7 @@ class Article:
         bibkey = track[0]
         bibkey_value_dictionary = track[1]
         filename = self.name.lower() + "_wikipedia_revision_history_" + bibkey + ".txt"
-        track = {bibkey_value:[timestamp.string for timestamp in bibkey_value_dictionary[bibkey_value]] for bibkey_value in bibkey_value_dictionary}
+        track = {bibkey_value:[timestamp for timestamp in bibkey_value_dictionary[bibkey_value]] for bibkey_value in bibkey_value_dictionary}
         if not exists(directory): makedirs(directory)
         with open(directory + sep + filename, "w") as file:
             dump(track, file)
@@ -130,7 +130,7 @@ class Article:
         plt.xlim((0, len(self.timestamps)))
         for bibkey_value in bibkey_value_dictionary:
             timestamps = bibkey_value_dictionary[bibkey_value]
-            plt.plot([self.timestamps.index(timestamp.string) for timestamp in timestamps], [bibkey_value[:30] + "(...)" * (bibkey_value[30:] != "")] * len(timestamps), "o")
+            plt.plot([self.timestamps.index(timestamp) for timestamp in timestamps], [bibkey_value[:30] + "(...)" * (bibkey_value[30:] != "")] * len(timestamps), "o")
         plt.subplots_adjust(bottom=0.175, top=0.95, left=0.1, right=0.995)
         filename = self.name.lower() + "_wikipedia_revision_history_" + bibkey + ".png"
         if not exists(directory): makedirs(directory)
@@ -145,11 +145,11 @@ class Article:
             directory: The directory to which the plot will be saved.
         """
         distribution = {}
-        for year in range(self.revisions[0].timestamp.datetime.year, self.revisions[-1].timestamp.datetime.year + 1):
+        for year in range(self.revisions[0].get_year(), self.revisions[-1].get_year() + 1):
             for month in range(1, 13):
                 distribution[str(year) + "/" + str(month).rjust(2, "0")] = 0
         for revision in self.revisions:
-            distribution[str(revision.timestamp.datetime.year) + "/" + str(revision.timestamp.datetime.month).rjust(2, "0")] += 1
+            distribution[str(revision.get_year()) + "/" + str(revision.get_month()).rjust(2, "0")] += 1
 
         plt.figure(figsize=(int(len(distribution) * 0.15), 10), dpi=150)
         plt.title(self.name + " Revision Distribition")
