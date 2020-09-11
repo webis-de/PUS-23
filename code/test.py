@@ -148,7 +148,7 @@ def test_pipeline(logger):
     assert article.revisions[0].userid == 92881
     assert article.revisions[0].comment == "neu, wird noch erweitert"
 
-    #rmtree(DIRECTORY)
+    rmtree(DIRECTORY)
 
     logger.stop("Pipeline test successful.", 1)
 
