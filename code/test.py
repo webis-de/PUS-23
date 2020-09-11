@@ -132,7 +132,7 @@ def test_pipeline(logger):
     article.plot_revision_distribution_to_file(DIRECTORY)
 
     #load bibliography from file
-    bibliography = Bibliography(".." + sep + "data" + sep + "data_tracing-innovations-lit_names_grouped_ms.bib")
+    bibliography = Bibliography(".." + sep + "data" + sep + "tracing-innovations-lit.bib")
     bibliography.plot_publication_distribution_to_file(DIRECTORY)
 
     #track bibkeys and print/plot
@@ -148,7 +148,7 @@ def test_pipeline(logger):
     assert article.revisions[0].userid == 92881
     assert article.revisions[0].comment == "neu, wird noch erweitert"
 
-    rmtree(DIRECTORY)
+    #rmtree(DIRECTORY)
 
     logger.stop("Pipeline test successful.", 1)
 
