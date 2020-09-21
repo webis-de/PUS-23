@@ -149,7 +149,7 @@ class Scraper:
 
     def collect_html(self):
         """Multiprocessing pool retrieval of HTML for revisions."""
-        pool = Pool()
+        pool = Pool(10)
         self.revisions = pool.map(self.html, self.revisions)
         pool.close()
         pool.join()
