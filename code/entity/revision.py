@@ -1,6 +1,8 @@
 from entity.timestamp import Timestamp
 from pprint import pformat
 from requests import get
+from lxml import etree
+from re import sub
 
 class Revision:
     """
@@ -54,7 +56,11 @@ class Revision:
 
     def get_html(self):
         """Retrieves HTML via GET request."""
-        self.html = get(self.url + "&oldid=" + str(self.revid)).text
+        html = get(self.url + "&oldid=" + str(self.revid)).text
+        tree   = etree.HTML(html)
+        content = tree.findall("./body/div")[2][4][6][1]
+        cleaned_content = etree.tostring(content).decode("utf-8").replace("\n","")
+        self.html = sub(r"<!--.*-->","", cleaned_content)
 
     def serial_timestamp(self):
         return Timestamp(self.timestamp)

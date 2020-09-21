@@ -52,6 +52,8 @@ class Scraper:
         self.updating = False
         self.update_count = 0
 
+        self.revisions = []
+
     def __enter__(self):
         """Makes the API autoclosable."""
         return self
@@ -111,10 +113,10 @@ class Scraper:
             number: Number of revisions to scrape.
         """
         response = get(self.api_url, self.parameters).json()
-        revisions = []
+        self.revisions = []
         for revision in response["query"]["pages"][self.page_id]["revisions"]:
             if self.revision_count >= number: break
-            revisions.append(Revision(revision["revid"],
+            self.revisions.append(Revision(revision["revid"],
                                            revision["parentid"],
                                            self.article_url + "&oldid=" + str(revision["revid"]),
                                            revision["user"],
@@ -129,9 +131,9 @@ class Scraper:
             self.revision_count += 1
             if self.updating: self.update_count += 1
 
-        if html: revisions = self.collect_html(revisions)
+        if html: self.revisions = self.collect_html(self.revisions)
 
-        self.save(revisions, directory)
+        self.save(self.revisions, directory)
         
         self.rvcontinue = response.get("continue",{}).get("rvcontinue",None)
         if self.rvcontinue:

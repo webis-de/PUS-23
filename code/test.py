@@ -40,7 +40,7 @@ def test_single_scrape(logger):
     logger.start_check("Singlescraping...")
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
         scraper.save = mock_save
-        scraper.scrape(DIRECTORY, html=False, number=5)
+        scraper.scrape(DIRECTORY, html=True, number=5)
 
         #assert attributes of first revision
         assert scraper.revisions[0].revid == 69137443
@@ -61,18 +61,25 @@ def test_single_scrape(logger):
 def test_multi_scrape(logger):
     DIRECTORY = TEST_DIRECTORY + sep + "test_multi_scrape"
 
+    #ARTICLE CHECKSUMS WITHOUT HTML
     ARTICLES = {"CRISPR":"ec49dd32946f736efdf7d3db050eb53a0178d1dc0a8c7ed3bf8db3766d57a1cc",
                 "CRISPR gene editing":"bdca90e56f4b0ad1e4d499c7ffb62d71527397801fb57d2a0c55565131515ad4",
                 "Cas9":"73b570cf10160b610220bc335c11a1e9a634a282e6a2b724be65e2aba6491f07",
                 "Trans-activating crRNA":"020206c191da8b5aca210b8dcb8eea960fb9199ebc6046592cfef68c81398594",
                 "CRISPR/Cpf1":"f8797c9fb37ae10898a62b729b69cd2ca91ed5229c0e954598a896d0ea1e8a67"}
+    #ARTICLE CHECKSUMS WITH HTML
+    ARTICLES = {"CRISPR":"cf2072be98d712873fb2585132d4b205eec9dc9baece5708f36c0d430691bc4d",
+                "CRISPR gene editing":"51ddc1e3481915d8f298347dfbe9e7b6e5c2ec93779a1c66d505c0d05d064444",
+                "Cas9":"86a2214745e5d61abc35f236b554a343d63807e08b92d1df556ecf1acdccb40a",
+                "Trans-activating crRNA":"6eb6761e8a304310d5d4e1592c5ae182a9714a3817cb517ae6970f3aa19f98c3",
+                "CRISPR/Cpf1":"014bd5ed13410cc673dedb2d03c4bf8d2b511e854e23ba6db974d20853b57866"}
     
     #scrape first five revisions of each article and assert checksum code state 31 August 2020
     logger.start("Testing multiscraping " + ", ".join(ARTICLES) + "...")
     for article in ARTICLES:
         with Scraper(logger = LOGGER, title = article, language = "en") as scraper:
             scraper.save = mock_save
-            scraper.scrape(DIRECTORY, html=False, number=5)
+            scraper.scrape(DIRECTORY, html=True, number=5)
             checksum = revisions_checksum(scraper.revisions)
             assert checksum == ARTICLES[article]
     logger.stop("Multiscraping test successful.", 1)
@@ -155,7 +162,7 @@ def test_pipeline(logger):
 if __name__ == "__main__":     
     
     with Logger(TEST_DIRECTORY) as LOGGER:
-        #test_single_scrape(LOGGER)
-        #test_multi_scrape(LOGGER)
+        test_single_scrape(LOGGER)
+        test_multi_scrape(LOGGER)
         test_full_and_updated_scrape(LOGGER)
         test_pipeline(LOGGER)
