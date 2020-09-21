@@ -149,7 +149,8 @@ class Scraper:
         Returns:
             The same revision but with updated HTML.
         """
-        revision.get_html()
+        result = revision.get_html()
+        if result: self.logger.log("Issue encountered with revid: " + str(result))
         return revision
 
     def collect_html(self, revisions):

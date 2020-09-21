@@ -58,9 +58,14 @@ class Revision:
         """Retrieves HTML via GET request."""
         html = get(self.url + "&oldid=" + str(self.revid)).text
         tree = etree.HTML(html)
-        content = tree.findall(".//div[@class='mw-parser-output']")[0]
-        cleaned_content = etree.tostring(content).decode("utf-8").replace("\n","")
-        self.html = sub(r"<!--.*-->","", cleaned_content)
+        try:
+            content = tree.findall(".//div[@class='mw-parser-output']")[0]
+            cleaned_content = etree.tostring(content).decode("utf-8").replace("\n","")
+            self.html = sub(r"<!--.*-->","", cleaned_content)
+            return None
+        except IndexError:
+            self.html = ""
+            return self.revid
 
     def serial_timestamp(self):
         return Timestamp(self.timestamp)
