@@ -32,7 +32,7 @@ if __name__ == "__main__":
     """
     Select an output directory.
     """
-    DIRECTORY = "../my_output_directory"
+    DIRECTORY = "../extractions"
 
     """
     Set HTML if you want to scrape HTML as well
@@ -51,13 +51,10 @@ if __name__ == "__main__":
     which contains small articles of a few kilobyte each (including HTML).
     """
     #ARTICLES = wikipedia_articles
-    ARTICLES = ["The CRISPR Journal",
-                "Trans-activating crRNA",
-                "Francisco Mojica",
-                "Yoshizumi Ishino"]
+    ARTICLES = ["CRISPR"]
     with Logger(DIRECTORY) as logger:
         for article in ARTICLES:
-            with Scraper(logger, article, "en") as scraper:
+            with Scraper(logger, article, "de") as scraper:
                 scraper.scrape(directory = DIRECTORY,
                                html = HTML,
                                number = NUMBER)

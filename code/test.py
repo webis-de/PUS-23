@@ -25,7 +25,7 @@ def revisions_checksum(revisions):
         sha256_hash.update(str(revision.__dict__).encode("utf-8"))
     return sha256_hash.hexdigest()
 
-def mock_save(d, m):
+def mock_save(r, d):
     pass
 
 def sorted_dictionary(dictionary):
@@ -89,7 +89,7 @@ def test_full_and_updated_scrape(logger):
     #scrape article in full
     logger.start_check("Singlescraping (full)...")
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
-        scraper.scrape(DIRECTORY, html=False)
+        scraper.scrape(DIRECTORY, html=True)
         number_of_full_scraped_revisions = scraper.revision_count
     full_scrape_checksum = file_checksum(FILEPATH)
     remove(FILEPATH)
@@ -98,10 +98,10 @@ def test_full_and_updated_scrape(logger):
     #scrape first five revisions
     logger.start_check("Singlescraping (update)...")
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
-        scraper.scrape(DIRECTORY, html=False, number=5)
+        scraper.scrape(DIRECTORY, html=True, number=5)
     #scrape remaining revisions
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
-        scraper.scrape(DIRECTORY, html=False)
+        scraper.scrape(DIRECTORY, html=True)
         number_of_updated_scraped_revisions = scraper.revision_count
     update_scrape_checksum = file_checksum(FILEPATH)
     logger.end_check("Done.")
@@ -155,7 +155,7 @@ def test_pipeline(logger):
 if __name__ == "__main__":     
     
     with Logger(TEST_DIRECTORY) as LOGGER:
-        test_single_scrape(LOGGER)
-        test_multi_scrape(LOGGER)
+        #test_single_scrape(LOGGER)
+        #test_multi_scrape(LOGGER)
         test_full_and_updated_scrape(LOGGER)
         test_pipeline(LOGGER)

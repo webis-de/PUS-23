@@ -1,7 +1,7 @@
 from entity.article import Article
 from entity.revision import Revision
 from requests import get
-from json import dumps
+from json import dumps, loads
 from os.path import exists, sep
 from os import makedirs
 from multiprocessing import Pool
@@ -48,7 +48,6 @@ class Scraper:
         self.rvprops = "comment|content|contentmodel|flagged|flags|ids|oresscores|parsedcomment|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid"
         self.parameters = {"format":"json","action":"query","titles":title,"prop":"revisions","rvlimit":"50","rvdir":"newer","rvslots":"*","rvprop":self.rvprops}
         self.rvcontinue = None
-        self.revisions = []
         self.revision_count = 0
         self.updating = False
         self.update_count = 0
@@ -69,21 +68,17 @@ class Scraper:
             html: Scrape HTML code of each revision.
             number: Number of revisions to scrape.
         """
-        self.logger.start_check("Scraping " + self.title + " and extracting html" * html + ".")
+        self.logger.start_check("Scraping " + self.title + "(" + self.language + ")" + " and extracting html" * html + ".")
         if exists(directory + sep + self.filename):
             self.get_rvstartid(directory + sep + self.filename)
             self.updating = True
-            mode = "a"
         else:
-            self.collect_revisions(number) 
-            mode = "w"
+            self.collect_revisions(directory, html, number) 
         while self.rvcontinue and self.revision_count < number:
-            self.collect_revisions(number)
-        if html:
-            self.collect_html()
+            self.collect_revisions(directory, html, number)
+
         if self.updating: self.logger.log("Number of updates: " + str(self.update_count))
         self.logger.end_check("Done. Number of revisions: " + str(self.revision_count))
-        self.save(directory, mode)
 
     def get_rvstartid(self, filepath):
         """
@@ -98,15 +93,17 @@ class Scraper:
         Args:
             filepath: Path to the revisions file.
         """
-        article = Article(filepath)
-        self.revision_count = len(article.revisions)
-        latest_revid = article.revisions[-1].revid
+        with open(filepath) as article:
+            for line in article:
+                self.revision_count += 1
+                LINE = line
+        latest_revid = loads(LINE)["revid"]
         response = get(self.api_url, {"format":"json","action":"query","titles":self.title,"prop":"revisions","rvlimit":"1","rvdir":"newer","rvstartid":str(latest_revid)}).json()
         self.rvcontinue = response.get("continue",{}).get("rvcontinue",None)
         if self.rvcontinue:
             self.parameters["rvstartid"] = self.rvcontinue.split("|")[1]
 
-    def collect_revisions(self, number):
+    def collect_revisions(self, directory, html, number):
         """
         Collect the revisions in the response.
 
@@ -114,9 +111,10 @@ class Scraper:
             number: Number of revisions to scrape.
         """
         response = get(self.api_url, self.parameters).json()
+        revisions = []
         for revision in response["query"]["pages"][self.page_id]["revisions"]:
             if self.revision_count >= number: break
-            self.revisions.append(Revision(revision["revid"],
+            revisions.append(Revision(revision["revid"],
                                            revision["parentid"],
                                            self.article_url + "&oldid=" + str(revision["revid"]),
                                            revision["user"],
@@ -130,6 +128,11 @@ class Scraper:
                                            self.revision_count))
             self.revision_count += 1
             if self.updating: self.update_count += 1
+
+        if html: revisions = self.collect_html(revisions)
+
+        self.save(revisions, directory)
+        
         self.rvcontinue = response.get("continue",{}).get("rvcontinue",None)
         if self.rvcontinue:
             self.parameters["rvstartid"] = self.rvcontinue.split("|")[1]
@@ -147,14 +150,15 @@ class Scraper:
         revision.get_html()
         return revision
 
-    def collect_html(self):
+    def collect_html(self, revisions):
         """Multiprocessing pool retrieval of HTML for revisions."""
         pool = Pool(10)
-        self.revisions = pool.map(self.html, self.revisions)
+        html_revisions = pool.map(self.html, revisions)
         pool.close()
         pool.join()
+        return html_revisions
     
-    def save(self, directory, mode):
+    def save(self, revisions, directory):
         """
         Save revisions to directory.
 
@@ -163,7 +167,7 @@ class Scraper:
             mode: Write or append mode, depending on first or update scrape.
         """
         if not exists(directory): makedirs(directory)
-        with open(directory + sep + self.filename, mode) as output_file:
-            for revision in self.revisions:
+        with open(directory + sep + self.filename, "a") as output_file:
+            for revision in revisions:
                 output_file.write(dumps(revision.__dict__) + "\n")
 
