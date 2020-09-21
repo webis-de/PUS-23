@@ -57,8 +57,8 @@ class Revision:
     def get_html(self):
         """Retrieves HTML via GET request."""
         html = get(self.url + "&oldid=" + str(self.revid)).text
-        tree   = etree.HTML(html)
-        content = tree.findall("./body/div")[2][4][6][1]
+        tree = etree.HTML(html)
+        content = tree.findall(".//div[@class='mw-parser-output']")[0]
         cleaned_content = etree.tostring(content).decode("utf-8").replace("\n","")
         self.html = sub(r"<!--.*-->","", cleaned_content)
 
