@@ -64,9 +64,9 @@ class Revision:
         html = get(self.url + "&oldid=" + str(self.revid)).text
         tree = etree.HTML(html)
         try:
-            content = tree.findall(".//div[@class='mw-parser-output']")[0]
-            cleaned_content = etree.tostring(content).decode("utf-8")
-            self.html = sub(r"<!--.*-->","", cleaned_content, flags=S)
+            mediawiki_parser_output = tree.findall(".//div[@class='mw-parser-output']")[0]
+            mediawiki_parser_output = etree.tostring(mediawiki_parser_output).decode("utf-8")
+            self.html = sub(r"<!--.*?-->", "", mediawiki_parser_output, flags=S)
             return None
         except IndexError:
             self.html = ""

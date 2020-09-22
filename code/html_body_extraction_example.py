@@ -16,16 +16,16 @@ def extract_article_body(url, name):
     tree   = etree.HTML(html)
 
     try:
-        content = etree.tostring(tree.findall(".//div[@class='mw-parser-output']")[0])
-        cleaned_content = content.decode("utf-8")
-        result = sub(r"<!--.*-->","", cleaned_content, flags=S)
+        mediawiki_parser_output = tree.findall(".//div[@class='mw-parser-output']")[0]
+        mediawiki_parser_output = etree.tostring(mediawiki_parser_output).decode("utf-8")
+        mediawiki_parser_output = sub(r"<!--.*?-->", "", mediawiki_parser_output, flags=S)
     except IndexError:
-        result = ""
+        mediawiki_parser_output = ""
 
     filename = name + ".html"
     
     with open(filename, "w") as file:
-        file.write(result)
+        file.write(mediawiki_parser_output)
 
     system("firefox " + filename)
 
