@@ -68,11 +68,11 @@ def test_multi_scrape(logger):
                 "Trans-activating crRNA":"020206c191da8b5aca210b8dcb8eea960fb9199ebc6046592cfef68c81398594",
                 "CRISPR/Cpf1":"f8797c9fb37ae10898a62b729b69cd2ca91ed5229c0e954598a896d0ea1e8a67"}
     #ARTICLE CHECKSUMS WITH HTML
-    ARTICLES = {"CRISPR":"6c62f0ca58f7bafd40c7ef80531611ce4d731b3145f07c846901dea375e29a95",
-                "CRISPR gene editing":"79eb8818809c12d74114e76581624776d19caf094a73496db9c1288dc38ce986",
-                "Cas9":"f1d1999256d8ab484ecaea594fc1e4b4b2e6da4457cb810ba1c66f70ec958169",
-                "Trans-activating crRNA":"1ba00f65d86011f9a81f23627477740accffef82c5664fbe4f6fc90bcd92b21f",
-                "CRISPR/Cpf1":"d54d3f5ff1f0419ace26594d8cee39f20825eaef800b2be19324f5847897aebc"}
+    ARTICLES = {"CRISPR":"1b610963e1d1eb0b81b96f3ec716af67e8fd09b5d52eab2523f7df76c4ca3a9f",
+                "CRISPR gene editing":"2a34456188352302f66712b8c9e4bff4c3803f0bcab3e26513d27d2dfc0d08ca",
+                "Cas9":"402c30d8ff4941775755a42708ab35553efab0446bf815e092ce7be266e1c5e1",
+                "Trans-activating crRNA":"99f82605c38616df195e9a6e7e53efd0229ba86299dd5a963be7e65860b33cde",
+                "CRISPR/Cpf1":"86331432618ff669e489a0ce4672d30d1b45de9daa5da79b842558d0de5f338c"}
     
     #scrape first five revisions of each article and assert checksum code state 22 September 2020
     logger.start("Testing multiscraping " + ", ".join(ARTICLES) + "...")
