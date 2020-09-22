@@ -11,7 +11,7 @@ This repository contains information and code concerning Science Analytics Wikip
 ##### CRISPR_events (Arno)
 - https://docs.google.com/spreadsheets/d/1wRwgRmMYluVJPrr_p-BKn6fycDGmZ_JdlI-5dWUKnMw/edit#gid=1179906549
 ##### Manuscript_STHV (Arno)
-- https://docs.google.com/document/d/1KOKK47m_EJqCqUsBGf9ZDlUKeSqTjJbd6yIgCjuS1K8/edit?ts=5f292f2a#heading=h.bs1md45veld8
+- https://docs.google.com/document/d/1KOKK47m_EJqCqUsBGf9ZDlUKeSqTjJbd6yIgCjuS1K8/edit
 
 ### cvs
 
