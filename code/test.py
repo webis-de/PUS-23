@@ -74,7 +74,7 @@ def test_multi_scrape(logger):
                 "Trans-activating crRNA":"354fca1dc75ab07a692f54dde523c414944e0d017d89cc5a887303af38658795",
                 "CRISPR/Cpf1":"08496cfb269f68cbe2719004ca56ca276309ce530a7ec64d0f4d95786e088f02"}
     
-    #scrape first five revisions of each article and assert checksum code state 31 August 2020
+    #scrape first five revisions of each article and assert checksum code state 22 September 2020
     logger.start("Testing multiscraping " + ", ".join(ARTICLES) + "...")
     for article in ARTICLES:
         with Scraper(logger = LOGGER, title = article, language = "en") as scraper:

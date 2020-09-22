@@ -22,12 +22,12 @@ class Scraper:
         article_url: The URL of the Wikipedia article.
         rvprops: The revision properties that will be requested from the REST API.
         parameters: Parameters for the get request to the Wikipedia REST API.
-        revisions: Deserialised revisions of this Wikipedia page.
         rvcontinue: Concatenation of timestamp, pipe (|) and revid of the next revision,
                     if available; else None.
         revision_count: The number of revisions extracted by this Scraper.
-        self.updating: Flag for update mode.
-        self.update_count: Number of revisions scraped if updating.
+        updating: Flag for update mode.
+        update_count: Number of revisions scraped if updating.
+        revisions: Deserialised revisions of this Wikipedia page.
     """
     def __init__(self, logger, title, language):
         """
@@ -66,11 +66,11 @@ class Scraper:
         Scrape the Wikipedia page.
 
         Args:
-            directory: Target directory of the extraction.
+            directory: The directory to which the scraped revisions are saved.
             html: Scrape HTML code of each revision.
             number: Number of revisions to scrape.
         """
-        self.logger.start_check("Scraping " + self.title + "(" + self.language + ")" + " and extracting html" * html + ".")
+        self.logger.start_check("Scraping " + self.title + " (" + self.language + ")" + " and extracting html" * html + ".")
         if exists(directory + sep + self.filename):
             self.get_rvstartid(directory + sep + self.filename)
             self.updating = True
@@ -110,6 +110,8 @@ class Scraper:
         Collect the revisions in the response.
 
         Args:
+            directory: The directory to which the scraped revisions are saved.
+            html: Scrape HTML code of each revision.
             number: Number of revisions to scrape.
         """
         response = get(self.api_url, self.parameters).json()
@@ -154,7 +156,15 @@ class Scraper:
         return revision
 
     def collect_html(self, revisions):
-        """Multiprocessing pool retrieval of HTML for revisions."""
+        """
+        Multiprocessing pool retrieval of HTML for revisions.
+
+        Args:
+            revisions: List of revisions without HTML.
+
+        Returns:
+            List of revisions with HTML.
+        """
         pool = Pool(10)
         html_revisions = pool.map(self.html, revisions)
         pool.close()
@@ -166,8 +176,8 @@ class Scraper:
         Save revisions to directory.
 
         Args:
-            directory: The directory to save the scraped revision history to.
-            mode: Write or append mode, depending on first or update scrape.
+            revisions: A list of revisions to save to file.
+            directory: The directory to which the scraped revisions are saved.
         """
         if not exists(directory): makedirs(directory)
         with open(directory + sep + self.filename, "a") as output_file:

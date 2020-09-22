@@ -55,7 +55,12 @@ class Revision:
         self.index = index
 
     def get_html(self):
-        """Retrieves HTML via GET request."""
+        """
+        Retrieves HTML via GET request.
+
+        Returns:
+            revid if mw-parser-output does not exist (revision removed), else None.
+        """
         html = get(self.url + "&oldid=" + str(self.revid)).text
         tree = etree.HTML(html)
         try:
