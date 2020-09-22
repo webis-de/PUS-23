@@ -1,6 +1,6 @@
 from requests import get
 from lxml import etree
-from re import sub
+from re import sub, S
 from os import remove, system
 from time import sleep
 
@@ -17,8 +17,8 @@ def extract_article_body(url, name):
 
     try:
         content = etree.tostring(tree.findall(".//div[@class='mw-parser-output']")[0])
-        cleaned_content = content.decode("utf-8").replace("\n","")
-        result = sub(r"<!--.*-->","", cleaned_content)
+        cleaned_content = content.decode("utf-8")
+        result = sub(r"<!--.*-->","", cleaned_content, flags=S)
     except IndexError:
         result = ""
 

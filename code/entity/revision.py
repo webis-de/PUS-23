@@ -2,7 +2,7 @@ from entity.timestamp import Timestamp
 from pprint import pformat
 from requests import get
 from lxml import etree
-from re import sub
+from re import sub, S
 
 class Revision:
     """
@@ -65,8 +65,8 @@ class Revision:
         tree = etree.HTML(html)
         try:
             content = tree.findall(".//div[@class='mw-parser-output']")[0]
-            cleaned_content = etree.tostring(content).decode("utf-8").replace("\n","")
-            self.html = sub(r"<!--.*-->","", cleaned_content)
+            cleaned_content = etree.tostring(content).decode("utf-8")
+            self.html = sub(r"<!--.*-->","", cleaned_content, flags=S)
             return None
         except IndexError:
             self.html = ""
