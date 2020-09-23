@@ -4,7 +4,7 @@ from json import load
 
 
 ##########################################################
-# This file serves as an entry point to test the scraper.#
+# This file serves as an entry point to test the Scraper.#
 ##########################################################
 
 

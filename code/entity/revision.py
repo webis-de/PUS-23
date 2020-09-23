@@ -1,4 +1,5 @@
 from entity.timestamp import Timestamp
+from entity.page import Page
 from pprint import pformat
 from requests import get
 from lxml import etree
@@ -61,16 +62,12 @@ class Revision:
         Returns:
             revid if mw-parser-output does not exist (revision removed), else None.
         """
-        html = get(self.url + "&oldid=" + str(self.revid)).text
-        tree = etree.HTML(html)
-        try:
-            mediawiki_parser_output = tree.findall(".//div[@class='mw-parser-output']")[0]
-            mediawiki_parser_output = etree.tostring(mediawiki_parser_output).decode("utf-8")
-            self.html = sub(r"<!--.*?-->", "", mediawiki_parser_output, flags=S)
-            return None
-        except IndexError:
-            self.html = ""
+        revision_url = self.url + "&oldid=" + str(self.revid)
+        self.html = Page(str(self.revid), revision_url).get_mediawiki_parser_output_and_normal_catlinks()
+        if not self.html:
             return self.revid
+        else:
+            return None
 
     def serial_timestamp(self):
         return Timestamp(self.timestamp)
