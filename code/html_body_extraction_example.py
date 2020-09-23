@@ -4,12 +4,8 @@ from re import sub, S
 from os import remove, system
 from time import sleep
 
-revisions = {"CRISPR_de_first_rev":"https://de.wikipedia.org/w/index.php?title=CRISPR&oldid=69137443",
-             "CRISPR_en_first_rev":"https://en.wikipedia.org/w/index.php?title=CRISPR&oldid=17918488",
-             "CRISPR_en_remov_rev":"https://en.wikipedia.org/w/index.php?title=CRISPR&oldid=898138824"}
-
 def extract_article_body(url, name):
-    system("firefox '" + url + "'")
+    #system("firefox '" + url + "'")
     
     html = get(url).text
 
@@ -27,11 +23,17 @@ def extract_article_body(url, name):
     with open(filename, "w") as file:
         file.write(mediawiki_parser_output)
 
-    system("firefox " + filename)
+    #system("firefox " + filename)
 
-    sleep(0.5)
+    #sleep(0.5)
 
-    remove(filename)
+    #remove(filename)
 
-for revision in revisions.items():
-    extract_article_body(revision[1], revision[0])
+if __name__ == "__main__":
+
+    revisions = {"CRISPR_de_first_rev":"https://de.wikipedia.org/w/index.php?title=CRISPR&oldid=69137443",
+             "CRISPR_en_first_rev":"https://en.wikipedia.org/w/index.php?title=CRISPR&oldid=17918488",
+             "CRISPR_en_remov_rev":"https://en.wikipedia.org/w/index.php?title=CRISPR&oldid=898138824"}
+    
+    for revision in revisions.items():
+        extract_article_body(revision[1], revision[0])
