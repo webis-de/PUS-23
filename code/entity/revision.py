@@ -63,7 +63,9 @@ class Revision:
             revid if mw-parser-output does not exist (revision removed), else None.
         """
         revision_url = self.url + "&oldid=" + str(self.revid)
-        self.html = Page(str(self.revid), revision_url).get_mediawiki_parser_output_and_normal_catlinks()
+        page = Page(str(self.revid), revision_url)
+        self.text = page.get_text()
+        self.html = page.get_mediawiki_parser_output_and_normal_catlinks()
         if not self.html:
             return self.revid
         else:

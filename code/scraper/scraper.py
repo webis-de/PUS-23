@@ -125,7 +125,7 @@ class Scraper:
                                            revision["userid"],
                                            revision["timestamp"],
                                            revision["size"],
-                                           revision.get("slots",{}).get("main",{}).get("*",""),
+                                           "",#revision.get("slots",{}).get("main",{}).get("*",""),
                                            "",
                                            revision.get("comment",""),
                                            revision.get("minor",""),

@@ -52,7 +52,7 @@ def test_single_scrape(logger):
         #assert attributes of fifth revision
         assert scraper.revisions[4].revid == 71287221
         assert scraper.revisions[4].parentid == 70862725
-        assert "Cas-Komplexes (''Cascade'') in Einzelteile zerlegt" in scraper.revisions[4].text
+        assert "Cas-Komplexes (Cascade) in Einzelteile zerlegt" in scraper.revisions[4].text
         assert scraper.revisions[4].user == "Hydro"
         assert scraper.revisions[4].timestamp == '2010-03-01T09:04:35Z'
 
@@ -68,11 +68,11 @@ def test_multi_scrape(logger):
                 "Trans-activating crRNA":"020206c191da8b5aca210b8dcb8eea960fb9199ebc6046592cfef68c81398594",
                 "CRISPR/Cpf1":"f8797c9fb37ae10898a62b729b69cd2ca91ed5229c0e954598a896d0ea1e8a67"}
     #ARTICLE CHECKSUMS WITH HTML
-    ARTICLES = {"CRISPR":"bdb24326988ce4ed69539466c26e8ca6a198b059f8c4cf4751ff1f52a176cd60",
-                "CRISPR gene editing":"fc633def507ffe1bd41e440be1a1e2f52cd41dc015e8b333404d1b91321f0e74",
-                "Cas9":"e8382e9d29e135e1ff80ef300b744f2811832c8635d3f2477a0b9e2672803629",
-                "Trans-activating crRNA":"148d2c5f891a0256f0b43a50418e6f884420f11ebe67cf0e238d528344940546",
-                "CRISPR/Cpf1":"02f993502aefd096d54692795ba81b0091fd2154acc60e4f955d3ec53101768d"}
+    ARTICLES = {"CRISPR":"f3e9c5b5ca1a0d18511f76cbcc05a957beb642ee0123e8ab2aac42ab0073b61c",
+                "CRISPR gene editing":"e9bc8381e57c74bdfe367080a3ef0b791851bc5e635db2f151549cf79cad69ca",
+                "Cas9":"b6dc436ad9ca3ed44e0b35fb25bfa93a5aedc8fc2bbea926ab157fb5fe0d1c34",
+                "Trans-activating crRNA":"582d17dd84af6be8f652e83fae221ebdbe5d01f7223a6c8620788d4f4a75868e",
+                "CRISPR/Cpf1":"86863491578db215df8718f1170979760d77c324c0b0db80675cc0836a85f0ef"}
     
     #scrape first five revisions of each article and assert checksum code state 24 September 2020
     logger.start("Testing multiscraping " + ", ".join(ARTICLES) + "...")
@@ -132,7 +132,7 @@ def test_pipeline(logger):
     
     #scrape article
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
-        scraper.scrape(DIRECTORY, html=False)
+        scraper.scrape(DIRECTORY, html=True)
 
     #load article from file
     article = Article(FILEPATH)
@@ -155,7 +155,7 @@ def test_pipeline(logger):
     assert article.revisions[0].userid == 92881
     assert article.revisions[0].comment == "neu, wird noch erweitert"
 
-    rmtree(DIRECTORY)
+    #rmtree(DIRECTORY)
 
     logger.stop("Pipeline test successful.", 1)
 
