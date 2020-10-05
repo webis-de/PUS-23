@@ -1,5 +1,4 @@
 from entity.article import Article
-from pprint import pprint
 
 ##########################################################
 # This file serves as an entry point to test the Article.#
@@ -14,7 +13,21 @@ if __name__ == "__main__":
     article = Article("../extractions/CRISPR_de")
 
     """
-    Print extracted HTML.
+    Print text from html.
     """
-    pprint(article.revisions[0].html, width=300)
+    print("TEXT\n")
+    print(article.revisions[0].get_text().strip())
+    print("="*50)
+    
+    """
+    Print references from html.
+    """
+    print("REFERENCES\n")
+    references = article.revisions[0].get_references()
+    print("\n\n".join(["\n".join([text.strip() for text in reference.itertext()]) for reference in references]))
+    print("="*50)
 
+    """
+    Print all titles in references.
+    """
+    print(article.revisions[0].get_titles())

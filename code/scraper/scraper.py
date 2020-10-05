@@ -125,7 +125,6 @@ class Scraper:
                                            revision["userid"],
                                            revision["timestamp"],
                                            revision["size"],
-                                           "",#revision.get("slots",{}).get("main",{}).get("*",""),
                                            "",
                                            revision.get("comment",""),
                                            revision.get("minor",""),
@@ -151,7 +150,7 @@ class Scraper:
         Returns:
             The same revision but with updated HTML.
         """
-        result = revision.get_html()
+        result = revision.request_html()
         if result: self.logger.log("Issue encountered with revid: " + str(result))
         return revision
 

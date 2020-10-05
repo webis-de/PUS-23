@@ -31,7 +31,6 @@ class Article:
                                        revision["userid"],
                                        revision["timestamp"],
                                        revision["size"],
-                                       revision["text"],
                                        revision["html"],
                                        revision["comment"],
                                        revision["minor"],
@@ -61,9 +60,9 @@ class Article:
         for revision in self.revisions:
             for field in tracks:
                 if field is "authors":
-                    text = revision.text
+                    text = revision.get_text()
                 else:
-                    text = revision.text.lower()
+                    text = revision.get_text().lower()
                 for field_value in tracks[field]:
                     if field_value in text:
                         tracks[field][field_value].append(revision.timestamp_pretty_string())

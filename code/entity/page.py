@@ -42,7 +42,7 @@ class Page:
         return self.tree.xpath(".//div[@class='mw-parser-output']//span[@class='reference-text']")
 
     def get_links_in_parser_output(self):
-        return self.tree.xpath(".//div[@class='mw-parser-output']//p//a")
+        return self.tree.xpath(".//div[@class='mw-parser-output']//p/a")
 
     def open_in_firefox(self):
 
@@ -85,4 +85,4 @@ if __name__ == "__main__":
     
     print("TEXT\n")
     print(page.get_text().strip())
-    
+    print("="*50)

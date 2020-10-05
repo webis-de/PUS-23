@@ -2,7 +2,7 @@ from entity.timestamp import Timestamp
 from entity.page import Page
 from pprint import pformat
 from requests import get
-from lxml import etree
+from lxml import html
 from re import sub, S
 
 class Revision:
@@ -17,14 +17,13 @@ class Revision:
         userid: The user ID of the user who penned this revision.
         timestamp: The Timestamp object pertaining to the revision.
         size: The size of this revision in Bytes.
-        text: The raw full text of the revision.
         html: The HTML of this revision.
         comment: The comment the user left.
         minor: Flag for minor revision.
         self.index: The 0-indexed position in the revision history.
         
     """
-    def __init__(self, revid, parentid, url, user, userid, timestamp, size, text, html, comment, minor, index):
+    def __init__(self, revid, parentid, url, user, userid, timestamp, size, html, comment, minor, index):
         """
         Intialises the revision from the revision dictionary entry provided.
 
@@ -36,7 +35,6 @@ class Revision:
             userid: The user ID of the user who penned this revision.
             timestamp: The Timestamp object pertaining to the revision.
             size: The size of this revision in Bytes.
-            text: The raw full text of the revision.
             html: The HTML of this revision.
             comment: The comment the user left.
             minor: Flag for minor revision.
@@ -49,13 +47,12 @@ class Revision:
         self.userid = userid
         self.timestamp = timestamp
         self.size = size
-        self.text = text
         self.html = html
         self.comment = comment
         self.minor = minor
         self.index = index
 
-    def get_html(self):
+    def request_html(self):
         """
         Retrieves HTML via GET request.
 
@@ -64,12 +61,25 @@ class Revision:
         """
         revision_url = self.url + "&oldid=" + str(self.revid)
         page = Page(str(self.revid), revision_url)
-        self.text = page.get_text()
         self.html = page.get_mediawiki_parser_output_and_normal_catlinks()
         if not self.html:
             return self.revid
         else:
             return None
+        
+    def get_text(self):
+        self.tree = html.fromstring(self.html)
+        try:
+            return "".join(self.tree.xpath(".//div[@class='mw-parser-output']")[0].itertext())
+        except IndexError:
+            return ""
+
+    def get_references(self):
+        self.tree = html.fromstring(self.html)
+        return self.tree.xpath(".//div[@class='mw-parser-output']//span[@class='reference-text']")
+
+    def get_titles(self):
+        return [reference.getchildren()[0].text for reference in self.get_references()]
 
     def serial_timestamp(self):
         return Timestamp(self.timestamp)

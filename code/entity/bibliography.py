@@ -26,7 +26,7 @@ class Bibliography:
         self.bibentries = parse_file(filepath).entries
         self.titles = [self.replace_braces(value) for value in [bibentry.fields.get("title").lower() for bibentry in self.bibentries.values()]]
         self.authors = [self.replace_braces(value) for value in [bibentry.persons.get("author")[0].last_names[0] for bibentry in self.bibentries.values()]]
-        self.dois = [bibentry.fields.get("doi").lower() for bibentry in self.bibentries.values()]
+        self.dois = [bibentry.fields.get("doi").lower() for bibentry in self.bibentries.values() if bibentry.fields.get("doi")]
         self.years = [int(bibentry.fields.get("year")) for bibentry in self.bibentries.values()]        
 
     def field_values(self, field):
