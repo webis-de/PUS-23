@@ -7,11 +7,11 @@ This repository contains information and code concerning Science Analytics Wikip
 ##### tracing-innovations-on-wikipedia (Benno)
 - https://docs.google.com/document/d/1QBe9mvq0BlYRzYDi0ul97GLRB8nibWsjxA7uUFYTino
 ##### Timeline_Crispr_cas (Marion)
-- https://docs.google.com/spreadsheets/d/1so4jyyjT62wzqMe_l7rpa94QhAWurNtSYed2oGSphoM/edit#gid=0
+- https://docs.google.com/spreadsheets/d/1so4jyyjT62wzqMe_l7rpa94QhAWurNtSYed2oGSphoM
 ##### CRISPR_events (Arno)
-- https://docs.google.com/spreadsheets/d/1wRwgRmMYluVJPrr_p-BKn6fycDGmZ_JdlI-5dWUKnMw/edit#gid=1179906549
+- https://docs.google.com/spreadsheets/d/1wRwgRmMYluVJPrr_p-BKn6fycDGmZ_JdlI-5dWUKnMw
 ##### Manuscript_STHV (Arno)
-- https://docs.google.com/document/d/1KOKK47m_EJqCqUsBGf9ZDlUKeSqTjJbd6yIgCjuS1K8/edit
+- https://docs.google.com/document/d/1KOKK47m_EJqCqUsBGf9ZDlUKeSqTjJbd6yIgCjuS1K8
 
 ### cvs
 
