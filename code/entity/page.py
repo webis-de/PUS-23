@@ -32,15 +32,6 @@ class Page:
     def get_mediawiki_parser_output_and_normal_catlinks(self):
         return self.get_mediawiki_parser_output() + "\n" + self.get_mediawiki_normal_catlinks()
 
-    def get_text(self):
-        try:
-            return "".join(self.tree.xpath(".//div[@class='mw-parser-output']")[0].itertext())
-        except IndexError:
-            return ""
-
-    def get_references(self):
-        return self.tree.xpath(".//div[@class='mw-parser-output']//span[@class='reference-text']")
-
     def get_links_in_parser_output(self):
         return self.tree.xpath(".//div[@class='mw-parser-output']//p/a")
 
@@ -76,13 +67,3 @@ if __name__ == "__main__":
     print("LINKS\n")
     links_in_parser_output = page.get_links_in_parser_output()
     print("\n".join([link.text for link in links_in_parser_output]))
-    print("="*50)
-    
-    print("REFERENCES\n")
-    references = page.get_references()
-    print("\n\n".join(["\n".join([text.strip() for text in reference.itertext()]) for reference in references]))
-    print("="*50)
-    
-    print("TEXT\n")
-    print(page.get_text().strip())
-    print("="*50)

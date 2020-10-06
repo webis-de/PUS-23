@@ -74,12 +74,42 @@ class Revision:
         except IndexError:
             return ""
 
+    def get_categories(self):
+        self.tree = html.fromstring(self.html)
+        return self.tree.xpath(".//div[@id='mw-normal-catlinks']//a")[1:]
+
     def get_references(self):
         self.tree = html.fromstring(self.html)
         return self.tree.xpath(".//div[@class='mw-parser-output']//span[@class='reference-text']")
 
-    def get_titles(self):
-        return [reference.getchildren()[0].text for reference in self.get_references()]
+    def get_referenced_authors(self):
+        authors = []
+        for reference in self.get_references():
+            try:
+                reference = reference.xpath(".//cite")[0]
+                authors.append("".join(reference.itertext()).replace("et al.", "et al").split(".")[0])
+            except IndexError:
+                authors.append(None)
+        return authors
+
+    def get_referenced_titles(self):
+        titles = []
+        for reference in self.get_references():
+            try:
+                reference = reference.xpath(".//cite")[0]
+                titles.append("".join(reference.itertext()).replace("et al.", "et al").split(".")[1])
+            except IndexError:
+                titles.append(None)
+        return titles
+
+    def get_referenced_dois(self):
+        dois = []
+        for reference in self.get_references():
+            try:
+                dois.append([doi.attrib["href"].split("doi.org/")[-1].replace("%2F","/") for doi in reference.xpath(".//a[contains(@href, 'doi.org/')]")])
+            except IndexError:
+                dois.append(None)
+        return dois
 
     def serial_timestamp(self):
         return Timestamp(self.timestamp)
