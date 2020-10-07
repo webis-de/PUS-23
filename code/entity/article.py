@@ -26,7 +26,7 @@ class Article:
         self.filename = basename(filepath)
         self.name = self.filename.replace(".","_")
         self.revisions = []
-        self.timestamps = [revision.timestamp_pretty_string() for revision in self.revisions]
+        self.timestamps = []
 
     def get_revisions(self, first = 0, final = float("inf")):
         with open(self.filepath) as file:
@@ -47,6 +47,7 @@ class Article:
                                                revision["comment"],
                                                revision["minor"],
                                                revision["index"]))
+        self.timestamps = [revision.timestamp_pretty_string() for revision in self.revisions]
         return self.revisions
 
     def track_field_values_in_article(self, fields, bibliography):
@@ -69,14 +70,19 @@ class Article:
         """
         if not self.revisions: self.get_revisions()
         tracks = {field:{field_value:[] for field_value in bibliography.field_values(field) if field_value} for field in fields}
-        for revision in self.revisions():
+        count = 0
+        for revision in self.revisions:
+            count += 1
+            print(count)
+            #text = "".join(["".join(reference.itertext()) for reference in revision.get_references()])
+            text = revision.get_text()
             for field in tracks:
                 if field is "authors":
-                    text = revision.get_text()
+                    temp_text = text
                 else:
-                    text = revision.get_text().lower()
+                    temp_text = text.lower()
                 for field_value in tracks[field]:
-                    if field_value in text:
+                    if field_value in temp_text:
                         tracks[field][field_value].append(revision.timestamp_pretty_string())
         return tracks
 

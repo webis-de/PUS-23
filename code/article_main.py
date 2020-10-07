@@ -1,6 +1,7 @@
 from entity.article import Article
 from pprint import pprint, pformat
 from lxml import html, etree
+from random import randint
 
 ##########################################################
 # This file serves as an entry point to test the Article.#
@@ -15,8 +16,8 @@ if __name__ == "__main__":
 
     #Open scraped article.
     article = Article("../extractions/CRISPR_en")
-    article.get_revisions(2010, 2010)
-    revision = article.revisions[0]
+    i = randint(0,2010)
+    revision = article.get_revisions(i, i)[0]
     """
     #Print html.
     heading("HTML")

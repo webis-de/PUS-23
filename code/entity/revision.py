@@ -2,7 +2,7 @@ from entity.timestamp import Timestamp
 from entity.page import Page
 from pprint import pformat
 from requests import get
-from lxml import html
+from lxml import html, etree
 from re import finditer, split, sub, S
 
 class Revision:
@@ -66,21 +66,24 @@ class Revision:
             return self.revid
         else:
             return None
+
+    def etree_from_html(self):
+        try:
+            return html.fromstring(self.html)
+        except etree.ParserError:
+            return html.fromstring("<p></p>")
         
     def get_text(self):
-        self.tree = html.fromstring(self.html)
         try:
-            return "".join(self.tree.xpath(".//div[@class='mw-parser-output']")[0].itertext())
+            return "".join(self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].itertext())
         except IndexError:
             return ""
 
     def get_categories(self):
-        self.tree = html.fromstring(self.html)
-        return [(element.text, element.get("href")) for element in self.tree.xpath(".//div[@id='mw-normal-catlinks']//a")[1:]]
+        return [(element.text, element.get("href")) for element in self.etree_from_html().xpath(".//div[@id='mw-normal-catlinks']//a")[1:]]
 
     def get_references(self):
-        self.tree = html.fromstring(self.html)
-        return self.tree.xpath(".//div[@class='mw-parser-output']//span[@class='reference-text']")
+        return self.etree_from_html().xpath(".//div[@class='mw-parser-output']//span[@class='reference-text']")
 
     def get_referenced_authors(self, language):
         authors = []
