@@ -3,7 +3,7 @@ from entity.page import Page
 from pprint import pformat
 from requests import get
 from lxml import html
-from re import sub, S
+from re import finditer, split, sub, S
 
 class Revision:
     """
@@ -76,7 +76,7 @@ class Revision:
 
     def get_categories(self):
         self.tree = html.fromstring(self.html)
-        return self.tree.xpath(".//div[@id='mw-normal-catlinks']//a")[1:]
+        return [(element.text, element.get("href")) for element in self.tree.xpath(".//div[@id='mw-normal-catlinks']//a")[1:]]
 
     def get_references(self):
         self.tree = html.fromstring(self.html)
@@ -85,30 +85,58 @@ class Revision:
     def get_referenced_authors(self):
         authors = []
         for reference in self.get_references():
-            try:
-                reference = reference.xpath(".//cite")[0]
-                authors.append("".join(reference.itertext()).replace("et al.", "et al").split(".")[0])
-            except IndexError:
-                authors.append(None)
+            text =  "".join(reference.itertext())
+            AUTHORS = []
+            if "(" in text:
+                #remove everything after first (
+                text = sub(r"\(.*", "", text)
+                #remove et al.
+                text = sub(r",? *et al\.?", "", text).strip()
+                #get surnames and fist names
+                for author in split(r", ?", text):
+                    try:
+                        match = next(finditer(r".* ", author))
+                        AUTHORS.append((author[0:match.end()-1], author[match.end():]))
+                    except StopIteration:
+                        pass
+            authors.append(AUTHORS)
         return authors
 
     def get_referenced_titles(self):
         titles = []
         for reference in self.get_references():
             try:
-                reference = reference.xpath(".//cite")[0]
-                titles.append("".join(reference.itertext()).replace("et al.", "et al").split(".")[1])
+                #get full text of reference
+                text = "".join(reference.itertext())
+                #split at year
+                text = split(r"\([a-zA-Z]* ?\d+\)\.? ?", text, 1)[1].strip()
+                try:
+                    #try to find quoted title
+                    match = next(finditer(r"\".*\"", text))
+                    #get span of first match
+                    text = text[match.start():match.end()]
+                    #remove quotation marks
+                    title = text.replace("\"", "")
+                except StopIteration:
+                    #split at stop
+                    text = text.split(".")[0]
+                    #remove quotation marks
+                    title = text.replace("\"", "")
+                titles.append(title)
             except IndexError:
-                titles.append(None)
+                titles.append("")
         return titles
 
     def get_referenced_dois(self):
         dois = []
         for reference in self.get_references():
-            try:
-                dois.append([doi.attrib["href"].split("doi.org/")[-1].replace("%2F","/") for doi in reference.xpath(".//a[contains(@href, 'doi.org/')]")])
-            except IndexError:
-                dois.append(None)
+            DOIs = []
+            for element in reference.xpath(".//a[contains(@href, 'doi.org/')]"):
+                #dois from links
+                DOIs.append(element.attrib["href"].split("doi.org/")[-1].replace("%2F","/"))
+                #dois from element text
+                DOIs.append(element.text)
+            dois.append([doi for doi in list(set(DOIs)) if " " not in doi])
         return dois
 
     def serial_timestamp(self):

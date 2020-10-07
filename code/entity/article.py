@@ -11,6 +11,7 @@ class Article:
     allows tracking, saving and plotting of bibentry value and phrase occurances.
 
     Attributes:
+        filepath: The path to the JSON file.
         filename: The name of the JSON file.
         name: The name of the article.
         revisions: The individual revisions of the article.
@@ -21,22 +22,32 @@ class Article:
         Args:
             filepath: The path to the JSON file.
         """
+        self.filepath = filepath
         self.filename = basename(filepath)
         self.name = self.filename.replace(".","_")
-        with open(filepath) as file:
-            self.revisions = [Revision(revision["revid"],
-                                       revision["parentid"],
-                                       revision["url"],
-                                       revision["user"],
-                                       revision["userid"],
-                                       revision["timestamp"],
-                                       revision["size"],
-                                       revision["html"],
-                                       revision["comment"],
-                                       revision["minor"],
-                                       revision["index"])
-                              for revision in [loads(line) for line in file.readlines()]]
+        self.revisions = []
         self.timestamps = [revision.timestamp_pretty_string() for revision in self.revisions]
+
+    def get_revisions(self, first = 0, final = float("inf")):
+        with open(self.filepath) as file:
+            for line in enumerate(file):
+                if line[0] < first:
+                    continue
+                if line[0] > final:
+                    break
+                revision = loads(line[1])
+                self.revisions.append(Revision(revision["revid"],
+                                               revision["parentid"],
+                                               revision["url"],
+                                               revision["user"],
+                                               revision["userid"],
+                                               revision["timestamp"],
+                                               revision["size"],
+                                               revision["html"],
+                                               revision["comment"],
+                                               revision["minor"],
+                                               revision["index"]))
+        return self.revisions
 
     def track_field_values_in_article(self, fields, bibliography):
         """
@@ -56,8 +67,9 @@ class Article:
                  'title2':[timestamp3,timestamp4,timestamp8,...]},
              ...}
         """
+        if not self.revisions: self.get_revisions()
         tracks = {field:{field_value:[] for field_value in bibliography.field_values(field) if field_value} for field in fields}
-        for revision in self.revisions:
+        for revision in self.revisions():
             for field in tracks:
                 if field is "authors":
                     text = revision.get_text()
@@ -83,6 +95,7 @@ class Article:
                  "..."},
             }
         """
+        if not self.revisions: self.get_revisions()
         tracks = {"(" + ",".join(phrase_list)[:20] + "(...)" * (",".join(phrase_list)[10:] != "") + ")":{phrase:[] for phrase in phrase_list} for phrase_list in phrase_lists}
         for revision in self.revisions:
             for phrase_list in tracks:
@@ -102,6 +115,7 @@ class Article:
                             ...}).
             directory: The directory to which the file will be written.
         """
+        if not self.revisions: self.get_revisions()
         bibkey = track[0]
         bibkey_value_dictionary = track[1]
         filename = self.name.lower() + "_wikipedia_revision_history_" + bibkey + ".txt"
@@ -121,6 +135,7 @@ class Article:
                             ...}).
             directory: The directory to which the plot will be saved.
         """
+        if not self.revisions: self.get_revisions()
         bibkey = track[0]
         bibkey_value_dictionary = track[1]
         plt.figure(figsize=(int(len(self.timestamps) * 0.15) + 10, 10), dpi=100)
@@ -143,6 +158,7 @@ class Article:
         Args:
             directory: The directory to which the plot will be saved.
         """
+        if not self.revisions: self.get_revisions()
         distribution = {}
         for year in range(self.revisions[0].get_year(), self.revisions[-1].get_year() + 1):
             for month in range(1, 13):

@@ -54,7 +54,7 @@ if __name__ == "__main__":
     ARTICLES = ["CRISPR"]
     with Logger(DIRECTORY) as logger:
         for article in ARTICLES:
-            with Scraper(logger, article, "en") as scraper:
+            with Scraper(logger, article, "de") as scraper:
                 scraper.scrape(directory = DIRECTORY,
                                html = HTML,
                                number = NUMBER)
