@@ -82,49 +82,83 @@ class Revision:
         self.tree = html.fromstring(self.html)
         return self.tree.xpath(".//div[@class='mw-parser-output']//span[@class='reference-text']")
 
-    def get_referenced_authors(self):
+    def get_referenced_authors(self, language):
         authors = []
         for reference in self.get_references():
-            text =  "".join(reference.itertext())
-            AUTHORS = []
-            if "(" in text:
-                #remove everything after first (
-                text = sub(r"\(.*", "", text)
-                #remove et al.
-                text = sub(r",? *et al\.?", "", text).strip()
-                #get surnames and fist names
-                for author in split(r", ?", text):
-                    try:
-                        match = next(finditer(r".* ", author))
-                        AUTHORS.append((author[0:match.end()-1], author[match.end():]))
-                    except StopIteration:
-                        pass
-            authors.append(AUTHORS)
+            if language == "en":
+                #get full text of reference
+                text =  "".join(reference.itertext())
+                AUTHORS = []
+                if "(" in text:
+                    #remove everything after first (
+                    text = sub(r"\(.*", "", text)
+                    #remove et al.
+                    text = sub(r",? *et al\.?", "", text).strip()
+                    #get surnames and fistnames
+                    for author in split(r", ?", text):
+                        try:
+                            match = next(finditer(r".* ", author))
+                            AUTHORS.append((author[0:match.end()-1], author[match.end():]))
+                        except StopIteration:
+                            pass
+                authors.append(AUTHORS)
+            if language == "de":
+                #get full text of reference
+                text =  "".join(reference.itertext())
+                AUTHORS = []
+                try:
+                    #split at :
+                    text = text.split(":")[0]
+                    #remove et al.
+                    text = sub(r",? *et al\.?", "", text).strip()
+                    #get surnames and fist names
+                    for author in split(r", ?", text):
+                        try:
+                            match = next(finditer(r".*\. ", author))
+                            AUTHORS.append((author[match.end():], author[0:match.end()-1]))
+                        except StopIteration:
+                            pass
+                except IndexError:
+                    pass
+                authors.append(AUTHORS)
         return authors
 
-    def get_referenced_titles(self):
+    def get_referenced_titles(self, language):
         titles = []
         for reference in self.get_references():
-            try:
+            if language == "en":
+                try:
+                    #get full text of reference
+                    text = "".join(reference.itertext())
+                    #split at year
+                    text = split(r"\(.*?\)\.? ?", text, 1)[1].strip()
+                    try:
+                        #try to find quoted title
+                        match = next(finditer(r"\".*?\"", text))
+                        #get span of first match
+                        text = text[match.start():match.end()]
+                        #remove quotation marks
+                        title = text.replace("\"", "")
+                    except StopIteration:
+                        #split at stop
+                        text = text.split(".")[0]
+                        #remove quotation marks
+                        title = text.replace("\"", "")
+                    titles.append(title)
+                except IndexError:
+                    titles.append("")
+            if language == "de":
                 #get full text of reference
                 text = "".join(reference.itertext())
-                #split at year
-                text = split(r"\([a-zA-Z]* ?\d+\)\.? ?", text, 1)[1].strip()
                 try:
-                    #try to find quoted title
-                    match = next(finditer(r"\".*\"", text))
-                    #get span of first match
-                    text = text[match.start():match.end()]
-                    #remove quotation marks
-                    title = text.replace("\"", "")
-                except StopIteration:
-                    #split at stop
-                    text = text.split(".")[0]
-                    #remove quotation marks
-                    title = text.replace("\"", "")
-                titles.append(title)
-            except IndexError:
-                titles.append("")
+                    #split at :
+                    text = split(":", text, 1)[1].strip()
+                    #split at .
+                    title = text.split(".")[0].strip()
+                    
+                    titles.append(title)
+                except IndexError:
+                    titles.append("")  
         return titles
 
     def get_referenced_dois(self):
@@ -133,7 +167,7 @@ class Revision:
             DOIs = []
             for element in reference.xpath(".//a[contains(@href, 'doi.org/')]"):
                 #dois from links
-                DOIs.append(element.attrib["href"].split("doi.org/")[-1].replace("%2F","/"))
+                DOIs.append(element.get("href").split("doi.org/")[-1].replace("%2F","/"))
                 #dois from element text
                 DOIs.append(element.text)
             dois.append([doi for doi in list(set(DOIs)) if " " not in doi])

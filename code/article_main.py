@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     #Open scraped article.
     article = Article("../extractions/CRISPR_en")
-    article.get_revisions(2005, 2005)
+    article.get_revisions(2010, 2010)
     revision = article.revisions[0]
     """
     #Print html.
@@ -33,8 +33,9 @@ if __name__ == "__main__":
     
     #Print references from html.
     references = revision.get_references()
-    authors = revision.get_referenced_authors()
-    titles = revision.get_referenced_titles()
+    CITATION_STYLE = "en" #citation style different for German (de) and English (en)
+    authors = revision.get_referenced_authors(CITATION_STYLE)
+    titles = revision.get_referenced_titles(CITATION_STYLE)
     dois = revision.get_referenced_dois()
     heading("\nREFERENCES " + "(" + str(len(references)) + ")")
     count = 1
