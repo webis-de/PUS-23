@@ -1,4 +1,5 @@
 from entity.article import Article
+from entity.timestamp import Timestamp
 from pprint import pprint, pformat
 from lxml import html, etree
 from random import randint
@@ -16,14 +17,13 @@ if __name__ == "__main__":
 
     #Open scraped article.
     article = Article("../extractions/CRISPR_en")
-    i = randint(0,2010)
-    print(i)
-    revision = article.get_revisions(i, i)[0]
-    """
-    #Print html.
-    heading("HTML")
-    print(pformat(revision.html, width=300))
-    """
+
+    random_index = randint(0,2010)
+    
+    revision = article.get_revisions(random_index, random_index)[0]
+
+    heading("You are looking at revision number " + str(random_index) + " from " + Timestamp(revision.timestamp).string + ".")
+
     #Print text from html.
     heading("\nTEXT")
     print(revision.get_text().strip())
