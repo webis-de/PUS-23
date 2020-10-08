@@ -17,6 +17,7 @@ if __name__ == "__main__":
     #Open scraped article.
     article = Article("../extractions/CRISPR_en")
     i = randint(0,2010)
+    print(i)
     revision = article.get_revisions(i, i)[0]
     """
     #Print html.

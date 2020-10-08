@@ -71,7 +71,7 @@ class Revision:
         try:
             return html.fromstring(self.html)
         except etree.ParserError:
-            return html.fromstring("<p></p>")
+            return html.fromstring("<html></html>")
         
     def get_text(self):
         try:

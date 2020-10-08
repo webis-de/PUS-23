@@ -24,9 +24,9 @@ class Bibliography:
         """
         self.filepath = filepath
         self.bibentries = parse_file(filepath).entries
-        self.titles = [self.replace_braces(value) for value in [bibentry.fields.get("title").lower() for bibentry in self.bibentries.values()]]
-        self.authors = [self.replace_braces(value) for value in [bibentry.persons.get("author")[0].last_names[0] for bibentry in self.bibentries.values()]]
-        self.dois = [bibentry.fields.get("doi").lower() for bibentry in self.bibentries.values() if bibentry.fields.get("doi")]
+        self.titles = [self.replace_braces(value) for value in [bibentry.fields.get("title") for bibentry in self.bibentries.values()]]
+        self.authors = sorted(list(set([self.replace_braces(value)[0] for value in [tuple(bibentry.persons.get("author")[0].last_names + bibentry.persons.get("author")[0].first_names) for bibentry in self.bibentries.values()]])))
+        self.dois = [bibentry.fields.get("doi") for bibentry in self.bibentries.values() if bibentry.fields.get("doi")]
         self.years = [int(bibentry.fields.get("year")) for bibentry in self.bibentries.values()]        
 
     def field_values(self, field):
@@ -49,7 +49,12 @@ class Bibliography:
             return self.years
 
     def replace_braces(self, value):
-        return value.replace("{","").replace("}","")
+        if type(value) == str:
+            return value.replace("{","").replace("}","")
+        if type(value) == list:
+            return [string.replace("{","").replace("}","") for string in value]
+        if type(value) == tuple:
+            return tuple(string.replace("{","").replace("}","") for string in value)
 
     def plot_publication_distribution_to_file(self, directory):
         """
@@ -71,3 +76,15 @@ class Bibliography:
         plt.subplots_adjust(bottom=0.1, top=0.95, left=0.03, right=0.995)
         if not exists(directory): makedirs(directory)
         plt.savefig(directory + sep + "publication_distribution.png")
+
+if __name__ == "__main__":
+
+    bib = Bibliography("../../data/tracing-innovations-lit.bib")
+    for author in bib.authors:
+        print(author)
+    print("="*50)
+    for title in bib.titles:
+        print(title)
+    print("="*50)
+    for doi in bib.dois:
+        print(doi)

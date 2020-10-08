@@ -74,15 +74,11 @@ class Article:
         for revision in self.revisions:
             count += 1
             print(count)
-            #text = "".join(["".join(reference.itertext()) for reference in revision.get_references()])
-            text = revision.get_text()
+            text = "".join(["".join(reference.itertext()) for reference in revision.get_references()]).lower()
+            #text = revision.get_text().lower()
             for field in tracks:
-                if field is "authors":
-                    temp_text = text
-                else:
-                    temp_text = text.lower()
                 for field_value in tracks[field]:
-                    if field_value in temp_text:
+                    if field_value.lower() in text:
                         tracks[field][field_value].append(revision.timestamp_pretty_string())
         return tracks
 
@@ -103,10 +99,15 @@ class Article:
         """
         if not self.revisions: self.get_revisions()
         tracks = {"(" + ",".join(phrase_list)[:20] + "(...)" * (",".join(phrase_list)[10:] != "") + ")":{phrase:[] for phrase in phrase_list} for phrase_list in phrase_lists}
+        count = 0
         for revision in self.revisions:
+            count += 1
+            print(count)
+            #text = "".join(["".join(reference.itertext()) for reference in revision.get_references()]).lower()
+            text = revision.get_text().lower()
             for phrase_list in tracks:
                 for phrase in tracks[phrase_list]:
-                    if phrase in revision.text.lower():
+                    if phrase.lower() in text:
                         tracks[phrase_list][phrase].append(revision.timestamp_pretty_string())
         return tracks
 
