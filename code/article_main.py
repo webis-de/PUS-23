@@ -23,10 +23,17 @@ if __name__ == "__main__":
     revision = article.get_revisions(random_index, random_index)[0]
 
     heading("You are looking at revision number " + str(random_index) + " from " + Timestamp(revision.timestamp).string + ".")
+    #URL of revsions
+    heading("\nURL OF REVISION")
+    print(revision.url)
 
-    #Print text from html.
+    #Print text from html
     heading("\nTEXT")
     print(revision.get_text().strip())
+
+    #Print paragraphs from html
+    heading("\nPARAGRAPS")
+    print("\n".join([str(paragraph[0] + 1) + "\n" + paragraph[1] for paragraph in enumerate(revision.get_paragraphs())]))
 
     #Print all categories.
     heading("\nCATEGORIES")

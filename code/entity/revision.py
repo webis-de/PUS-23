@@ -75,15 +75,21 @@ class Revision:
         
     def get_text(self):
         try:
-            return "".join(self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].itertext())
+            return "".join(self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].xpath("//text()")).strip()
         except IndexError:
-            return ""
+            return "".join(self.etree_from_html().xpath(".//text()")).strip()
+
+    def get_paragraphs(self):
+        try:
+            return ["".join(paragraph.itertext()) for paragraph in self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].xpath(".//p")]
+        except IndexError:
+            return ["".join(paragraph.itertext()) for paragraph in self.etree_from_html().xpath(".//p")]
 
     def get_categories(self):
         return [(element.text, element.get("href")) for element in self.etree_from_html().xpath(".//div[@id='mw-normal-catlinks']//a")[1:]]
 
     def get_references(self):
-        return self.etree_from_html().xpath(".//div[@class='mw-parser-output']//span[@class='reference-text']")
+        return self.etree_from_html().xpath(".//div[@class='mw-parser-output']//cite")
 
     def get_referenced_authors(self, language):
         authors = []
