@@ -1,6 +1,6 @@
 from csv import reader
 from re import split
-from pprint import pformat
+from utils import prettyprint
 from bibliography import Bibliography
 
 class Event:
@@ -14,10 +14,10 @@ class Event:
         self.event = event
         self.typ = typ
         self.subtyp = subtyp
-        self.actors = [actor for actor in split(", +", actors) if actor]
-        self.places = [place for place in split(", +", places) if place]
-        self.papers = [bibliography.bibentries.get(paper) for paper in split("; +", papers) if paper]
-        self.keywords = [keyword.replace("\"", "") for keyword in split(", +", keywords)]
+        self.actors = [actor.strip() for actor in split(", +", actors.strip()) if actor.strip()]
+        self.places = [place.strip() for place in split(", +", places.strip()) if place.strip()]
+        self.papers = [bibliography.bibentries.get(paper) for paper in split("; *", papers.strip()) if paper]
+        self.keywords = [keyword.replace("\"", "") for keyword in split("; *", keywords)]
         
 
     def parse_int(self, value):
@@ -26,10 +26,10 @@ class Event:
         except ValueError:
             return None
 
-    def __str__(self):
+    def print(self):
         copy = self.__dict__.copy()
         copy["papers"] = [{"fields":paper.fields._dict,"persons":paper.persons._dict} for paper in self.papers]
-        return pformat(copy)
+        return prettyprint(copy)
 
 if __name__ == "__main__":
 
@@ -39,7 +39,8 @@ if __name__ == "__main__":
 
     with open("../../data/CRISPR_events - keywords.csv") as file:
         csv_reader = reader(file, delimiter=",")
-        skip_header = True
+        #skip header
+        next(csv_reader)
         for row in csv_reader:
             try:
                 args = [row[i].strip() for i in range(12)] + [bib]
@@ -48,4 +49,5 @@ if __name__ == "__main__":
                 print("Could not parse " + str(row))
 
     for event in events:
-        print(event)
+        print(event.print())
+        print("="*50)
