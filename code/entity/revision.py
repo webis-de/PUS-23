@@ -1,4 +1,6 @@
 from entity.timestamp import Timestamp
+from entity.reference import Reference
+from entity.paragraph import Paragraph
 from entity.page import Page
 from pprint import pformat
 from requests import get
@@ -81,22 +83,25 @@ class Revision:
 
     def get_paragraphs(self):
         try:
-            return ["".join(paragraph.itertext()) for paragraph in self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].xpath(".//p")]
+            return [Paragraph(paragraph) for paragraph in self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].xpath(".//p")]
         except IndexError:
-            return ["".join(paragraph.itertext()) for paragraph in self.etree_from_html().xpath(".//p")]
+            return [Paragraph(paragraph) for paragraph in self.etree_from_html().xpath(".//p")]
 
     def get_categories(self):
         return [(element.text, element.get("href")) for element in self.etree_from_html().xpath(".//div[@id='mw-normal-catlinks']//a")[1:]]
 
     def get_references(self):
-        return self.etree_from_html().xpath(".//div[@class='mw-parser-output']//cite")
+        return [Reference(reference[1], reference[0] + 1) for reference in enumerate(self.etree_from_html().xpath(".//ol[@class='references']/li | .//ol/li/cite"))]
 
-    def get_referenced_authors(self, language):
+    def get_further_reading(self):
+        return [Reference(reference[1], None) for reference in enumerate(self.etree_from_html().xpath(".//ul/li/cite"))]
+
+    def get_referenced_authors(self, language, source):
         authors = []
-        for reference in self.get_references():
+        for reference in source:
             if language == "en":
                 #get full text of reference
-                text =  "".join(reference.itertext())
+                text = reference.text()
                 AUTHORS = []
                 if "(" in text:
                     #remove everything after first (
@@ -113,7 +118,7 @@ class Revision:
                 authors.append(AUTHORS)
             if language == "de":
                 #get full text of reference
-                text =  "".join(reference.itertext())
+                text = reference.text()
                 AUTHORS = []
                 try:
                     #split at :
@@ -132,13 +137,13 @@ class Revision:
                 authors.append(AUTHORS)
         return authors
 
-    def get_referenced_titles(self, language):
+    def get_referenced_titles(self, language, source):
         titles = []
-        for reference in self.get_references():
+        for reference in source:
             if language == "en":
                 try:
                     #get full text of reference
-                    text = "".join(reference.itertext())
+                    text = reference.text()
                     #split at year
                     text = split(r"\(.*?\)\.? ?", text, 1)[1].strip()
                     try:
@@ -158,7 +163,7 @@ class Revision:
                     titles.append("")
             if language == "de":
                 #get full text of reference
-                text = "".join(reference.itertext())
+                text = reference.text()
                 try:
                     #split at :
                     text = split(":", text, 1)[1].strip()
@@ -170,11 +175,11 @@ class Revision:
                     titles.append("")  
         return titles
 
-    def get_referenced_dois(self):
+    def get_referenced_dois(self, source):
         dois = []
-        for reference in self.get_references():
+        for reference in source:
             DOIs = []
-            for element in reference.xpath(".//a[contains(@href, 'doi.org/')]"):
+            for element in reference.source.xpath(".//a[contains(@href, 'doi.org/')]"):
                 #dois from links
                 DOIs.append(element.get("href").split("doi.org/")[-1].replace("%2F","/"))
                 #dois from element text

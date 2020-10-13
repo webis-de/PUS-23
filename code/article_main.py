@@ -22,7 +22,7 @@ if __name__ == "__main__":
     
     revision = article.get_revisions(random_index, random_index)[0]
 
-    heading("You are looking at revision number " + str(random_index) + " from " + Timestamp(revision.timestamp).string + ".")
+    print("You are looking at revision number " + str(random_index) + " from " + Timestamp(revision.timestamp).string + ".")
     #URL of revsions
     heading("\nURL OF REVISION")
     print(revision.url)
@@ -32,32 +32,31 @@ if __name__ == "__main__":
     print(revision.get_text().strip())
 
     #Print paragraphs from html
-    heading("\nPARAGRAPS")
-    print("\n".join([str(paragraph[0] + 1) + "\n" + paragraph[1] for paragraph in enumerate(revision.get_paragraphs())]))
+    heading("\nPARAGRAPHS")
+    print("\n".join([paragraph.text() for paragraph in revision.get_paragraphs()]))
 
     #Print all categories.
     heading("\nCATEGORIES")
     for category in revision.get_categories():
         print(category)
     
-    #Print references from html.
-    references = revision.get_references()
-    CITATION_STYLE = "en" #citation style different for German (de) and English (en)
-    authors = revision.get_referenced_authors(CITATION_STYLE)
-    titles = revision.get_referenced_titles(CITATION_STYLE)
-    dois = revision.get_referenced_dois()
-    heading("\nREFERENCES " + "(" + str(len(references)) + ")")
-    count = 1
-    for reference, author, title, doi in zip(references, authors, titles, dois):
-        print(str(count))
-        #print(html.tostring(reference).decode("utf-8"))
-        #print()
-        print("".join(reference.itertext()))
-        print()
-        print("AUTHORS: " + str(author))
-        print("TITLE: " + str(title))
-        print("DOIS: " + str(doi))
-        input("-"*50)
-        count += 1
-
-
+    #Print references and further reading from html.
+    CITATION_STYLE = article.filename.split("_")[-1] #citation style different for German (de) and English (en)
+    sources = {"REFERENCES": revision.get_references(), "FURTHER READING":revision.get_further_reading()}
+    for source in sources.items():
+        authors = revision.get_referenced_authors(CITATION_STYLE, source[1])
+        titles = revision.get_referenced_titles(CITATION_STYLE, source[1])
+        dois = revision.get_referenced_dois(source[1])
+        heading("\n" + source[0] + " " + "(" + str(len(source[1])) + ")")
+        for reference, author, title, doi in zip(source[1], authors, titles, dois):
+            print("NUMBER: " + str(reference.number))
+            print("REFERENCE TEXT: " + reference.text().strip())
+            print()
+            print("AUTHORS: " + str(author))
+            print("TITLE: " + str(title))
+            print("DOIS: " + str(doi))
+            print("\nLINKED PARAGRAPHS:")
+            backlinks = reference.backlinks()
+            if backlinks:
+                print("\n".join(["=>" + str(backlink) + "\n" + linked_paragraph.text().strip() for backlink, linked_paragraph in zip(backlinks, reference.linked_paragraphs(revision.get_paragraphs()))]))
+            input("-"*50)
