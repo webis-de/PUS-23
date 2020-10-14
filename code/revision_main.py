@@ -2,6 +2,7 @@ from entity.revision.revision import Revision
 from entity.timestamp import Timestamp
 from random import randint
 from json import loads
+from re import sub
 
 #################################################################
 # This file serves as an entry point to test the Revision class.#
@@ -37,7 +38,7 @@ if __name__ == "__main__":
 
     #Print paragraphs from html
     heading("\nPARAGRAPHS")
-    print("\n".join([paragraph.text() for paragraph in revision.get_paragraphs()]))
+    print(sub(r"\n\n+", "\n\n", "\n\n".join([paragraph.text() for paragraph in revision.get_paragraphs()])))
 
     #Print all categories.
     heading("\nCATEGORIES")

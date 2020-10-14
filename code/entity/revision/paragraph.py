@@ -1,3 +1,5 @@
+from re import sub
+
 class Paragraph:
 
     def __init__(self, source):
@@ -5,7 +7,7 @@ class Paragraph:
         self.source = source
 
     def text(self):
-        return "".join(self.source.xpath(".//text()"))
+        return sub(r" +", " ", " ".join(self.source.xpath(".//text()")))
 
     def backlink(self, backlink):
         try:

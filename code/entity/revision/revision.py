@@ -66,10 +66,14 @@ class Revision:
             return "".join(self.etree_from_html().xpath(".//text()")).strip()
 
     def get_paragraphs(self):
+        #get all unclassified paragraphs, ordered lists, unordered lists and headlines, as well as all captions and thumbnails
+        xpath_expression = "|".join(["./" + tag + "[not(@class)]" for tag in ["p","ol","ul","h1","h2","h3","h4","h5","h6"]]) + \
+                           "|" + ".//div[@class='thumbcaption']" + \
+                           "|" + ".//table"
         try:
-            return [Paragraph(paragraph) for paragraph in self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].xpath(".//p")]
+            return [Paragraph(paragraph) for paragraph in self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].xpath(xpath_expression)]
         except IndexError:
-            return [Paragraph(paragraph) for paragraph in self.etree_from_html().xpath(".//p")]
+            return [Paragraph(paragraph) for paragraph in self.etree_from_html().xpath(xpath_expression)]
 
     def get_categories(self):
         return [(element.text, element.get("href")) for element in self.etree_from_html().xpath(".//div[@id='mw-normal-catlinks']//a")[1:]]
