@@ -18,7 +18,7 @@ if __name__ == "__main__":
     #Open scraped article.
     article = Article("../extractions/CRISPR_en")
 
-    random_index = randint(0,2010)
+    random_index = 2023#randint(0,2023)
     
     revision = article.get_revisions(random_index, random_index)[0]
 

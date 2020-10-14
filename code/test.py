@@ -69,10 +69,10 @@ def test_multi_scrape(logger):
                 "CRISPR/Cpf1":"f8797c9fb37ae10898a62b729b69cd2ca91ed5229c0e954598a896d0ea1e8a67"}
     #ARTICLE CHECKSUMS WITH HTML
     ARTICLES = {"CRISPR":"3b3b515988600fbddcd3a3d7b6a797da5dbe9381dd438d471ab2d86ad3bb0633",
-                "CRISPR gene editing":"1da367d5705c2b9e926fbabbbc1bc1c515ab82dc0bb694268e78cb52b83cd3ba",
+                "CRISPR gene editing":"8e349f28a0e158c28d395ceb8c1beaf94b133e3686a25c366e6009e47f552661",
                 "Cas9":"fec5eeab10e0f58be1d4460dd972783e7167652683175d5e3f50e4816a22fc83",
-                "Trans-activating crRNA":"ba7dc144f7610f28ec032b13e5ea759f8bc5cba20095124bee4baac8f49fd6dd",
-                "CRISPR/Cpf1":"e60a7b281fecb0f9f494d85245ad03864cc94a5b124439bf05084c09c1c963ee"}
+                "Trans-activating crRNA":"119a20105a7d64d95dc6606095ab58b7bb3584f2d16e2b17e5889f65194a0013",
+                "CRISPR/Cpf1":"3f94f9c7ebcf0200f3d84e3032da5af19271b957b3f1e4192a4b66b3651a9c72"}
     
     #scrape first five revisions of each article and assert checksum code state 24 September 2020
     logger.start("Testing multiscraping " + ", ".join(ARTICLES) + "...")

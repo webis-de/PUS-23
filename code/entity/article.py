@@ -74,7 +74,7 @@ class Article:
         for revision in self.revisions:
             count += 1
             print(count)
-            text = "".join(["".join(reference.itertext()) for reference in revision.get_references()]).lower()
+            text = "".join(["".join(reference.text()) for reference in revision.get_references()]).lower()
             #text = revision.get_text().lower()
             for field in tracks:
                 for field_value in tracks[field]:
