@@ -1,7 +1,6 @@
 from entity.timestamp import Timestamp
 from entity.reference import Reference
 from entity.paragraph import Paragraph
-from entity.page import Page
 from pprint import pformat
 from requests import get
 from lxml import html, etree
@@ -53,21 +52,6 @@ class Revision:
         self.comment = comment
         self.minor = minor
         self.index = index
-
-    def request_html(self):
-        """
-        Retrieves HTML via GET request.
-
-        Returns:
-            revid if mw-parser-output does not exist (revision removed), else None.
-        """
-        revision_url = self.url + "&oldid=" + str(self.revid)
-        page = Page(str(self.revid), revision_url)
-        self.html = page.get_mediawiki_parser_output_and_normal_catlinks()
-        if not self.html:
-            return self.revid
-        else:
-            return None
 
     def etree_from_html(self):
         try:

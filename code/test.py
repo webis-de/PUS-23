@@ -1,5 +1,6 @@
 from scraper.scraper import Scraper
 from entity.article import Article
+from entity.revision import Revision
 from entity.bibliography import Bibliography
 from utility.logger import Logger
 from os import remove, rename, rmdir
@@ -40,21 +41,21 @@ def test_single_scrape(logger):
     logger.start_check("Singlescraping...")
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
         scraper.save = mock_save
-        scraper.scrape(DIRECTORY, html=True, number=5)
+        revisions = [Revision(**revision) for revision in scraper.scrape(DIRECTORY, number=5)]
 
         #assert attributes of first revision
-        assert scraper.revisions[0].revid == 69137443
-        assert scraper.revisions[0].parentid == 0
-        assert "Cas-Komplexes in Einzelteile zerlegt" in scraper.revisions[0].get_text()
-        assert scraper.revisions[0].user == "Tinz"
-        assert scraper.revisions[0].timestamp == '2010-01-11T02:11:54Z'
+        assert revisions[0].revid == 69137443
+        assert revisions[0].parentid == 0
+        assert "Cas-Komplexes in Einzelteile zerlegt" in revisions[0].get_text()
+        assert revisions[0].user == "Tinz"
+        assert revisions[0].timestamp == '2010-01-11T02:11:54Z'
 
         #assert attributes of fifth revision
-        assert scraper.revisions[4].revid == 71287221
-        assert scraper.revisions[4].parentid == 70862725
-        assert "Cas-Komplexes (Cascade) in Einzelteile zerlegt" in scraper.revisions[4].get_text()
-        assert scraper.revisions[4].user == "Hydro"
-        assert scraper.revisions[4].timestamp == '2010-03-01T09:04:35Z'
+        assert revisions[4].revid == 71287221
+        assert revisions[4].parentid == 70862725
+        assert "Cas-Komplexes (Cascade) in Einzelteile zerlegt" in revisions[4].get_text()
+        assert revisions[4].user == "Hydro"
+        assert revisions[4].timestamp == '2010-03-01T09:04:35Z'
 
     logger.stop("Single scrape test successful.", 1)
 
@@ -79,8 +80,8 @@ def test_multi_scrape(logger):
     for article in ARTICLES:
         with Scraper(logger = LOGGER, title = article, language = "en") as scraper:
             scraper.save = mock_save
-            scraper.scrape(DIRECTORY, html=True, number=5)
-            checksum = revisions_checksum(scraper.revisions)
+            revisions = [Revision(**revision) for revision in scraper.scrape(DIRECTORY, number=5)]
+            checksum = revisions_checksum(revisions)
             assert checksum == ARTICLES[article]
     logger.stop("Multiscraping test successful.", 1)
 
@@ -96,7 +97,7 @@ def test_full_and_updated_scrape(logger):
     #scrape article in full
     logger.start_check("Singlescraping (full)...")
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
-        scraper.scrape(DIRECTORY, html=True)
+        scraper.scrape(DIRECTORY)
         number_of_full_scraped_revisions = scraper.revision_count
     full_scrape_checksum = file_checksum(FILEPATH)
     remove(FILEPATH)
@@ -105,10 +106,10 @@ def test_full_and_updated_scrape(logger):
     #scrape first five revisions
     logger.start_check("Singlescraping (update)...")
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
-        scraper.scrape(DIRECTORY, html=True, number=5)
+        scraper.scrape(DIRECTORY, number=5)
     #scrape remaining revisions
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
-        scraper.scrape(DIRECTORY, html=True)
+        scraper.scrape(DIRECTORY)
         number_of_updated_scraped_revisions = scraper.revision_count
     update_scrape_checksum = file_checksum(FILEPATH)
     logger.end_check("Done.")
@@ -132,7 +133,7 @@ def test_pipeline(logger):
     
     #scrape article
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
-        scraper.scrape(DIRECTORY, html=True)
+        scraper.scrape(DIRECTORY)
 
     #load article from file
     article = Article(FILEPATH)

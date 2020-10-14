@@ -35,12 +35,6 @@ if __name__ == "__main__":
     DIRECTORY = "../extractions"
 
     """
-    Set HTML if you want to scrape HTML as well
-    FOR TESTING ONLY: Updating a revision scrape will only scrape scrape HTML for new revisions.
-    """
-    HTML = True
-
-    """
     Select the first n revisions you want to scrape (float("inf") will scrape all)
     FOR TESTING PURPOSES
     """
@@ -56,5 +50,4 @@ if __name__ == "__main__":
         for article in ARTICLES:
             with Scraper(logger, article, "de") as scraper:
                 scraper.scrape(directory = DIRECTORY,
-                               html = HTML,
                                number = NUMBER)
