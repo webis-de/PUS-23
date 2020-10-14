@@ -15,7 +15,7 @@ def heading(text, file):
 
 if __name__ == "__main__":
 
-    with open("revision_extraction.txt", "w") as file:
+    with open("revision_extraction.txt", "w", encoding="utf-8") as file:
 
         #Select a language: en or de
         LANGUAGE = "en"
