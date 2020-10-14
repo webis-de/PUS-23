@@ -1,6 +1,6 @@
 from re import sub
 
-class Paragraph:
+class Section:
 
     def __init__(self, source):
 

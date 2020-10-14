@@ -14,7 +14,7 @@ class Reference:
     def backlinks(self):
         return [backlink.get("href")[1:] for backlink in self.source.xpath(".//span[@class='mw-cite-backlink']//a")]
 
-    def linked_paragraphs(self, paragraphs):
+    def linked_sections(self, paragraphs):
         linked_paragraphs = set()
         for paragraph in paragraphs:
             backlinks = self.backlinks()
