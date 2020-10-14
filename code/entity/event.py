@@ -1,6 +1,5 @@
 from csv import reader
 from re import split
-from utils import prettyprint
 from bibliography import Bibliography
 
 class Event:
@@ -29,7 +28,18 @@ class Event:
     def print(self):
         copy = self.__dict__.copy()
         copy["papers"] = [{"fields":paper.fields._dict,"persons":paper.persons._dict} for paper in self.papers]
-        return prettyprint(copy)
+        return self.prettyprint(copy)
+
+    def prettyprint(self, structure, indent = ""):
+        if structure and type(structure) == dict:
+            return "\n".join([indent + str(pair[0]) + "\n" + self.prettyprint(pair[1], indent + "    ") for pair in structure.items()])
+        elif structure and type(structure) == list:
+            return "\n".join(self.prettyprint(item, indent) for item in structure)
+        else:
+            if structure:
+                return indent + str(structure)
+            else:
+                return indent + "-"
 
 if __name__ == "__main__":
 

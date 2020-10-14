@@ -1,6 +1,6 @@
 from scraper.scraper import Scraper
 from entity.article import Article
-from entity.revision import Revision
+from entity.revision.revision import Revision
 from entity.bibliography import Bibliography
 from utility.logger import Logger
 from os import remove, rename, rmdir

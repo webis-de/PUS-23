@@ -1,6 +1,6 @@
 from entity.timestamp import Timestamp
-from entity.reference import Reference
-from entity.paragraph import Paragraph
+from .reference import Reference
+from .paragraph import Paragraph
 from pprint import pformat
 from requests import get
 from lxml import html, etree

@@ -3,9 +3,9 @@ from utility.logger import Logger
 from json import load
 
 
-##########################################################
-# This file serves as an entry point to test the Scraper.#
-##########################################################
+################################################################
+# This file serves as an entry point to test the Scraper class.#
+################################################################
 
 
 def flatten_list_of_lists(list_of_lists):

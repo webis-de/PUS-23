@@ -1,9 +1,9 @@
-from entity.revision import Revision
-from entity.timestamp import Timestamp
+from .revision.revision import Revision
+from .timestamp import Timestamp
 from os.path import basename, exists, sep
 from os import makedirs
-import matplotlib.pyplot as plt
 from json import loads, dump
+import matplotlib.pyplot as plt
 
 class Article:
     """

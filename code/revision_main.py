@@ -1,12 +1,11 @@
-from entity.article import Article
+from entity.revision.revision import Revision
 from entity.timestamp import Timestamp
-from pprint import pprint, pformat
-from lxml import html, etree
 from random import randint
+from json import loads
 
-##########################################################
-# This file serves as an entry point to test the Article.#
-##########################################################
+#################################################################
+# This file serves as an entry point to test the Revision class.#
+#################################################################
 
 def heading(text):
     print(text)
@@ -15,12 +14,17 @@ def heading(text):
 
 if __name__ == "__main__":
 
-    #Open scraped article.
-    article = Article("../extractions/CRISPR_en")
+    #Select a language: en or de
+    LANGUAGE = "en"
 
-    random_index = 2023#randint(0,2023)
-    
-    revision = article.get_revisions(random_index, random_index)[0]
+    #Open scraped article and get random revision.
+    random_index = randint(0,2023)
+    line = 0
+    with open("../extractions/CRISPR_" + LANGUAGE) as article:
+        while line < random_index:
+            article.readline()
+            line += 1
+        revision = Revision(**loads(article.readline()))
 
     print("You are looking at revision number " + str(random_index) + " from " + Timestamp(revision.timestamp).string + ".")
     #URL of revsions
@@ -41,7 +45,7 @@ if __name__ == "__main__":
         print(category)
     
     #Print references and further reading from html.
-    CITATION_STYLE = article.filename.split("_")[-1] #citation style different for German (de) and English (en)
+    CITATION_STYLE = LANGUAGE #citation style different for German (de) and English (en)
     sources = {"REFERENCES": revision.get_references(), "FURTHER READING":revision.get_further_reading()}
     for source in sources.items():
         authors = revision.get_referenced_authors(CITATION_STYLE, source[1])
