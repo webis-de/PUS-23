@@ -19,7 +19,7 @@ if __name__ == "__main__":
     LANGUAGE = "en"
 
     #Open scraped article and get random revision.
-    random_index = 1935#randint(0,2023)
+    random_index = randint(0,2023)
     line = 0
     with open("../extractions/CRISPR_" + LANGUAGE) as article:
         while line < random_index:
