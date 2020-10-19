@@ -26,7 +26,7 @@ class Tokenizer:
                 hashed_abbreviation = " " + self.abbreviation_dictionary[abbreviation]
                 sentence = sentence.replace(abbreviation, hashed_abbreviation)
                 encountered_abbreviations[hashed_abbreviation] = abbreviation
-        for mark in [".","!","?",", ",": ",";", "(", ")","[","]","{","}","/","\\", " - "]:
+        for mark in [".","!","?",", ",": ",";", "(", ")","[","]","{","}","/","\\", "-"]:
             sentence = sentence.replace(mark, " " + mark + " ")
         for encountered_abbreviation in encountered_abbreviations:
             sentence = sentence.replace(encountered_abbreviation, encountered_abbreviations[encountered_abbreviation])

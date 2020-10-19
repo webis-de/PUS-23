@@ -36,19 +36,15 @@ class Article:
                 if line[0] > final:
                     break
                 revision = loads(line[1])
-                self.revisions.append(Revision(revision["revid"],
-                                               revision["parentid"],
-                                               revision["url"],
-                                               revision["user"],
-                                               revision["userid"],
-                                               revision["timestamp"],
-                                               revision["size"],
-                                               revision["html"],
-                                               revision["comment"],
-                                               revision["minor"],
-                                               revision["index"]))
+                self.revisions.append(Revision(**revision))
         self.timestamps = [revision.timestamp_pretty_string() for revision in self.revisions]
         return self.revisions
+
+    def yield_revisions(self):
+        with open(self.filepath) as file:
+            for line in file:
+                revision = loads(line)
+                yield Revision(**revision)
 
     def track_field_values_in_article(self, fields, bibliography):
         """
