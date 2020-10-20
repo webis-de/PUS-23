@@ -1,5 +1,6 @@
 from entity.article import Article
 from entity.eventlist import EventList
+from entity.accountlist import AccountList
 from entity.bibliography import Bibliography
 from utility.utils import flatten_list_of_lists
 from preprocessor.preprocessor import Preprocessor
@@ -9,13 +10,16 @@ from re import findall
 # This file serves as an entry point to test the entire pipeline.#
 ##################################################################
 
+def occurrence(revision):
+    return ["index: " + str(revision.index), "url: " + revision.url, "timestamp: " + revision.timestamp_pretty_string()]
 
 if __name__ == "__main__":
 
     language = "en"
     article = Article("../extractions/CRISPR_" + language)
     bibliography = Bibliography("../data/tracing-innovations-lit.bib")
-    eventlist = EventList("../data/CRISPR_events - keywords.csv", bibliography)
+    accountlist = AccountList("../data/CRISPR_events - accounts.csv")
+    eventlist = EventList("../data/CRISPR_events - events.csv", bibliography, accountlist)
     preprocessor = Preprocessor(language)
 
     revisions = article.yield_revisions()
@@ -36,7 +40,12 @@ if __name__ == "__main__":
         
         for event in eventlist.events:
 
-            if event.dois and not event.occurrences["all_dois"]:
+            for event_doi in event.dois:
+                if not event.first_occurrence["dois"][event_doi]:
+                    if event_doi in referenced_dois:
+                        event.first_occurrence["dois"][event_doi] = occurrence(revision)
+
+            if event.dois and not event.first_occurrence["all_dois"]:
                 #iterate over all event dois
                 for event_doi in event.dois:
                     #break if event doi not referenced
@@ -44,9 +53,22 @@ if __name__ == "__main__":
                         break
                 else:
                     #add rivision if all dois occur
-                    event.occurrences["all_dois"] = {"index":revision.index,"revid":revision.revid, "url":revision.url, "timestamp":revision.timestamp_pretty_string()}
+                    event.first_occurrence["all_dois"] = occurrence(revision)
 
-            if event.titles and not event.occurrences["all_full_titles"]:
+            for event_title in event.titles:
+                if not event.first_occurrence["titles"][event_title]["full"]:
+                    if event_title.lower() in referenced_titles:
+                        event.first_occurrence["titles"][event_title]["full"] = occurrence(revision)
+                if not event.first_occurrence["titles"][event_title]["processed"]:
+                    preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=True, sentenize=False, tokenize=True)[0]
+                    for referenced_title in referenced_titles:
+                        referenced_title = preprocessor.preprocess(referenced_title, lower=True, stopping=True, sentenize=False, tokenize=True)[0]
+                        match_count = sum([1 if word in referenced_title else 0 for word in preprocessed_event_title])
+                        if match_count >= len(preprocessed_event_title) * 0.8:
+                            event.first_occurrence["titles"][event_title]["processed"] = occurrence(revision)
+                            break
+
+            if event.titles and not event.first_occurrence["all_titles"]["full"]:
                 #iterate over all event titles
                 for event_title in event.titles:
                     #break if event event_title not referenced
@@ -54,9 +76,9 @@ if __name__ == "__main__":
                         break
                 else:
                     #add rivision if all titles occur
-                    event.occurrences["all_full_titles"] = {"index":revision.index,"revid":revision.revid, "url":revision.url, "timestamp":revision.timestamp_pretty_string()}
+                    event.first_occurrence["all_titles"]["full"] = occurrence(revision)
 
-            if event.titles and not event.occurrences["80_percent_of_words_in_stopped_titles"]:
+            if event.titles and not event.first_occurrence["all_titles"]["processed"]:
                 #iterate over all event titles
                 for event_title in event.titles:
                     #tokenize event title
@@ -74,9 +96,9 @@ if __name__ == "__main__":
                         break
                 else:
                     #add revision if all titles occur
-                    event.occurrences["80_percent_of_words_in_stopped_titles"] = {"index":revision.index,"revid":revision.revid, "url":revision.url, "timestamp":revision.timestamp_pretty_string()}
+                    event.first_occurrence["all_titles"]["processed"] = occurrence(revision)
 
-            if event.keywords and not event.occurrences["all_keywords_in_one_section"]:
+            if event.keywords and not event.first_occurrence["all_keywords"]:
                 for section in paragraphs_and_captions:
                     for keyword in event.keywords:
                         if not findall(keyword, section.text()):
@@ -84,7 +106,7 @@ if __name__ == "__main__":
                             break
                     else:
                         #else add revision
-                        event.occurrences["all_keywords_in_one_section"] = {"index":revision.index,"revid":revision.revid, "url":revision.url, "timestamp":revision.timestamp_pretty_string()}
+                        event.first_occurrence["all_keywords"] = occurrence(revision)
                         break
                      
         revision = next(revisions, None)

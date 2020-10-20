@@ -21,12 +21,12 @@ class Event:
         self.authors = [[self.replace_braces(person.last_names[0]) for person in paper.persons.get("author")] for paper in self.bib_keys]
         self.dois = [paper.fields.get("doi") for paper in self.bib_keys]
         self.titles = [self.replace_braces(paper.fields.get("title")) for paper in self.bib_keys]
-        self.keywords = [keyword.replace("\"", "") for keyword in split("; *", keywords)]
-        self.first_occurrence = {"dois":{}, "all_dois":None, "titles":{}, "all_titles":None, "keywords":{}}
+        self.keywords = [keyword.replace("\"", "") for keyword in split("; *", keywords) if keyword.strip()]
+        self.first_occurrence = {"dois":{}, "all_dois":None, "titles":{}, "all_titles":{"full":None, "processed":None}, "keywords":{}, "all_keywords":None}
         for doi in self.dois:
             self.first_occurrence["dois"][doi] = None
         for title in self.titles:
-            self.first_occurrence["titles"][title] = None
+            self.first_occurrence["titles"][title] = {"full":None, "processed":None}
         for keyword in self.keywords:
             self.first_occurrence["keywords"][keyword] = None
 
