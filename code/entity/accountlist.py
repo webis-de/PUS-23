@@ -1,11 +1,11 @@
-from .event import Event
+from .account import Account
 from csv import reader
     
-class EventList:
+class AccountList:
 
-    def __init__(self, filepath, bibliography, accountlist):
+    def __init__(self, filepath):
 
-        self.events = []
+        self.accounts = []
 
         with open(filepath) as file:
             csv_reader = reader(file, delimiter=",")
@@ -14,10 +14,11 @@ class EventList:
             for row in csv_reader:
                 try:
                     args = {header[i].strip():row[i].strip() for i in range(len(header))}
-                    args["bibliography"] = bibliography
-                    args["accountlist"] = accountlist
-                    self.events.append(Event(**args))
+                    self.accounts.append(Account(**args))
                 except ValueError:
                     print("Could not parse " + str(row))
 
-
+    def get_account(self, account_id):
+        for account in self.accounts:
+            if account.account_id == account_id:
+                return account

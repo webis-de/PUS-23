@@ -2,29 +2,49 @@ from re import split
 
 class Event:
 
-    def __init__(self, ID, year, month, day, event, typ, subtyp, actors, places, papers, source, keywords, bibliography):
+    def __init__(self, event_id, event_year, event_month, event_day, account_id, sampled, event_text, type, subtype, actors, places, bib_keys, keywords, comment, bibliography, accountlist):
 
-        self.ID = int(ID)
-        self.year = self.parse_int(year)
-        self.month = self.parse_int(month)
-        self.day = self.parse_int(day)
-        self.event = event
-        self.typ = typ
-        self.subtyp = subtyp
+        self.event_id = int(event_id)
+        self.event_year = self.parse_int(event_year)
+        self.event_month = self.parse_int(event_month)
+        self.event_day = self.parse_int(event_day)
+        self.event_date = self.get_event_date()
+        self.account = accountlist.get_account(account_id)
+        self.sampled = sampled
+        self.event_text = event_text
+        self.type = type
+        self.subtype = subtype
         self.actors = [actor.strip() for actor in split(", +", actors.strip()) if actor.strip()]
         self.places = [place.strip() for place in split(", +", places.strip()) if place.strip()]
-        self.papers = [bibliography.bibentries.get(paper) for paper in split("; *", papers.strip()) if paper]
-        self.dois = [paper.fields.get("doi") for paper in self.papers]
-        self.titles = [self.replace_braces(paper.fields.get("title")) for paper in self.papers]
-        self.authors = [[self.replace_braces(person.last_names[0]) for person in paper.persons.get("author")] for paper in self.papers]
+        self.bib_keys = [bibliography.bibentries.get(paper) for paper in split("; *", bib_keys.strip()) if paper]
+        self.comment = comment
+        self.authors = [[self.replace_braces(person.last_names[0]) for person in paper.persons.get("author")] for paper in self.bib_keys]
+        self.dois = [paper.fields.get("doi") for paper in self.bib_keys]
+        self.titles = [self.replace_braces(paper.fields.get("title")) for paper in self.bib_keys]
         self.keywords = [keyword.replace("\"", "") for keyword in split("; *", keywords)]
-        self.occurrences = {"all_dois":None,"all_full_titles":None,"80_percent_of_words_in_stopped_titles":None,"all_keywords_in_one_section":None}
+        self.first_occurrence = {"dois":{}, "all_dois":None, "titles":{}, "all_titles":None, "keywords":{}}
+        for doi in self.dois:
+            self.first_occurrence["dois"][doi] = None
+        for title in self.titles:
+            self.first_occurrence["titles"][title] = None
+        for keyword in self.keywords:
+            self.first_occurrence["keywords"][keyword] = None
 
     def parse_int(self, value):
         try:
             return int(value)
         except ValueError:
             return None
+
+    def get_event_date(self):
+        event_date = ""
+        if self.event_year:
+            event_date += str(self.event_year)
+        if self.event_month:
+            event_date += "-" + str(self.event_month).rjust(2, "0")
+        if self.event_day:
+            event_date += "-" + str(self.event_day).rjust(2, "0")
+        return event_date
 
     def replace_braces(self, value):
         if type(value) == str:
@@ -36,14 +56,24 @@ class Event:
 
     def __str__(self):
         copy = self.__dict__.copy()
-        copy["papers"] = [{"fields":paper.fields._dict,"persons":paper.persons._dict} for paper in self.papers]
+        copy["account"] = {"account_date":self.account.account_date,"account_url":self.account.url}
+        copy["bib_keys"] = {paper.key:{"fields":paper.fields._dict,"persons":paper.persons._dict} for paper in self.bib_keys}
+        del copy["event_year"]
+        del copy["event_month"]
+        del copy["event_day"]
+        del copy["comment"]
+        del copy["authors"]
+        del copy["dois"]
+        del copy["titles"]
+        del copy["keywords"]
+        del copy["sampled"]
         return self.prettyprint(copy)
 
     def prettyprint(self, structure, indent = ""):
         if structure and type(structure) == dict:
             return "\n".join([indent + str(pair[0]) + "\n" + self.prettyprint(pair[1], indent + "    ") for pair in structure.items()])
         elif structure and type(structure) == list:
-            return indent + "[" + "\n" + ",\n".join([self.prettyprint(item, " " + indent) for item in structure]) + "\n" + indent + "]"
+            return indent + "[" + "\n" + ",\n".join([self.prettyprint(item, "    " + indent) for item in structure]) + "\n" + indent + "]"
         else:
             if structure:
                 return indent + str(structure)
