@@ -35,10 +35,9 @@ if __name__ == "__main__":
 
         ### The full text of the article.
         text = revision.get_text()
-        ### All sentences in the article.
-        #sentenized_text = preprocessor.preprocess(text, lower=True, stopping=False, sentenize=True, tokenize=False)
-        ### All paragraphs and captions in the article.
-        paragraphs_and_captions = revision.get_paragraphs() + revision.get_captions()
+        ### All sentences/paragraphs and captions in the article.
+        #sections = preprocessor.preprocess(text, lower=True, stopping=False, sentenize=True, tokenize=False)
+        sections = revision.get_paragraphs() + revision.get_captions()
         ### All 'References' and 'Further Reading' elements.
         references_and_further_reading = revision.get_references() + revision.get_further_reading()
         ### All dois occurring in 'References' and 'Further Reading'.
@@ -112,7 +111,7 @@ if __name__ == "__main__":
 
             if event.keywords and not event.first_occurrence["all_keywords"]:
                 #iterate over all sections
-                for section in paragraphs_and_captions:
+                for section in sections:
                     #iterate over all event keywords
                     for event_keyword in event.keywords:
                         #break if keyword not in section
