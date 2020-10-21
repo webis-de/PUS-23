@@ -25,92 +25,83 @@ if __name__ == "__main__":
 
     revisions = article.yield_revisions()
 
-    count = 1
-
     revision = next(revisions, None)
 
     start = datetime.now()
     
     while revision:
         
-        print(count)
-        count += 1
+        print(revision.index)
 
-        #sentenized_text = preprocessor.preprocess(revision.get_text(), lower=True, stopping=False, sentenize=True, tokenize=False)
+        ### The full text of the article.
         text = revision.get_text()
+        ### All sentences in the article.
+        #sentenized_text = preprocessor.preprocess(text, lower=True, stopping=False, sentenize=True, tokenize=False)
+        ### All paragraphs and captions in the article.
         paragraphs_and_captions = revision.get_paragraphs() + revision.get_captions()
-        referenced_dois = set(flatten_list_of_lists(revision.get_referenced_dois(revision.get_references())))
-        referenced_titles = set([title.lower() for title in revision.get_referenced_titles("en", revision.get_references())])
+        ### All 'References' and 'Further Reading' elements.
+        references_and_further_reading = revision.get_references() + revision.get_further_reading()
+        ### All dois occurring in 'References' and 'Further Reading'.
+        referenced_dois = set(flatten_list_of_lists(revision.get_referenced_dois(references_and_further_reading)))
+        ### All titles occuring in 'References' and 'Further Reading'.
+        referenced_titles = set([title.lower() for title in revision.get_referenced_titles("en", references_and_further_reading)])
         
         for event in eventlist.events:
 
-            if not event.sampled:
-                continue
-
             #iterate over all event dois
+            event_doi_missing = False
             for event_doi in event.dois:
-                if not event.first_occurrence["dois"][event_doi]:
-                    #add rivision if event doi is referenced
-                    if event_doi in referenced_dois:
+                if event_doi in referenced_dois:
+                    if not event.first_occurrence["dois"][event_doi]:
+                        #add revision if event doi is referenced
                         event.first_occurrence["dois"][event_doi] = occurrence(revision)
-
-            if event.dois and not event.first_occurrence["all_dois"]:
-                #iterate over all event dois
-                for event_doi in event.dois:
-                    #break if event doi not referenced
-                    if event_doi not in referenced_dois:
-                        break
                 else:
-                    #add rivision if all event dois are referenced
+                    event_doi_missing = True
+            if event.dois and not event.first_occurrence["all_dois"]:
+                if not event_doi_missing:
+                    #add revision if all event dois are referenced
                     event.first_occurrence["all_dois"] = occurrence(revision)
 
+            ##############################################################################################
+
             #iterate over all event titles
+            event_title_full_missing = False
+            event_title_processed_missing = False
+            
             for event_title in event.titles:
-                if not event.first_occurrence["titles"][event_title]["full"]:
-                    #add revision if full event title is referenced
-                    if event_title.lower() in referenced_titles:
+                
+                
+                if event_title.lower() in referenced_titles:
+                    if not event.first_occurrence["titles"][event_title]["full"]:
+                        #add revision if full event title is referenced
                         event.first_occurrence["titles"][event_title]["full"] = occurrence(revision)
-                if not event.first_occurrence["titles"][event_title]["processed"]:
-                    #lower, stop and tokenize event title
-                    preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=True, sentenize=False, tokenize=True)[0]
-                    for referenced_title in referenced_titles:
-                        #lower, stop and tokenize referenced title
-                        preprocessed_referenced_title = preprocessor.preprocess(referenced_title, lower=True, stopping=True, sentenize=False, tokenize=True)[0]
-                        match_count = sum([1 if word in preprocessed_referenced_title else 0 for word in preprocessed_event_title])
-                        #add revision if processed event title is partially referenced
-                        if match_count >= len(preprocessed_event_title) * 0.8:
+                else:
+                    event_title_full_missing = True
+                
+                #lower, stop and tokenize event title
+                preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=True, sentenize=False, tokenize=True)[0]
+                for referenced_title in referenced_titles:
+                    #lower, stop and tokenize referenced title
+                    preprocessed_referenced_title = preprocessor.preprocess(referenced_title, lower=True, stopping=True, sentenize=False, tokenize=True)[0]
+                    match_count = sum([1 if word in preprocessed_referenced_title else 0 for word in preprocessed_event_title])
+                    #add revision if processed event title is partially referenced
+                    if match_count >= len(preprocessed_event_title) * 0.8:
+                        if not event.first_occurrence["titles"][event_title]["processed"]:
                             event.first_occurrence["titles"][event_title]["processed"] = occurrence(revision)
-                            break
-
-            if event.titles and not event.first_occurrence["all_titles"]["full"]:
-                #iterate over all event titles
-                for event_title in event.titles:
-                    #break if event title not referenced
-                    if event_title.lower() not in referenced_titles:
                         break
                 else:
-                    #add rivision if all event titles are referenced
-                    event.first_occurrence["all_titles"]["full"] = occurrence(revision)
+                    event_title_processed_missing = True
 
-            if event.titles and not event.first_occurrence["all_titles"]["processed"]:
-                #iterate over all event titles
-                for event_title in event.titles:
-                    #lower, stop and tokenize event title
-                    preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=True, sentenize=False, tokenize=True)[0]
-                    #iterate over all referenced titles
-                    for referenced_title in referenced_titles:
-                        #lower, stop and tokenize referenced title
-                        preprocessed_referenced_title = preprocessor.preprocess(referenced_title, lower=True, stopping=True, sentenize=False, tokenize=True)[0]
-                        #break if 80% of words in preprocessed event title occur in preprocessed referenced title
-                        match_count = sum([1 if word in preprocessed_referenced_title else 0 for word in preprocessed_event_title])
-                        if match_count >= len(preprocessed_event_title) * 0.8:
-                            break
-                    else:
-                        #event title does not occur in referenced titles
-                        break
-                else:
-                    #add revision if all titles occur
-                    event.first_occurrence["all_titles"]["processed"] = occurrence(revision)
+            if event.titles:
+                if not event.first_occurrence["all_titles"]["full"]:
+                    if not event_title_full_missing:
+                        event.first_occurrence["all_titles"]["full"] = occurrence(revision)
+
+                if not event.first_occurrence["all_titles"]["processed"]:
+                    if not event_title_processed_missing:
+                        event.first_occurrence["all_titles"]["processed"] = occurrence(revision)
+
+            ##############################################################################################
 
             #iterate over all event keywords
             for event_keyword in event.keywords:
@@ -138,5 +129,5 @@ if __name__ == "__main__":
 
     print(end - start)
 
-    with open("article_extraction_2.txt", "w") as file:
+    with open("article_extraction_4.txt", "w") as file:
         file.write(("\n"+"-"*50+"\n").join([str(event) for event in eventlist.events]))
