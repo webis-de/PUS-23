@@ -19,8 +19,8 @@ class Event:
         self.bib_keys = [bibliography.bibentries.get(paper) for paper in split("; *", bib_keys.strip()) if paper]
         self.comment = comment
         self.authors = [[self.replace_braces(person.last_names[0]) for person in paper.persons.get("author")] for paper in self.bib_keys]
-        self.dois = [paper.fields.get("doi") for paper in self.bib_keys]
-        self.titles = [self.replace_braces(paper.fields.get("title")) for paper in self.bib_keys]
+        self.dois = [paper.fields.get("doi") for paper in self.bib_keys if paper.fields.get("doi")]
+        self.titles = [self.replace_braces(paper.fields.get("title")) for paper in self.bib_keys if self.replace_braces(paper.fields.get("title"))]
         self.keywords = [keyword.replace("\"", "") for keyword in split("; *", keywords) if keyword.strip()]
         self.first_occurrence = {"dois":{}, "all_dois":None, "titles":{}, "all_titles":{"full":None, "processed":None}, "keywords":{}, "all_keywords":None}
         for doi in self.dois:
