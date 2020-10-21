@@ -44,6 +44,9 @@ if __name__ == "__main__":
         
         for event in eventlist.events:
 
+            if not event.sampled:
+                continue
+
             #iterate over all event dois
             for event_doi in event.dois:
                 if not event.first_occurrence["dois"][event_doi]:
@@ -100,7 +103,7 @@ if __name__ == "__main__":
                         preprocessed_referenced_title = preprocessor.preprocess(referenced_title, lower=True, stopping=True, sentenize=False, tokenize=True)[0]
                         #break if 80% of words in preprocessed event title occur in preprocessed referenced title
                         match_count = sum([1 if word in preprocessed_referenced_title else 0 for word in preprocessed_event_title])
-                        if match_count >= len(event_title) * 0.8:
+                        if match_count >= len(preprocessed_event_title) * 0.8:
                             break
                     else:
                         #event title does not occur in referenced titles
@@ -135,5 +138,5 @@ if __name__ == "__main__":
 
     print(end - start)
 
-    with open("article_extraction.txt", "w") as file:
+    with open("article_extraction_2.txt", "w") as file:
         file.write(("\n"+"-"*50+"\n").join([str(event) for event in eventlist.events]))
