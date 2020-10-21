@@ -21,7 +21,7 @@ def process(data):
     sections = data[2]
     referenced_dois = data[3]
     referenced_titles = data[4]
-    revision = data[5]
+    occurrence = data[5]
 
     #iterate over all event dois
     event_doi_missing = False
@@ -29,13 +29,13 @@ def process(data):
         if event_doi in referenced_dois:
             if not event.first_occurrence["dois"][event_doi]:
                 #add revision if event doi is referenced
-                event.first_occurrence["dois"][event_doi] = occurrence(revision)
+                event.first_occurrence["dois"][event_doi] = occurrence
         else:
             event_doi_missing = True
     if event.dois and not event.first_occurrence["all_dois"]:
         if not event_doi_missing:
             #add revision if all event dois are referenced
-            event.first_occurrence["all_dois"] = occurrence(revision)
+            event.first_occurrence["all_dois"] = occurrence
 
     ##############################################################################################
 
@@ -49,7 +49,7 @@ def process(data):
         if event_title.lower() in referenced_titles:
             if not event.first_occurrence["titles"][event_title]["full"]:
                 #add revision if full event title is referenced
-                event.first_occurrence["titles"][event_title]["full"] = occurrence(revision)
+                event.first_occurrence["titles"][event_title]["full"] = occurrence
         else:
             event_title_full_missing = True
         
@@ -62,7 +62,7 @@ def process(data):
             #add revision if processed event title is partially referenced
             if match_count >= len(preprocessed_event_title) * 0.8:
                 if not event.first_occurrence["titles"][event_title]["processed"]:
-                    event.first_occurrence["titles"][event_title]["processed"] = occurrence(revision)
+                    event.first_occurrence["titles"][event_title]["processed"] = occurrence
                 break
         else:
             event_title_processed_missing = True
@@ -70,11 +70,11 @@ def process(data):
     if event.titles:
         if not event.first_occurrence["all_titles"]["full"]:
             if not event_title_full_missing:
-                event.first_occurrence["all_titles"]["full"] = occurrence(revision)
+                event.first_occurrence["all_titles"]["full"] = occurrence
 
         if not event.first_occurrence["all_titles"]["processed"]:
             if not event_title_processed_missing:
-                event.first_occurrence["all_titles"]["processed"] = occurrence(revision)
+                event.first_occurrence["all_titles"]["processed"] = occurrence
 
     ##############################################################################################
 
@@ -83,7 +83,7 @@ def process(data):
         if not event.first_occurrence["keywords"][event_keyword]:
             #add revision if keyword occur in text
             if match(event_keyword, text):
-                event.first_occurrence["keywords"][event_keyword] = occurrence(revision)
+                event.first_occurrence["keywords"][event_keyword] = occurrence
 
     if event.keywords and not event.first_occurrence["all_keywords"]:
         #iterate over all sections
@@ -91,11 +91,11 @@ def process(data):
             #iterate over all event keywords
             for event_keyword in event.keywords:
                 #break if keyword not in section
-                if not match(event_keyword, section.text()):
+                if not match(event_keyword, section):
                     break
             else:
                 #add revision if all keywords occur in section
-                event.first_occurrence["all_keywords"] = occurrence(revision)
+                event.first_occurrence["all_keywords"] = occurrence
                 break
 
     return event
@@ -124,7 +124,7 @@ if __name__ == "__main__":
         text = revision.get_text()
         ### All sentences/paragraphs and captions in the article.
         #sections = preprocessor.preprocess(text, lower=True, stopping=False, sentenize=True, tokenize=False)
-        sections = revision.get_paragraphs() + revision.get_captions()
+        sections = [section.text() for section in (revision.get_paragraphs() + revision.get_captions())]
         ### All 'References' and 'Further Reading' elements.
         references_and_further_reading = revision.get_references() + revision.get_further_reading()
         ### All dois occurring in 'References' and 'Further Reading'.
@@ -133,7 +133,7 @@ if __name__ == "__main__":
         referenced_titles = set([title.lower() for title in revision.get_referenced_titles("en", references_and_further_reading)])
         
         with Pool(4) as pool:
-            eventlist.events = pool.map(process, [(event, text, sections, referenced_dois, referenced_titles, revision) for event in eventlist.events])
+            eventlist.events = pool.map(process, [(event, text, sections, referenced_dois, referenced_titles, occurrence(revision)) for event in eventlist.events])
                      
         revision = next(revisions, None)
 
