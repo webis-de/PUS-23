@@ -4,7 +4,7 @@ from entity.accountlist import AccountList
 from entity.bibliography import Bibliography
 from utility.utils import flatten_list_of_lists
 from preprocessor.preprocessor import Preprocessor
-from re import match
+from re import search
 from datetime import datetime
 
 ##################################################################
@@ -106,7 +106,7 @@ if __name__ == "__main__":
             for event_keyword in event.keywords:
                 if not event.first_occurrence["keywords"][event_keyword]:
                     #add revision if keyword occur in text
-                    if match(event_keyword, text):
+                    if search(event_keyword, text):
                         event.first_occurrence["keywords"][event_keyword] = occurrence(revision)
 
             if event.keywords and not event.first_occurrence["all_keywords"]:
@@ -115,7 +115,7 @@ if __name__ == "__main__":
                     #iterate over all event keywords
                     for event_keyword in event.keywords:
                         #break if keyword not in section
-                        if not match(event_keyword, section.text()):
+                        if not search(event_keyword, section.text()):
                             break
                     else:
                         #add revision if all keywords occur in section
@@ -128,5 +128,5 @@ if __name__ == "__main__":
 
     print(end - start)
 
-    with open("article_extraction_4.txt", "w") as file:
+    with open("article_extraction.txt", "w") as file:
         file.write(("\n"+"-"*50+"\n").join([str(event) for event in eventlist.events]))

@@ -5,7 +5,7 @@ from entity.bibliography import Bibliography
 from utility.utils import flatten_list_of_lists
 from preprocessor.preprocessor import Preprocessor
 from multiprocessing import Pool
-from re import match
+from re import search
 from datetime import datetime
 
 ##################################################################
@@ -82,7 +82,7 @@ def process(data):
     for event_keyword in event.keywords:
         if not event.first_occurrence["keywords"][event_keyword]:
             #add revision if keyword occur in text
-            if match(event_keyword, text):
+            if search(event_keyword, text):
                 event.first_occurrence["keywords"][event_keyword] = occurrence
 
     if event.keywords and not event.first_occurrence["all_keywords"]:
@@ -91,7 +91,7 @@ def process(data):
             #iterate over all event keywords
             for event_keyword in event.keywords:
                 #break if keyword not in section
-                if not match(event_keyword, section):
+                if not search(event_keyword, section):
                     break
             else:
                 #add revision if all keywords occur in section
@@ -131,9 +131,11 @@ if __name__ == "__main__":
         referenced_dois = set(flatten_list_of_lists(revision.get_referenced_dois(references_and_further_reading)))
         ### All titles occuring in 'References' and 'Further Reading'.
         referenced_titles = set([title.lower() for title in revision.get_referenced_titles("en", references_and_further_reading)])
+        ### Format occurrence
+        occ = occurrence(revision)
         
         with Pool(4) as pool:
-            eventlist.events = pool.map(process, [(event, text, sections, referenced_dois, referenced_titles, occurrence(revision)) for event in eventlist.events])
+            eventlist.events = pool.map(process, [(event, text, sections, referenced_dois, referenced_titles, occ) for event in eventlist.events])
                      
         revision = next(revisions, None)
 
@@ -141,5 +143,5 @@ if __name__ == "__main__":
 
     print(end - start)
 
-    with open("article_extraction_5.txt", "w") as file:
+    with open("article_extraction.txt", "w") as file:
         file.write(("\n"+"-"*50+"\n").join([str(event) for event in eventlist.events]))
