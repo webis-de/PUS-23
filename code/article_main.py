@@ -38,6 +38,13 @@ def process(data):
                 event.first_occurrence["dois"][event_doi] = occurrence
         else:
             event_doi_missing = True
+
+        #iterate over all authors of event_doi:
+        for author in event.first_occurrence["authors"][event_doi]:
+            if not event.first_occurrence["authors"][event_doi][author]:
+                if author in text:
+                    event.first_occurrence["authors"][event_doi][author] = occurrence
+                    
     if event.dois and not event.first_occurrence["all_dois"]:
         if not event_doi_missing:
             #add revision if all event dois are referenced
