@@ -70,6 +70,7 @@ class Scraper:
         Returns:
             Last batch of revisions scraped.
         """
+        revisions = []
         self.logger.start_check("Scraping " + self.title + " (" + self.language + ").")
         if exists(directory + sep + self.filename):
             self.get_rvstartid(directory + sep + self.filename)
