@@ -13,6 +13,9 @@ This repository contains information and code concerning Science Analytics Wikip
 ##### Manuscript_STHV (Arno)
 - https://docs.google.com/document/d/1KOKK47m_EJqCqUsBGf9ZDlUKeSqTjJbd6yIgCjuS1K8
 
+### files
+- https://files.webis.de/wikipedia-tracing-innovations/
+
 ### cvs
 
 - proposals-in-progress/BMBF-indikatorik-19-today
@@ -29,9 +32,14 @@ This repository contains information and code concerning Science Analytics Wikip
 - bibliography_marion.bib: bibliography related to Crispr Cas (BibTex) as compiled by Marion
 - wikipedia_articles.json: relevant Wikipedia article titles as compiled by Arno
 
-### extractions
+### articles
 
 - default directory for extractions
+- on gitignore
+
+## analysis
+
+- default directory for article analyis runs
 - on gitignore
 
 ### results
