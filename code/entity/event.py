@@ -10,7 +10,7 @@ class Event:
         self.event_day = self.parse_int(event_day)
         self.event_date = self.get_event_date()
         self.account = accountlist.get_account(account_id)
-        self.sampled = sampled
+        self.sampled = bool(sampled.strip())
         self.event_text = event_text
         self.type = type
         self.subtype = subtype
@@ -68,6 +68,15 @@ class Event:
         del copy["keywords"]
         del copy["sampled"]
         return self.prettyprint(copy)
+
+    def json(self):
+        copy = self.__dict__.copy()
+        copy["account"] = self.account.__dict__
+        copy["bib_keys"] = {paper.key:{"fields":paper.fields._dict,"persons":paper.persons._dict} for paper in self.bib_keys}
+        for bib_key in copy["bib_keys"]:
+            for role in copy["bib_keys"][bib_key]["persons"]:
+                copy["bib_keys"][bib_key]["persons"][role] = [person.__dict__ for person in copy["bib_keys"][bib_key]["persons"][role]]
+        return copy
 
     def prettyprint(self, structure, indent = ""):
         if structure and type(structure) == dict:

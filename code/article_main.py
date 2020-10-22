@@ -3,10 +3,16 @@ from entity.eventlist import EventList
 from entity.accountlist import AccountList
 from entity.bibliography import Bibliography
 from utility.utils import flatten_list_of_lists
+from utility.logger import Logger
 from preprocessor.preprocessor import Preprocessor
 from multiprocessing import Pool
 from re import search
 from datetime import datetime
+from argparse import ArgumentParser
+from os.path import sep, exists
+from os import makedirs
+from json import load, dump
+from urllib.parse import quote, unquote
 
 ##################################################################
 # This file serves as an entry point to test the entire pipeline.#
@@ -19,9 +25,9 @@ def process(data):
     event = data[0]
     text = data[1]
     sections = data[2]
-    #referenced_dois = data[3]
     referenced_titles = data[3]
     occurrence = data[4]
+    preprocessor = data[5]
 
     #iterate over all event dois
     event_doi_missing = False
@@ -103,45 +109,73 @@ def process(data):
 
 if __name__ == "__main__":
 
-    language = "en"
-    article = Article("../articles/CRISPR_" + language)
-    bibliography = Bibliography("../data/tracing-innovations-lit.bib")
-    accountlist = AccountList("../data/CRISPR_events - accounts.csv")
-    eventlist = EventList("../data/CRISPR_events - events.csv", bibliography, accountlist)
+    argument_parser = ArgumentParser()
+
+    argument_parser.add_argument("-i", "--input_dir", default="../articles")
+    argument_parser.add_argument("-o", "--output_dir", default="../analysis")
+    argument_parser.add_argument("-art", "--articles", default="../data/wikipedia_articles.json")
+    argument_parser.add_argument("-lang", "--language", default="en")
+    args = vars(argument_parser.parse_args())
+
+    input_directory = args["input_dir"]
+    output_directory = args["output_dir"]
+    if not exists(output_directory):
+        makedirs(output_directory)
+    with open(args["articles"]) as file:
+        wikipedia_articles = flatten_list_of_lists(load(file).values())
+    language = args["language"]
+
     preprocessor = Preprocessor(language)
+    logger = Logger("../analysis")
 
-    revisions = article.yield_revisions()
+    logger.start("Analysing articles " + ", ".join(wikipedia_articles))
 
-    revision = next(revisions, None)
+    for wikipedia_article in wikipedia_articles:
 
-    start = datetime.now()
-    
-    while revision:
+        logger.start_check(wikipedia_article)
         
-        print(revision.index)
+        filename = quote(wikipedia_article.replace(" ","_"), safe="")
+        article = Article(input_directory + sep + filename + "_" + language)
+        bibliography = Bibliography("../data/tracing-innovations-lit.bib")
+        accountlist = AccountList("../data/CRISPR_events - accounts.csv")
+        eventlist = EventList("../data/CRISPR_events - events.csv", bibliography, accountlist)
 
-        ### The full text of the article.
-        text = revision.get_text()
-        ### All sentences/paragraphs and captions in the article.
-        #sections = preprocessor.preprocess(text, lower=True, stopping=False, sentenize=True, tokenize=False)
-        sections = [section.text() for section in (revision.get_paragraphs() + revision.get_captions())]
-        ### All 'References' and 'Further Reading' elements.
-        references_and_further_reading = revision.get_references() + revision.get_further_reading()
-        ### All dois occurring in 'References' and 'Further Reading'.
-        #referenced_dois = set(flatten_list_of_lists(revision.get_referenced_dois(references_and_further_reading)))
-        ### All titles occuring in 'References' and 'Further Reading'.
-        referenced_titles = set([title.lower() for title in revision.get_referenced_titles("en", references_and_further_reading)])
-        ### Format occurrence
-        occ = occurrence(revision)
-        
-        with Pool(4) as pool:
-            eventlist.events = pool.map(process, [(event, text, sections, referenced_titles, occ) for event in eventlist.events])
-                     
+        revisions = article.yield_revisions()
+
         revision = next(revisions, None)
 
-    end = datetime.now()
+        start = datetime.now()
+        
+        while revision:
+            
+            print(revision.index)
 
-    print(end - start)
+            ### The full text of the article.
+            text = revision.get_text()
+            ### All sentences/paragraphs and captions in the article.
+            #sections = preprocessor.preprocess(text, lower=True, stopping=False, sentenize=True, tokenize=False)
+            sections = [section.text() for section in (revision.get_paragraphs() + revision.get_captions())]
+            ### All 'References' and 'Further Reading' elements.
+            references_and_further_reading = revision.get_references() + revision.get_further_reading()
+            ### All titles occuring in 'References' and 'Further Reading'.
+            referenced_titles = set([title.lower() for title in revision.get_referenced_titles("en", references_and_further_reading)])
+            ### Format occurrence
+            formatted_occurence = occurrence(revision)
+            
+            with Pool(4) as pool:
+                eventlist.events = pool.map(process, [(event, text, sections, referenced_titles, formatted_occurence, preprocessor) for event in eventlist.events])
+                         
+            revision = next(revisions, None)
 
-    with open("article_extraction_1.txt", "w") as file:
-        file.write(("\n"+"-"*50+"\n").join([str(event) for event in eventlist.events]))
+        end = datetime.now()
+
+        logger.end_check(end - start)
+
+        with open(output_directory + sep + filename + "_" + language + "." + "txt", "w") as file:
+            file.write(("\n"+"-"*50+"\n").join([str(event) for event in eventlist.events]))
+        with open(output_directory + sep + filename + "_" + language + "." + "json", "w") as file:
+            for event in eventlist.events:
+                dump(event.json(), file)
+                file.write("\n")
+
+    logger.close()
