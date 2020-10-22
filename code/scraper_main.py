@@ -29,6 +29,11 @@ if __name__ == "__main__":
     NUMBER = float("inf")
 
     """
+    Select the language, either 'en' or 'de'.
+    """
+    LANGUAGE = "en"
+
+    """
     Select articles you want to scrape. For test purposes, use the second list,
     which contains small articles of a few kilobyte each (including HTML).
     """
@@ -36,6 +41,6 @@ if __name__ == "__main__":
     ARTICLES = ["CRISPR"]
     with Logger(DIRECTORY) as logger:
         for article in ARTICLES:
-            with Scraper(logger, article, "de") as scraper:
+            with Scraper(logger, article, LANGUAGE) as scraper:
                 scraper.scrape(directory = DIRECTORY,
                                number = NUMBER)
