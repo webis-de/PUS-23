@@ -5,6 +5,7 @@ from json import dumps, loads
 from os.path import exists, sep
 from os import makedirs
 from multiprocessing import Pool
+from urllib.parse import quote, unquote
 
 class Scraper:
     """
@@ -38,9 +39,9 @@ class Scraper:
             language: The language of the Wikipedia page to scrape.
         """
         self.logger = logger
-        self.title = title
+        self.title = title.replace(" ", "_")
         self.language= language
-        self.filename = self.title.replace("/","-") + "_" + self.language
+        self.filename = quote(self.title, safe="") + "_" + self.language
         self.api_url = "https://" + language + ".wikipedia.org/w/api.php"
         self.page_id = list(get(self.api_url, {"format":"json","action":"query","titles":title}).json()["query"]["pages"].keys())[0]
         self.article_url = "https://" + language + ".wikipedia.org/w/index.php?title=" + title
