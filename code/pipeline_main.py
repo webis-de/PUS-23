@@ -25,11 +25,11 @@ if __name__ == "__main__":
 
     #read revisions from wikipedia revision history (scrape CRISPR article if not present)
     try:
-        article = Article(".." + sep + "extractions" + sep + "CRISPR_en")
+        article = Article(".." + sep + "articles" + sep + "CRISPR_en")
     except FileNotFoundError:
         with Scraper(Logger(), "CRISPR", "en") as scraper:
-            scraper.scrape(".." + sep + "extractions", False)
-        article = Article(".." + sep + "extractions" + sep + "CRISPR_en")
+            scraper.scrape(".." + sep + "articles", False)
+        article = Article(".." + sep + "articles" + sep + "CRISPR_en")
     article.plot_revision_distribution_to_file(output_directory)
 
     #extract tracks of field values for each bibentry in bibliography from article

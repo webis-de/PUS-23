@@ -23,7 +23,7 @@ if __name__ == "__main__":
         #Open scraped article and get random revision.
         random_index = randint(0,2023)
         line = 0
-        with open("../extractions/CRISPR_" + LANGUAGE) as article:
+        with open("../articles/CRISPR_" + LANGUAGE) as article:
             while line < random_index:
                 article.readline()
                 line += 1
