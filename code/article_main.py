@@ -26,8 +26,9 @@ def process(data):
     text = data[1]
     sections = data[2]
     referenced_titles = data[3]
-    occurrence = data[4]
-    preprocessor = data[5]
+    referenced_authors = data[4]
+    occurrence = data[5]
+    preprocessor = data[6]
 
     #iterate over all event dois
     event_doi_missing = False
@@ -40,10 +41,12 @@ def process(data):
             event_doi_missing = True
 
         #iterate over all authors of event_doi:
-        for author in event.first_occurrence["authors"][event_doi]:
-            if not event.first_occurrence["authors"][event_doi][author]:
-                if author in text:
-                    event.first_occurrence["authors"][event_doi][author] = occurrence
+        for event_author in event.first_occurrence["authors"][event_doi]:
+            if not event.first_occurrence["authors"][event_doi][event_author]:
+                for referenced_author in referenced_authors:
+                    if event_author in referenced_author:
+                        event.first_occurrence["authors"][event_doi][event_author] = occurrence
+                        break
                     
     if event.dois and not event.first_occurrence["all_dois"]:
         if not event_doi_missing:
@@ -165,12 +168,14 @@ if __name__ == "__main__":
             ### All 'References' and 'Further Reading' elements.
             references_and_further_reading = revision.get_references() + revision.get_further_reading()
             ### All titles occuring in 'References' and 'Further Reading'.
-            referenced_titles = set([title.lower() for title in revision.get_referenced_titles("en", references_and_further_reading)])
+            referenced_titles = set([title.lower() for title in revision.get_referenced_titles(language, references_and_further_reading)])
+            ### All authors occuring in 'References' and 'Further Reading'.
+            referenced_authors = set([author[0] for author in flatten_list_of_lists(revision.get_referenced_authors(language, references_and_further_reading))])
             ### Format occurrence
             formatted_occurence = occurrence(revision)
             
             with Pool(4) as pool:
-                eventlist.events = pool.map(process, [(event, text, sections, referenced_titles, formatted_occurence, preprocessor) for event in eventlist.events])
+                eventlist.events = pool.map(process, [(event, text, sections, referenced_titles, referenced_authors, formatted_occurence, preprocessor) for event in eventlist.events])
                          
             revision = next(revisions, None)
 
