@@ -26,22 +26,26 @@ def revisions_checksum(revisions):
         sha256_hash.update(str(revision.__dict__).encode("utf-8"))
     return sha256_hash.hexdigest()
 
-def mock_save(r, d):
-    pass
+def mock_save(directory, revision):
+    directory += [revision]
+
+def mock_delay():
+    return 0
 
 def sorted_dictionary(dictionary):
     return {key:dictionary[key] for key in sorted(list(dictionary.keys()))}
 
 def test_single_scrape(logger):
-    DIRECTORY = TEST_DIRECTORY + sep + "test_single_scrape"
-    FILEPATH = DIRECTORY + sep + FILENAME
     logger.start("Testing single scrape")
 
     #scrape first five revisions
     logger.start_check("Singlescraping...")
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
         scraper.save = mock_save
-        revisions = [Revision(**revision) for revision in scraper.scrape(DIRECTORY, number=5)]
+        scraper.deley = mock_delay
+        revisions = []
+        scraper.scrape(revisions, number=5)
+        revisions = [Revision(**revision) for revision in revisions]
 
         #assert attributes of first revision
         assert revisions[0].revid == 69137443
@@ -49,6 +53,7 @@ def test_single_scrape(logger):
         assert "Cas-Komplexes in Einzelteile zerlegt" in revisions[0].get_text()
         assert revisions[0].user == "Tinz"
         assert revisions[0].timestamp == '2010-01-11T02:11:54Z'
+        assert revisions[0].index == 0
 
         #assert attributes of fifth revision
         assert revisions[4].revid == 71287221
@@ -56,19 +61,12 @@ def test_single_scrape(logger):
         assert "Cas-Komplexes (Cascade) in Einzelteile zerlegt" in revisions[4].get_text()
         assert revisions[4].user == "Hydro"
         assert revisions[4].timestamp == '2010-03-01T09:04:35Z'
+        assert revisions[4].index == 4
 
     logger.stop("Single scrape test successful.", 1)
 
 def test_multi_scrape(logger):
-    DIRECTORY = TEST_DIRECTORY + sep + "test_multi_scrape"
-
-    #ARTICLE CHECKSUMS WITHOUT HTML
-    ARTICLES = {"CRISPR":"ec49dd32946f736efdf7d3db050eb53a0178d1dc0a8c7ed3bf8db3766d57a1cc",
-                "CRISPR gene editing":"bdca90e56f4b0ad1e4d499c7ffb62d71527397801fb57d2a0c55565131515ad4",
-                "Cas9":"73b570cf10160b610220bc335c11a1e9a634a282e6a2b724be65e2aba6491f07",
-                "Trans-activating crRNA":"020206c191da8b5aca210b8dcb8eea960fb9199ebc6046592cfef68c81398594",
-                "CRISPR/Cpf1":"f8797c9fb37ae10898a62b729b69cd2ca91ed5229c0e954598a896d0ea1e8a67"}
-    #ARTICLE CHECKSUMS WITH HTML
+    #ARTICLE CHECKSUMS
     ARTICLES = {"CRISPR":"3b3b515988600fbddcd3a3d7b6a797da5dbe9381dd438d471ab2d86ad3bb0633",
                 "CRISPR gene editing":"8e349f28a0e158c28d395ceb8c1beaf94b133e3686a25c366e6009e47f552661",
                 "Cas9":"fec5eeab10e0f58be1d4460dd972783e7167652683175d5e3f50e4816a22fc83",
@@ -80,7 +78,10 @@ def test_multi_scrape(logger):
     for article in ARTICLES:
         with Scraper(logger = LOGGER, title = article, language = "en") as scraper:
             scraper.save = mock_save
-            revisions = [Revision(**revision) for revision in scraper.scrape(DIRECTORY, number=5)]
+            scraper.delay = mock_delay
+            revisions = []
+            scraper.scrape(revisions, number=5)
+            revisions = [Revision(**revision) for revision in revisions]
             checksum = revisions_checksum(revisions)
             assert checksum == ARTICLES[article]
     logger.stop("Multiscraping test successful.", 1)
@@ -97,32 +98,48 @@ def test_full_and_updated_scrape(logger):
     #scrape article in full
     logger.start_check("Singlescraping (full)...")
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
-        scraper.scrape(DIRECTORY)
+        scraper.delay = mock_delay
+        scraper.scrape(DIRECTORY, number=3)
         number_of_full_scraped_revisions = scraper.revision_count
-    full_scrape_checksum = file_checksum(FILEPATH)
+    full_scrape_file_checksum = file_checksum(FILEPATH)
+    full_article = Article(FILEPATH)
+    full_article.get_revisions()
+    full_article_revisions_checksum = revisions_checksum(full_article.revisions)
+    assert full_article.revisions[0].index == 0
+    assert full_article.revisions[1].index == 1
+    assert full_article.revisions[2].index == 2
     remove(FILEPATH)
     logger.end_check("Done.")
 
     #scrape first five revisions
     logger.start_check("Singlescraping (update)...")
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
-        scraper.scrape(DIRECTORY, number=5)
+        scraper.delay = mock_delay
+        scraper.scrape(DIRECTORY, number=1)
     #scrape remaining revisions
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
-        scraper.scrape(DIRECTORY)
+        scraper.delay = mock_delay
+        scraper.scrape(DIRECTORY, number=3)
         number_of_updated_scraped_revisions = scraper.revision_count
-    update_scrape_checksum = file_checksum(FILEPATH)
+    update_scrape_file_checksum = file_checksum(FILEPATH)
+    update_article = Article(FILEPATH)
+    update_article.get_revisions()
+    update_scrape_revisions_checksum = revisions_checksum(update_article.revisions)
+    assert update_article.revisions[0].index == 0
+    assert update_article.revisions[1].index == 1
+    assert update_article.revisions[2].index == 2
     logger.end_check("Done.")
 
     #assert full and updated scrape match
-    assert full_scrape_checksum == update_scrape_checksum
+    assert full_scrape_file_checksum == update_scrape_file_checksum
+    assert full_article_revisions_checksum == update_scrape_revisions_checksum
     assert number_of_full_scraped_revisions == number_of_updated_scraped_revisions
 
     rmtree(DIRECTORY)
 
     logger.stop("Full and updated scrape test successful.", 1)
 
-def test_pipeline(logger):
+def test_pipeline(logger): #deprecated
     DIRECTORY = TEST_DIRECTORY + sep + "test_pipeline"
 
     assert not exists(DIRECTORY)
@@ -163,7 +180,6 @@ def test_pipeline(logger):
 if __name__ == "__main__":     
     
     with Logger(TEST_DIRECTORY) as LOGGER:
-        test_single_scrape(LOGGER)
-        test_multi_scrape(LOGGER)
+##        test_single_scrape(LOGGER)
+##        test_multi_scrape(LOGGER)
         test_full_and_updated_scrape(LOGGER)
-        test_pipeline(LOGGER)
