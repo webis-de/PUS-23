@@ -31,6 +31,7 @@ class Scraper:
         revision_count: The number of revisions extracted by this Scraper.
         updating: Flag for update mode.
         update_count: Number of revisions scraped if updating.
+        before_deadline: Flag for deadline.
     """
     def __init__(self, logger, title, language):
         """
@@ -55,6 +56,7 @@ class Scraper:
         self.revision_count = 0
         self.updating = False
         self.update_count = 0
+        self.before_deadline = True
 
     def __enter__(self):
         """Makes the API autoclosable."""
@@ -80,7 +82,7 @@ class Scraper:
             self.updating = True
         else:
             self.collect_revisions(directory, deadline, number) 
-        while self.rvcontinue and self.revision_count < number:
+        while self.rvcontinue and self.revision_count < number and self.before_deadline:
             self.collect_revisions(directory, deadline, number)
 
         if self.updating: self.logger.log("Number of updates: " + str(self.update_count))
@@ -124,8 +126,11 @@ class Scraper:
         response_json = response.json()
         sleep(self.delay())
         for revision in response_json["query"]["pages"][self.page_id]["revisions"]:
-            if self.revision_count >= number: break
-            if not self.before(revision["timestamp"], deadline): break
+            if self.revision_count >= number:
+                break
+            if not self.before(revision["timestamp"], deadline):
+                self.before_deadline = False
+                break
             revision_url = self.article_url + "&oldid=" + str(revision["revid"])
             self.save(directory,
                       {"revid":revision["revid"],
