@@ -7,6 +7,7 @@ from os import makedirs
 from urllib.parse import quote, unquote
 from time import sleep
 from random import randint, random
+from datetime import datetime
 
 class Scraper:
     """
@@ -62,24 +63,25 @@ class Scraper:
     def __exit__(self, type, value, traceback):
         pass
 
-    def scrape(self, directory, number = float("inf")):
+    def scrape(self, directory, deadline, number = float("inf")):
         """
         Scrape revisions from Wikipedia page.
         Revisions are scraped in batches of a maximum of 50 at a time.
 
         Args:
             directory: The directory to which the scraped revisions are saved.
+            deadline: The deadline before which collections are collected. Use 'YYYY-MM-DD'.
             number: Number of revisions to scrape.
         """
         revisions = []
-        self.logger.start("Scraping " + self.title + " (" + self.language + ").")
+        self.logger.start("Scraping revisions of " + self.title + " (" + self.language + ") before " + deadline + ".")
         if exists(str(directory) + sep + self.filename):
             self.get_rvstartid(directory + sep + self.filename)
             self.updating = True
         else:
-            self.collect_revisions(directory, number) 
+            self.collect_revisions(directory, deadline, number) 
         while self.rvcontinue and self.revision_count < number:
-            self.collect_revisions(directory, number)
+            self.collect_revisions(directory, deadline, number)
 
         if self.updating: self.logger.log("Number of updates: " + str(self.update_count))
         self.logger.stop("Done. Number of revisions: " + str(self.revision_count))
@@ -107,13 +109,14 @@ class Scraper:
         if self.rvcontinue:
             self.parameters["rvstartid"] = self.rvcontinue.split("|")[1]
 
-    def collect_revisions(self, directory, number):
+    def collect_revisions(self, directory, deadline, number):
         """
         Collect all revisions for the Wikipedia article.
         Revisions are scraped in batches of a maximum of 50 at a time.
 
         Args:
             directory: The directory to which the scraped revisions are saved.
+            deadline: The deadline before which collections are collected. Use 'YYYY-MM-DD'.
             number: Number of revisions to scrape.
         """
         response = GET(self.api_url, params=self.parameters, headers=self.headers)
@@ -122,6 +125,7 @@ class Scraper:
         sleep(self.delay())
         for revision in response_json["query"]["pages"][self.page_id]["revisions"]:
             if self.revision_count >= number: break
+            if not self.before(revision["timestamp"], deadline): break
             revision_url = self.article_url + "&oldid=" + str(revision["revid"])
             self.save(directory,
                       {"revid":revision["revid"],
@@ -141,10 +145,7 @@ class Scraper:
                 self.logger.end_check(self.revision_count)
             else:
                 print(self.revision_count)
-            
-        
-        
-        
+
         self.rvcontinue = response_json.get("continue",{}).get("rvcontinue",None)
         if self.rvcontinue:
             self.parameters["rvstartid"] = self.rvcontinue.split("|")[1]
@@ -202,4 +203,33 @@ class Scraper:
         if not exists(directory): makedirs(directory)
         with open(directory + sep + self.filename, "a") as output_file:
             output_file.write(dumps(revision) + "\n")
+
+    def before(self, timestamp, deadline):
+        """
+        Determine whether timestamp is before a given deadline.
+        Use string with format 'YYYY-MM-DD'.
+
+        Return:
+            True if timestamp is before deadline, else False.
+        """
+        timestamp = datetime.strptime(timestamp,"%Y-%m-%dT%H:%M:%SZ")
+        deadline = datetime.strptime(deadline,"%Y-%m-%d")
+        if timestamp.year < deadline.year:
+            return True
+        else:
+            if timestamp.year == deadline.year:
+                if timestamp.month < deadline.month:
+                    return True
+                else:
+                    if timestamp.month == deadline.month:
+                        if timestamp.day < deadline.day:
+                            return True
+                        else:
+                            return False
+                    else:
+                        return False
+            else:
+                return False
+                        
+        
 

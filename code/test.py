@@ -37,6 +37,7 @@ def test_single_scrape(logger):
     logger.start("Testing single scrape")
 
     LANGUAGE = "de"
+    DEADLINE = "2010-03-02"
 
     #scrape first five revisions
     logger.start_check("Singlescraping...")
@@ -44,7 +45,7 @@ def test_single_scrape(logger):
         scraper.save = mock_save
         scraper.delay = mock_delay
         revisions = []
-        scraper.scrape(revisions, number=5)
+        scraper.scrape(revisions, DEADLINE)
         revisions = [Revision(**revision) for revision in revisions]
 
         #assert attributes of first revision
@@ -56,17 +57,18 @@ def test_single_scrape(logger):
         assert revisions[0].index == 0
 
         #assert attributes of fifth revision
-        assert revisions[4].revid == 71287221
-        assert revisions[4].parentid == 70862725
+        assert revisions[-1].revid == 71287221
+        assert revisions[-1].parentid == 70862725
         assert "Cas-Komplexes (Cascade) in Einzelteile zerlegt" in revisions[4].get_text()
-        assert revisions[4].user == "Hydro"
-        assert revisions[4].timestamp == '2010-03-01T09:04:35Z'
-        assert revisions[4].index == 4
+        assert revisions[-1].user == "Hydro"
+        assert revisions[-1].timestamp == '2010-03-01T09:04:35Z'
+        assert revisions[-1].index == 4
 
     logger.stop("Single scrape test successful.", 1)
 
 def test_multi_scrape(logger):
     LANGUAGE = "en"
+    DEADLINE = "2020-10-25"
     #ARTICLE CHECKSUMS
     ARTICLES = {"CRISPR":"3b3b515988600fbddcd3a3d7b6a797da5dbe9381dd438d471ab2d86ad3bb0633",
                 "CRISPR gene editing":"8e349f28a0e158c28d395ceb8c1beaf94b133e3686a25c366e6009e47f552661",
@@ -81,7 +83,7 @@ def test_multi_scrape(logger):
             scraper.save = mock_save
             scraper.delay = mock_delay
             revisions = []
-            scraper.scrape(revisions, number=5)
+            scraper.scrape(revisions, DEADLINE, number=5)
             revisions = [Revision(**revision) for revision in revisions]
             checksum = revisions_checksum(revisions)
             assert checksum == ARTICLES[article]
@@ -90,6 +92,7 @@ def test_multi_scrape(logger):
 def test_full_and_updated_scrape(logger):    
     DIRECTORY = TEST_DIRECTORY + sep + "test_full_and_updated_scrape"
     LANGUAGE = "en"
+    DEADLINE = "2020-10-25"
 
     assert not exists(DIRECTORY)
     
@@ -101,7 +104,7 @@ def test_full_and_updated_scrape(logger):
     logger.start_check("Singlescraping (full)...")
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
         scraper.delay = mock_delay
-        scraper.scrape(DIRECTORY, number=15)
+        scraper.scrape(DIRECTORY, DEADLINE, number=15)
         number_of_full_scraped_revisions = scraper.revision_count
     full_scrape_file_checksum = file_checksum(FILEPATH)
     full_article = Article(FILEPATH)
@@ -117,11 +120,11 @@ def test_full_and_updated_scrape(logger):
     logger.start_check("Singlescraping (update)...")
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
         scraper.delay = mock_delay
-        scraper.scrape(DIRECTORY, number=10)
+        scraper.scrape(DIRECTORY, DEADLINE, number=10)
     #scrape remaining revisions
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
         scraper.delay = mock_delay
-        scraper.scrape(DIRECTORY, number=15)
+        scraper.scrape(DIRECTORY, DEADLINE, number=15)
         number_of_updated_scraped_revisions = scraper.revision_count
     update_scrape_file_checksum = file_checksum(FILEPATH)
     update_article = Article(FILEPATH)

@@ -1,20 +1,5 @@
 {
-"CRISPR articles":[
-          "Cas9",
-          "Genome-wide CRISPR-Cas9 knockout screens",
-          "CRISPR interference"
-          ],
-"Genetics & biomedicine":[
-          "Genetic engineering",
-          "Genome editing",
-          "DNA repair",
-          "History of genetic engineering"
-          ],
-"CRISPR actors":[
-          "Emmanuelle Charpentier",
-          "George Church (geneticist)"
-          ],
-"CRISPR alternatives":[
-          "Zinc finger nuclease"
+"articles":[
+          "Cas3"
           ]
 }

@@ -16,6 +16,7 @@ if __name__ == "__main__":
     argument_parser.add_argument("-dir", "--directory", default="../articles")
     argument_parser.add_argument("-art", "--articles", default="../data/wikipedia_articles.json")
     argument_parser.add_argument("-lang", "--language", default="en")
+    argument_parser.add_argument("-dl", "--deadline")
     args = vars(argument_parser.parse_args())
 
     """
@@ -35,6 +36,11 @@ if __name__ == "__main__":
     LANGUAGE = args["language"]
 
     """
+    Select a deadline with format YYYY-MM-DD. Only revision before that date will be scraped.
+    """
+    DEADLINE = args["deadline"]
+
+    """
     Select the first n revisions you want to scrape (float("inf") will scrape all)
     FOR TESTING PURPOSES
     """
@@ -49,4 +55,5 @@ if __name__ == "__main__":
         for article in ARTICLES:
             with Scraper(logger, article, LANGUAGE) as scraper:
                 scraper.scrape(directory = DIRECTORY,
+                               deadline = DEADLINE,
                                number = NUMBER)
