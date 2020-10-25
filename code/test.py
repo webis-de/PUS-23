@@ -10,8 +10,6 @@ from hashlib import sha256
 
 TEST_DIRECTORY = ".." + sep + "test"
 TITLE = "CRISPR"
-LANGUAGE = "de"
-FILENAME = TITLE + "_" + LANGUAGE
 
 def file_checksum(filepath):
     sha256_hash = sha256()
@@ -38,11 +36,13 @@ def sorted_dictionary(dictionary):
 def test_single_scrape(logger):
     logger.start("Testing single scrape")
 
+    LANGUAGE = "de"
+
     #scrape first five revisions
     logger.start_check("Singlescraping...")
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
         scraper.save = mock_save
-        scraper.deley = mock_delay
+        scraper.delay = mock_delay
         revisions = []
         scraper.scrape(revisions, number=5)
         revisions = [Revision(**revision) for revision in revisions]
@@ -66,6 +66,7 @@ def test_single_scrape(logger):
     logger.stop("Single scrape test successful.", 1)
 
 def test_multi_scrape(logger):
+    LANGUAGE = "en"
     #ARTICLE CHECKSUMS
     ARTICLES = {"CRISPR":"3b3b515988600fbddcd3a3d7b6a797da5dbe9381dd438d471ab2d86ad3bb0633",
                 "CRISPR gene editing":"8e349f28a0e158c28d395ceb8c1beaf94b133e3686a25c366e6009e47f552661",
@@ -76,7 +77,7 @@ def test_multi_scrape(logger):
     #scrape first five revisions of each article and assert checksum code state 24 September 2020
     logger.start("Testing multiscraping " + ", ".join(ARTICLES) + "...")
     for article in ARTICLES:
-        with Scraper(logger = LOGGER, title = article, language = "en") as scraper:
+        with Scraper(logger = LOGGER, title = article, language = LANGUAGE) as scraper:
             scraper.save = mock_save
             scraper.delay = mock_delay
             revisions = []
@@ -88,10 +89,11 @@ def test_multi_scrape(logger):
 
 def test_full_and_updated_scrape(logger):    
     DIRECTORY = TEST_DIRECTORY + sep + "test_full_and_updated_scrape"
+    LANGUAGE = "en"
 
     assert not exists(DIRECTORY)
     
-    FILEPATH = DIRECTORY + sep + FILENAME
+    FILEPATH = DIRECTORY + sep + TITLE + "_" + LANGUAGE
 
     logger.start("Testing full and updated scrape")
 
@@ -99,15 +101,15 @@ def test_full_and_updated_scrape(logger):
     logger.start_check("Singlescraping (full)...")
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
         scraper.delay = mock_delay
-        scraper.scrape(DIRECTORY, number=3)
+        scraper.scrape(DIRECTORY, number=15)
         number_of_full_scraped_revisions = scraper.revision_count
     full_scrape_file_checksum = file_checksum(FILEPATH)
     full_article = Article(FILEPATH)
     full_article.get_revisions()
     full_article_revisions_checksum = revisions_checksum(full_article.revisions)
     assert full_article.revisions[0].index == 0
-    assert full_article.revisions[1].index == 1
-    assert full_article.revisions[2].index == 2
+    assert full_article.revisions[7].index == 7
+    assert full_article.revisions[14].index == 14
     remove(FILEPATH)
     logger.end_check("Done.")
 
@@ -115,19 +117,19 @@ def test_full_and_updated_scrape(logger):
     logger.start_check("Singlescraping (update)...")
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
         scraper.delay = mock_delay
-        scraper.scrape(DIRECTORY, number=1)
+        scraper.scrape(DIRECTORY, number=10)
     #scrape remaining revisions
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
         scraper.delay = mock_delay
-        scraper.scrape(DIRECTORY, number=3)
+        scraper.scrape(DIRECTORY, number=15)
         number_of_updated_scraped_revisions = scraper.revision_count
     update_scrape_file_checksum = file_checksum(FILEPATH)
     update_article = Article(FILEPATH)
     update_article.get_revisions()
     update_scrape_revisions_checksum = revisions_checksum(update_article.revisions)
     assert update_article.revisions[0].index == 0
-    assert update_article.revisions[1].index == 1
-    assert update_article.revisions[2].index == 2
+    assert update_article.revisions[11].index == 11
+    assert update_article.revisions[14].index == 14
     logger.end_check("Done.")
 
     #assert full and updated scrape match
@@ -141,10 +143,11 @@ def test_full_and_updated_scrape(logger):
 
 def test_pipeline(logger): #deprecated
     DIRECTORY = TEST_DIRECTORY + sep + "test_pipeline"
+    LANGUAGE = "de"
 
     assert not exists(DIRECTORY)
     
-    FILEPATH = DIRECTORY + sep + FILENAME
+    FILEPATH = DIRECTORY + sep + TITLE + "_" + LANGUAGE
 
     logger.start("Testing pipeline...")
     
@@ -180,6 +183,6 @@ def test_pipeline(logger): #deprecated
 if __name__ == "__main__":     
     
     with Logger(TEST_DIRECTORY) as LOGGER:
-##        test_single_scrape(LOGGER)
-##        test_multi_scrape(LOGGER)
+        test_single_scrape(LOGGER)
+        test_multi_scrape(LOGGER)
         test_full_and_updated_scrape(LOGGER)
