@@ -1,6 +1,6 @@
 class Account:
 
-    def __init__(self, account_id, url, type, genre, dynamic, account_year, account_month, account_day, about, bib_keys, publisher_author):
+    def __init__(self, account_id, url, type, genre, dynamic, account_year, account_month, account_day, about, bib_keys, publisher_author, comment):
 
         self.account_id = account_id
         self.url = url
@@ -14,6 +14,7 @@ class Account:
         self.about = about
         self.bib_keys = bib_keys
         self.publisher_author = publisher_author
+        self.comment = comment
 
     def get_account_date(self):
         account_date = ""

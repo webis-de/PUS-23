@@ -23,8 +23,11 @@ class Logger:
             self.begin = self.timestamp
             self.stopwatch = self.timestamp
             self.checkpoint = self.timestamp
+            timestamped_directory = str(self.timestamp)[:-7].replace(":","_").replace("-","_").replace(" ","_")
+            directory = directory + sep + timestamped_directory
             if not exists(directory): makedirs(directory)
-            self.file_name = directory + sep + str(self.timestamp)[:-7].replace(":","_").replace("-","_").replace(" ","_") + ".log"
+            self.file_name = timestamped_directory + ".txt"
+            self.file_path = directory + sep + self.file_name
             print(self.timestamp.strftime("%d %b %Y %H:%M:%S"))
 
         def __enter__(self):
@@ -43,7 +46,7 @@ class Logger:
                 line_breaks: The number of line breaks to insert after the message.
             """
 
-            with open(self.file_name, "a") as file:
+            with open(self.file_path, "a") as file:
                 if message.strip() != "":
                     message = str(message)
                     print(message + ("\n" * line_breaks))

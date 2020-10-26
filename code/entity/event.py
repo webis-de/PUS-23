@@ -2,7 +2,7 @@ from re import split
 
 class Event:
 
-    def __init__(self, event_id, event_year, event_month, event_day, account_id, sampled, event_text, type, subtype, actors, places, bib_keys, keywords, comment, bibliography, accountlist):
+    def __init__(self, event_id, event_year, event_month, event_day, account_id, sampled, event_text, type, subtype, actors, places, bib_keys, keywords, extracted_from, comment, bibliography, accountlist):
 
         self.event_id = int(event_id)
         self.event_year = self.parse_int(event_year)
@@ -16,12 +16,13 @@ class Event:
         self.subtype = subtype
         self.actors = [actor.strip() for actor in split(", +", actors.strip()) if actor.strip()]
         self.places = [place.strip() for place in split(", +", places.strip()) if place.strip()]
-        self.bib_keys = [bibliography.bibentries.get(paper) for paper in split("; *", bib_keys.strip()) if paper]
+        self.bib_keys = [bibliography.bibentries.get(paper) for paper in split("; *", bib_keys.strip()) if (paper and paper != "none")]
         self.comment = comment
         self.authors = {paper.fields.get("doi"):[self.replace_braces(person.last_names[0]) for person in paper.persons.get("author")] for paper in self.bib_keys if paper.fields.get("doi")}
         self.dois = [paper.fields.get("doi") for paper in self.bib_keys if paper.fields.get("doi")]
         self.titles = [self.replace_braces(paper.fields.get("title")) for paper in self.bib_keys if self.replace_braces(paper.fields.get("title"))]
         self.keywords = [keyword.replace("\"", "") for keyword in split("; *", keywords) if keyword.strip()]
+        self.extracted_from = extracted_from
         self.first_occurrence = {"authors":{}, "dois":{}, "all_dois":None, "titles":{}, "all_titles":{"full":None, "processed":None}, "keywords":{}, "all_keywords":None}
         for doi in self.dois:
             self.first_occurrence["dois"][doi] = None
