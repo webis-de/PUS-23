@@ -16,7 +16,7 @@ def heading(text, file):
 
 if __name__ == "__main__":
 
-    processing = ["","_raw","_preprocessor","_spacy"][3]
+    processing = ["","_raw","_preprocessor","_spacy"][0]
 
     with open("revision_extraction" + processing + ".txt", "w", encoding="utf-8") as file:
 
