@@ -122,7 +122,7 @@ if __name__ == "__main__":
 
     argument_parser.add_argument("-i", "--input_dir", default="../articles")
     argument_parser.add_argument("-o", "--output_dir", default="../analysis")
-    argument_parser.add_argument("-art", "--articles", default="../data/wikipedia_articles.json")
+    argument_parser.add_argument("-art", "--articles", default="../data/articles_arno.json")
     argument_parser.add_argument("-lang", "--language", default="en")
     args = vars(argument_parser.parse_args())
 

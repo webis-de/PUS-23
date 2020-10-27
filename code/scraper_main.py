@@ -14,7 +14,7 @@ if __name__ == "__main__":
     argument_parser = ArgumentParser()
 
     argument_parser.add_argument("-dir", "--directory", default="../articles")
-    argument_parser.add_argument("-art", "--articles", default="../data/wikipedia_articles.json")
+    argument_parser.add_argument("-art", "--articles", default="../data/articles_arno.json")
     argument_parser.add_argument("-lang", "--language", default="en")
     argument_parser.add_argument("-dl", "--deadline")
     args = vars(argument_parser.parse_args())
