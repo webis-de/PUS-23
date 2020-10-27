@@ -12,9 +12,9 @@ class Preprocessor:
         sentenizer: The sentenizer this preprocessor uses.
         stopwords: The list of stopwords this preprocessor uses.
     """
-    def __init__(self, language):
+    def __init__(self, language, filterwords = []):
 
-        self.tokenizer = Tokenizer("preprocessor/data/abbreviations_" + language + ".txt")
+        self.tokenizer = Tokenizer("preprocessor/data/abbreviations_" + language + ".txt", filterwords)
         self.sentenizer = Sentenizer("preprocessor/data/abbreviations_" + language + ".txt")
         self.stopwords = stopwords("preprocessor/data/stopwords_" + language + ".txt")
 

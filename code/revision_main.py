@@ -16,13 +16,14 @@ def heading(text, file):
 
 if __name__ == "__main__":
 
-    processing = ["", "_raw", "_preprocessor", "_spacy"][0]
+    processing = ["", "_raw", "_preprocessor", "_spacy"][2]
 
     if processing == "_preprocessor":
         from preprocessor.preprocessor import Preprocessor
+        preprocessor = Preprocessor("en", ["prokaryotic antiviral system"])
     if processing == "_spacy":
-        from spacy import load
         from spacy.lang.en import English
+        spacy = English()
 
     with open("revision_extraction" + processing + ".txt", "w", encoding="utf-8") as file:
 
@@ -47,11 +48,9 @@ if __name__ == "__main__":
             TEXT = revision.get_text().strip() + "\n"
         if processing == "_preprocessor":
             #TOKENIZED USING PREPROCESSOR
-            preprocessor = Preprocessor("en")
             TEXT = "|".join(preprocessor.preprocess(revision.get_text().strip() + "\n", lower=False, stopping=False, sentenize=False, tokenize=True)[0])
         if processing == "_spacy":
             #TOKENIZED USING SPACY
-            spacy = English()
             TEXT = "|".join([str(token) for token in spacy(revision.get_text().strip() + "\n")])
         end = datetime.now()
 
