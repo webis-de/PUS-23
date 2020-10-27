@@ -14,8 +14,8 @@ class Event:
         self.event_text = event_text
         self.type = type
         self.subtype = subtype
-        self.actors = [actor.strip() for actor in split(", +", actors.strip()) if actor.strip()]
-        self.places = [place.strip() for place in split(", +", places.strip()) if place.strip()]
+        self.actors = [actor.strip() for actor in split("[,;] *", actors.strip()) if actor.strip()]
+        self.places = [place.strip() for place in split("[,;] *", places.strip()) if place.strip()]
         self.bib_keys = [bibliography.bibentries.get(paper) for paper in split("; *", bib_keys.strip()) if bibliography.bibentries.get(paper)]
         self.comment = comment
         self.authors = {paper.fields.get("doi"):[self.replace_braces(person.last_names[0]) for person in paper.persons.get("author")] for paper in self.bib_keys if paper.fields.get("doi")}
