@@ -16,7 +16,7 @@ def heading(text, file):
 
 if __name__ == "__main__":
 
-    processing = ["","_raw","_preprocessor","_spacy"][0]
+    processing = ["", "_raw", "_preprocessor", "_spacy"][0]
 
     with open("revision_extraction" + processing + ".txt", "w", encoding="utf-8") as file:
 
@@ -34,6 +34,23 @@ if __name__ == "__main__":
                 article.readline()
                 line += 1
             revision = Revision(**loads(article.readline()))
+        
+        start = datetime.now()
+        if processing == "_raw":
+            #RAW TEXT
+            TEXT = revision.get_text().strip() + "\n"
+        if processing == "_preprocessor":
+            #TOKENIZED USING PREPROCESSOR
+            from preprocessor.preprocessor import Preprocessor
+            preprocessor = Preprocessor("en")
+            TEXT = "|".join(preprocessor.preprocess(revision.get_text().strip() + "\n", lower=False, stopping=False, sentenize=False, tokenize=True)[0])
+        if processing == "_spacy":
+            #TOKENIZED USING SPACY
+            from spacy import load
+            from spacy.lang.en import English
+            spacy = English()
+            TEXT = "|".join([str(token) for token in spacy(revision.get_text().strip() + "\n")])
+        end = datetime.now()
 
         file.write("You are looking at revision number " + str(index) + " from " + Timestamp(revision.timestamp).string + "." + "\n")
         #URL of revsions
@@ -42,23 +59,9 @@ if __name__ == "__main__":
 
         #Print text from html
         heading("\nTEXT", file)
-        
-        start = datetime.now()
-        if processing == "_raw":
-            #RAW TEXT
-            file.write(revision.get_text().strip() + "\n")
-        if processing == "_preprocessor":
-            #TOKENIZED USING PREPROCESSOR
-            from preprocessor.preprocessor import Preprocessor
-            preprocessor = Preprocessor("en")
-            file.write("|".join(preprocessor.preprocess(revision.get_text().strip() + "\n", lower=False, stopping=False, sentenize=False, tokenize=True)[0]))
-        if processing == "_spacy":
-            #TOKENIZED USING SPACY
-            from spacy import load
-            from spacy.lang.en import English
-            spacy = English()
-            file.write("|".join([str(token) for token in spacy(revision.get_text().strip() + "\n")]))
-        print(datetime.now() - start)
+        if processing: file.write("Processing text took : " + str(end - start) + "\n\n")
+
+        file.write(TEXT)
 
         if not processing:
 
