@@ -18,6 +18,12 @@ if __name__ == "__main__":
 
     processing = ["", "_raw", "_preprocessor", "_spacy"][0]
 
+    if processing == "_preprocessor":
+        from preprocessor.preprocessor import Preprocessor
+    if processing == "_spacy":
+        from spacy import load
+        from spacy.lang.en import English
+
     with open("revision_extraction" + processing + ".txt", "w", encoding="utf-8") as file:
 
         #Select a language: en or de
@@ -36,18 +42,15 @@ if __name__ == "__main__":
             revision = Revision(**loads(article.readline()))
         
         start = datetime.now()
-        if processing == "_raw":
+        if processing == "_raw" or processing == "":
             #RAW TEXT
             TEXT = revision.get_text().strip() + "\n"
         if processing == "_preprocessor":
             #TOKENIZED USING PREPROCESSOR
-            from preprocessor.preprocessor import Preprocessor
             preprocessor = Preprocessor("en")
             TEXT = "|".join(preprocessor.preprocess(revision.get_text().strip() + "\n", lower=False, stopping=False, sentenize=False, tokenize=True)[0])
         if processing == "_spacy":
             #TOKENIZED USING SPACY
-            from spacy import load
-            from spacy.lang.en import English
             spacy = English()
             TEXT = "|".join([str(token) for token in spacy(revision.get_text().strip() + "\n")])
         end = datetime.now()
