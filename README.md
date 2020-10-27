@@ -20,12 +20,12 @@ This repository contains information and code concerning the project Tracing Inn
 - proposals-in-progress/BMBF-indikatorik-19-today
 - research-in-progress/computational-social-science/CONF-20/science-analytics-wikipedia
 
-## articles
-- default directory for extractions
-- on gitignore
-
 ## analysis
 - default directory for article analyis runs
+- on gitignore
+
+## articles
+- default directory for extractions
 - on gitignore
 
 ## code
