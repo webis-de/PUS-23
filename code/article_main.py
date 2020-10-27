@@ -7,7 +7,6 @@ from utility.logger import Logger
 from preprocessor.preprocessor import Preprocessor
 from multiprocessing import Pool
 from re import search
-from datetime import datetime
 from argparse import ArgumentParser
 from os.path import sep, exists
 from os import makedirs
@@ -129,6 +128,11 @@ if __name__ == "__main__":
 
     input_directory = args["input_dir"]
     output_directory = args["output_dir"]
+
+    logger = Logger(output_directory)
+
+    output_directory = logger.directory
+    
     if not exists(output_directory):
         makedirs(output_directory)
     with open(args["articles"]) as file:
@@ -136,7 +140,9 @@ if __name__ == "__main__":
     language = args["language"]
 
     preprocessor = Preprocessor(language)
-    logger = Logger("../analysis")
+
+    bibliography = Bibliography("../data/tracing-innovations-lit.bib")
+    accountlist = AccountList("../data/CRISPR_events - accounts.csv")
 
     logger.start("Analysing articles " + ", ".join(wikipedia_articles))
 
@@ -145,16 +151,17 @@ if __name__ == "__main__":
         logger.start_check(wikipedia_article)
         
         filename = quote(wikipedia_article.replace(" ","_"), safe="")
-        article = Article(input_directory + sep + filename + "_" + language)
-        bibliography = Bibliography("../data/tracing-innovations-lit.bib")
-        accountlist = AccountList("../data/CRISPR_events - accounts.csv")
-        eventlist = EventList("../data/CRISPR_events - events.csv", bibliography, accountlist)
+        filepath = input_directory + sep + filename + "_" + language
+        if not exists(filepath):
+            logger.end_check(filepath + " does not exist.")
+            continue            
+        article = Article(filepath)
 
         revisions = article.yield_revisions()
 
         revision = next(revisions, None)
 
-        start = datetime.now()
+        eventlist = EventList("../data/CRISPR_events - events.csv", bibliography, accountlist)
         
         while revision:
             
@@ -174,14 +181,12 @@ if __name__ == "__main__":
             ### Format occurrence
             formatted_occurence = occurrence(revision)
             
-            with Pool(4) as pool:
+            with Pool(10) as pool:
                 eventlist.events = pool.map(process, [(event, text, sections, referenced_titles, referenced_authors, formatted_occurence, preprocessor) for event in eventlist.events])
                          
             revision = next(revisions, None)
 
-        end = datetime.now()
-
-        logger.end_check(end - start)
+        logger.end_check("Done.")
 
         with open(output_directory + sep + filename + "_" + language + "." + "txt", "w") as file:
             file.write(("\n"+"-"*50+"\n").join([str(event) for event in eventlist.events]))
