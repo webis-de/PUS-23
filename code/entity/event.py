@@ -16,22 +16,24 @@ class Event:
         self.subtype = subtype
         self.actors = [actor.strip() for actor in split(", +", actors.strip()) if actor.strip()]
         self.places = [place.strip() for place in split(", +", places.strip()) if place.strip()]
-        self.bib_keys = [bibliography.bibentries.get(paper) for paper in split("; *", bib_keys.strip()) if (paper and paper != "none")]
+        self.bib_keys = [bibliography.bibentries.get(paper) for paper in split("; *", bib_keys.strip()) if bibliography.bibentries.get(paper)]
         self.comment = comment
         self.authors = {paper.fields.get("doi"):[self.replace_braces(person.last_names[0]) for person in paper.persons.get("author")] for paper in self.bib_keys if paper.fields.get("doi")}
         self.dois = [paper.fields.get("doi") for paper in self.bib_keys if paper.fields.get("doi")]
         self.titles = [self.replace_braces(paper.fields.get("title")) for paper in self.bib_keys if self.replace_braces(paper.fields.get("title"))]
-        self.keywords = [keyword.replace("\"", "") for keyword in split("; *", keywords) if keyword.strip()]
+        self.keywords = [keyword.replace("\"", "").strip() for keyword in split("; *", keywords) if keyword.strip()]
         self.extracted_from = extracted_from
-        self.first_occurrence = {"authors":{}, "dois":{}, "all_dois":None, "titles":{}, "all_titles":{"full":None, "processed":None}, "keywords":{}, "all_keywords":None}
-        for doi in self.dois:
-            self.first_occurrence["dois"][doi] = None
-        for title in self.titles:
-            self.first_occurrence["titles"][title] = {"full":None, "processed":None}
-        for keyword in self.keywords:
-            self.first_occurrence["keywords"][keyword] = None
-        for doi in self.authors:
-            self.first_occurrence["authors"][doi] = {author:None for author in self.authors[doi]}
+        self.first_occurrence = {"authors":{doi:{author:None for author in self.authors[doi]} for doi in self.dois},
+                                 "dois":{doi:None for doi in self.dois},
+                                 "all_dois":None,
+                                 "titles":{title:{"full":None, "processed":None} for title in self.titles},
+                                 "all_titles":{"full":None, "processed":None},
+                                 "keywords":{keyword:None for keyword in self.keywords},
+                                 "all_keywords":None,
+                                 "actors":{actor:None for actor in self.actors},
+                                 "all_actors":None,
+                                 "places":{place:None for place in self.places},
+                                 "all_places":None}
 
     def parse_int(self, value):
         try:
