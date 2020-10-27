@@ -24,10 +24,10 @@ class Logger:
             self.stopwatch = self.timestamp
             self.checkpoint = self.timestamp
             timestamped_directory = str(self.timestamp)[:-7].replace(":","_").replace("-","_").replace(" ","_")
-            directory = directory + sep + timestamped_directory
-            if not exists(directory): makedirs(directory)
+            self.directory = directory + sep + timestamped_directory
+            if not exists(self.directory): makedirs(self.directory)
             self.file_name = timestamped_directory + ".txt"
-            self.file_path = directory + sep + self.file_name
+            self.file_path = self.directory + sep + self.file_name
             print(self.timestamp.strftime("%d %b %Y %H:%M:%S"))
 
         def __enter__(self):
