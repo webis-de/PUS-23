@@ -1,5 +1,5 @@
-from entity.bibliography import Bibliography
-from entity.article import Article
+from bibliography.bibliography import Bibliography
+from article.article import Article
 from scraper.scraper import Scraper
 from utility.logger import Logger
 from os.path import sep

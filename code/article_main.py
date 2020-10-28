@@ -1,7 +1,7 @@
-from entity.article import Article
-from entity.eventlist import EventList
-from entity.accountlist import AccountList
-from entity.bibliography import Bibliography
+from article.article import Article
+from timeline.eventlist import EventList
+from timeline.accountlist import AccountList
+from bibliography.bibliography import Bibliography
 from utility.utils import flatten_list_of_lists
 from utility.logger import Logger
 from preprocessor.preprocessor import Preprocessor
@@ -10,6 +10,7 @@ from re import search
 from argparse import ArgumentParser
 from os.path import sep, exists
 from os import makedirs
+from re import split
 from json import load, dump
 from urllib.parse import quote, unquote
 
@@ -120,10 +121,21 @@ if __name__ == "__main__":
 
     argument_parser = ArgumentParser()
 
-    argument_parser.add_argument("-i", "--input_dir", default="../articles")
-    argument_parser.add_argument("-o", "--output_dir", default="../analysis")
-    argument_parser.add_argument("-art", "--articles", default="../data/articles_arno.json")
-    argument_parser.add_argument("-lang", "--language", default="en")
+    argument_parser.add_argument("-i", "--input_dir",
+                                 default="../articles",
+                                 help="The relative or absolute path to the directory where the articles reside.")
+    argument_parser.add_argument("-o", "--output_dir",
+                                 default="../analysis",
+                                 help="The relative or absolute path to the directory the analysis will be saved.")
+    argument_parser.add_argument("-a", "--articles",
+                                 default="../data/articles_arno.json",
+                                 help="Either the relative of abolute path to a JSON file of articles " + \
+                                      "or quoted string of comma-separated articles, " + \
+                                      "e.g. 'Cas9,The CRISPR JOURNAL'.")
+    argument_parser.add_argument("-l", "--language",
+                                 default="en",
+                                 help="en or de, defaults to en.")
+
     args = vars(argument_parser.parse_args())
 
     input_directory = args["input_dir"]
@@ -135,8 +147,12 @@ if __name__ == "__main__":
     
     if not exists(output_directory):
         makedirs(output_directory)
-    with open(args["articles"]) as file:
-        wikipedia_articles = flatten_list_of_lists(load(file).values())
+    ARTICLES = args["articles"]
+    try:
+        with open(ARTICLES) as file:
+            wikipedia_articles = flatten_list_of_lists(load(file).values())
+    except FileNotFoundError:
+        wikipedia_articles = [article.strip() for article in split(" *, *", ARTICLES)]
     language = args["language"]
 
     preprocessor = Preprocessor(language)

@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     argument_parser.add_argument("-dir", "--directory",
                                  default="../articles",
-                                 help="The relative or absolute path to directory to which the revisions will be saved.")
+                                 help="The relative or absolute path to the directory to which the revisions will be saved.")
     argument_parser.add_argument("-a", "--articles",
                                  default="../data/articles_custom.json",
                                  help="Either the relative of abolute path to a JSON file of articles " + \

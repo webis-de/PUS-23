@@ -1,4 +1,4 @@
-from entity.revision.revision import Revision
+from article.revision.revision import Revision
 from random import randint
 from json import loads
 from re import sub
@@ -31,9 +31,16 @@ if __name__ == "__main__":
 
         #Open scraped article and get random revision.
         if processing:
-            index = 1935
+            if LANGUAGE == "en":
+                index = 1935
+            if LANGUAGE == "en":
+                index = 100
         else:
-            index = 1935#randint(0,2023)
+            revision_count = 0
+            with open("../articles/CRISPR_" + LANGUAGE) as file_to_count:
+                for line in file_to_count:
+                    revision_count += 1
+            index = randint(0,revision_count - 1)
         line = 0
         with open("../articles/CRISPR_" + LANGUAGE) as article:
             while line < index:

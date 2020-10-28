@@ -1,6 +1,6 @@
-from entity.bibliography import Bibliography
-from entity.accountlist import AccountList
-from entity.eventlist import EventList
+from bibliography.bibliography import Bibliography
+from timeline.accountlist import AccountList
+from timeline.eventlist import EventList
 
 el = EventList("../data/CRISPR_events - events.csv",
                Bibliography("../data/tracing-innovations-lit.bib"),
