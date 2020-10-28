@@ -77,6 +77,6 @@ if __name__ == "__main__":
     with Logger(DIRECTORY) as logger:
         for article in ARTICLES:
             with Scraper(logger, article, LANGUAGE) as scraper:
-                scraper.scrape(directory = logger.directory,
+                scraper.scrape(directory = DIRECTORY,
                                deadline = DEADLINE,
                                number = NUMBER)

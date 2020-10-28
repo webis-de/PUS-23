@@ -1,4 +1,4 @@
-from entity.timestamp import Timestamp
+from .timestamp import Timestamp
 from .reference import Reference
 from .section import Section
 from pprint import pformat

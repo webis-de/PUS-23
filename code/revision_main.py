@@ -1,5 +1,4 @@
 from entity.revision.revision import Revision
-from entity.timestamp import Timestamp
 from random import randint
 from json import loads
 from re import sub
@@ -16,7 +15,7 @@ def heading(text, file):
 
 if __name__ == "__main__":
 
-    processing = ["", "_raw", "_preprocessor", "_spacy"][2]
+    processing = ["", "_raw", "_preprocessor", "_spacy"][0]
 
     if processing == "_preprocessor":
         from preprocessor.preprocessor import Preprocessor
@@ -34,7 +33,7 @@ if __name__ == "__main__":
         if processing:
             index = 1935
         else:
-            index = randint(0,2023)
+            index = 1935#randint(0,2023)
         line = 0
         with open("../articles/CRISPR_" + LANGUAGE) as article:
             while line < index:
@@ -54,7 +53,7 @@ if __name__ == "__main__":
             TEXT = "|".join([str(token) for token in spacy(revision.get_text().strip() + "\n")])
         end = datetime.now()
 
-        file.write("You are looking at revision number " + str(index) + " from " + Timestamp(revision.timestamp).string + "." + "\n")
+        file.write("You are looking at revision number " + str(index) + " from " + revision.timestamp_pretty_string() + "." + "\n")
         #URL of revsions
         heading("\nURL OF REVISION", file)
         file.write(revision.url + "\n")

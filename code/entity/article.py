@@ -1,5 +1,4 @@
 from .revision.revision import Revision
-from .timestamp import Timestamp
 from os.path import basename, exists, sep
 from os import makedirs
 from json import loads, dump
