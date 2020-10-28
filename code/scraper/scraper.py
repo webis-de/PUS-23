@@ -31,7 +31,6 @@ class Scraper:
         revision_count: The number of revisions extracted by this Scraper.
         updating: Flag for update mode.
         update_count: Number of revisions scraped if updating.
-        before_deadline: Flag for deadline.
     """
     def __init__(self, logger, title, language):
         """
@@ -56,14 +55,15 @@ class Scraper:
         self.revision_count = 0
         self.updating = False
         self.update_count = 0
-        self.before_deadline = True
 
     def __enter__(self):
         """Makes the API autoclosable."""
         return self
 
     def __exit__(self, type, value, traceback):
-        pass
+        """Logs the number of scraped and updated revisions when the instance is closed."""
+        if self.updating: self.logger.log("Number of updates: " + str(self.update_count))
+        self.logger.stop("Done. Number of revisions: " + str(self.revision_count))
 
     def scrape(self, directory, deadline, number = float("inf")):
         """
@@ -80,13 +80,8 @@ class Scraper:
         if exists(str(directory) + sep + self.filename):
             self.get_rvstartid(directory + sep + self.filename)
             self.updating = True
-        else:
-            self.collect_revisions(directory, deadline, number) 
-        while self.rvcontinue and self.revision_count < number and self.before_deadline:
-            self.collect_revisions(directory, deadline, number)
-
-        if self.updating: self.logger.log("Number of updates: " + str(self.update_count))
-        self.logger.stop("Done. Number of revisions: " + str(self.revision_count))
+        while self.collect_revisions(directory, deadline, number):
+            pass
 
     def get_rvstartid(self, filepath):
         """
@@ -120,6 +115,9 @@ class Scraper:
             directory: The directory to which the scraped revisions are saved.
             deadline: The deadline before which collections are collected. Use 'YYYY-MM-DD'.
             number: Number of revisions to scrape.
+        Returns:
+            False if maximum number of revision to scrape has been reached, scraped revision
+            date is on day of deadline or there are no more revisions, else True.
         """
         response = GET(self.api_url, params=self.parameters, headers=self.headers)
         #print(response.status_code)
@@ -127,10 +125,9 @@ class Scraper:
         sleep(self.delay())
         for revision in response_json["query"]["pages"][self.page_id]["revisions"]:
             if self.revision_count >= number:
-                break
+                return False
             if not self.before(revision["timestamp"], deadline):
-                self.before_deadline = False
-                break
+                return False
             revision_url = self.article_url + "&oldid=" + str(revision["revid"])
             self.save(directory,
                       {"revid":revision["revid"],
@@ -154,6 +151,9 @@ class Scraper:
         self.rvcontinue = response_json.get("continue",{}).get("rvcontinue",None)
         if self.rvcontinue:
             self.parameters["rvstartid"] = self.rvcontinue.split("|")[1]
+            return True
+        else:
+            return False
 
     def delay(self):
         """
