@@ -48,6 +48,8 @@ class Scraper:
         self.filename = quote(self.title, safe="") + "_" + self.language
         self.api_url = "https://" + language + ".wikipedia.org/w/api.php"
         self.page_id = list(GET(self.api_url, params={"format":"json","action":"query","titles":title}, headers=self.headers).json()["query"]["pages"].keys())[0]
+        if self.page_id == "-1":
+            self.logger.log("Article '" + title + "' does not exist.")
         self.article_url = "https://" + language + ".wikipedia.org/w/index.php?title=" + title
         self.rvprops = "comment|content|contentmodel|flagged|flags|ids|oresscores|parsedcomment|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid"
         self.parameters = {"format":"json","action":"query","titles":title,"prop":"revisions","rvlimit":"50","rvdir":"newer","rvslots":"*","rvprop":self.rvprops}
@@ -75,15 +77,19 @@ class Scraper:
             deadline: The deadline before which collections are collected. Use 'YYYY-MM-DD'.
             number: Number of revisions to scrape.
         """
-        revisions = []
-        self.logger.start("Scraping revisions of " + self.title + " (" + self.language + ") before " + deadline + ".")
-        if exists(str(directory) + sep + self.filename):
-            self.get_rvstartid(directory + sep + self.filename)
-            self.updating = True
-        while self.collect_revisions(directory, deadline, number):
-            pass
+        if self.page_id == "-1":
+            return 1
+        else:
+            revisions = []
+            self.logger.start("Scraping revisions of " + self.title + " (" + self.language + ") before " + deadline + ".")
+            if exists(str(directory) + sep + self.filename):
+                self.__get_rvstartid(directory + sep + self.filename)
+                self.updating = True
+            while self.__collect_revisions(directory, deadline, number):
+                pass
+            return 0
 
-    def get_rvstartid(self, filepath):
+    def __get_rvstartid(self, filepath):
         """
         Helper function to set up revision update. Opens revision file, obtains last revision id,
         requests revision from API, sets rvcontinue to API value if available (None if not available)
@@ -106,7 +112,7 @@ class Scraper:
         if self.rvcontinue:
             self.parameters["rvstartid"] = self.rvcontinue.split("|")[1]
 
-    def collect_revisions(self, directory, deadline, number):
+    def __collect_revisions(self, directory, deadline, number):
         """
         Collect all revisions for the Wikipedia article.
         Revisions are scraped in batches of a maximum of 50 at a time.
@@ -137,7 +143,7 @@ class Scraper:
                        "userid":revision["userid"],
                        "timestamp":revision["timestamp"],
                        "size":revision["size"],
-                       "html":self.download_html(revision_url),
+                       "html":self.__download_html(revision_url),
                        "comment":revision.get("comment",""),
                        "minor":revision.get("minor",""),
                        "index":self.revision_count})
@@ -164,7 +170,7 @@ class Scraper:
         """
         return 2 + randint(0,1) + random()
 
-    def download_html(self, revision_url):
+    def __download_html(self, revision_url):
         """
         Download HTML for a given revision URL.
 

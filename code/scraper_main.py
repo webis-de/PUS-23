@@ -43,12 +43,11 @@ if __name__ == "__main__":
     Load articles and flatten to one list if from file or split if connected with ','.
     """
     ARTICLES = args["articles"]
-    if "," in ARTICLES:
-        wikipedia_articles = [article.strip() for article in split(" *, *", ARTICLES)]
-    else:
+    try:
         with open(ARTICLES) as file:
             wikipedia_articles = flatten_list_of_lists(load(file).values())
-
+    except FileNotFoundError:
+        wikipedia_articles = [article.strip() for article in split(" *, *", ARTICLES)]
     """
     Select an output directory.
     """
@@ -78,6 +77,6 @@ if __name__ == "__main__":
     with Logger(DIRECTORY) as logger:
         for article in ARTICLES:
             with Scraper(logger, article, LANGUAGE) as scraper:
-                scraper.scrape(directory = DIRECTORY,
+                scraper.scrape(directory = logger.directory,
                                deadline = DEADLINE,
                                number = NUMBER)
