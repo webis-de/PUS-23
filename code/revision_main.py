@@ -33,7 +33,7 @@ if __name__ == "__main__":
         if processing:
             if LANGUAGE == "en":
                 index = 1935
-            if LANGUAGE == "en":
+            if LANGUAGE == "de":
                 index = 100
         else:
             revision_count = 0
