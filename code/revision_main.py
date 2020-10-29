@@ -60,7 +60,7 @@ if __name__ == "__main__":
             TEXT = "|".join([str(token) for token in spacy(revision.get_text().strip() + "\n")])
         end = datetime.now()
 
-        file.write("You are looking at revision number " + str(index) + " from " + revision.timestamp_pretty_string() + "." + "\n")
+        file.write("You are looking at revision number " + str(index) + " from " + revision.timestamp.string + "." + "\n")
         #URL of revsions
         heading("\nURL OF REVISION", file)
         file.write(revision.url + "\n")

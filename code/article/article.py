@@ -36,7 +36,7 @@ class Article:
                     break
                 revision = loads(line[1])
                 self.revisions.append(Revision(**revision))
-        self.timestamps = [revision.timestamp_pretty_string() for revision in self.revisions]
+        self.timestamps = [revision.timestamp.string for revision in self.revisions]
         return self.revisions
 
     def yield_revisions(self):
@@ -74,7 +74,7 @@ class Article:
             for field in tracks:
                 for field_value in tracks[field]:
                     if field_value.lower() in text:
-                        tracks[field][field_value].append(revision.timestamp_pretty_string())
+                        tracks[field][field_value].append(revision.timestamp.string)
         return tracks
 
     def track_phrases_in_article(self, phrase_lists):
@@ -103,7 +103,7 @@ class Article:
             for phrase_list in tracks:
                 for phrase in tracks[phrase_list]:
                     if phrase.lower() in text:
-                        tracks[phrase_list][phrase].append(revision.timestamp_pretty_string())
+                        tracks[phrase_list][phrase].append(revision.timestamp.string)
         return tracks
 
     def write_track_to_file(self, track, directory):
@@ -162,11 +162,11 @@ class Article:
         """
         if not self.revisions: self.get_revisions()
         distribution = {}
-        for year in range(self.revisions[0].get_year(), self.revisions[-1].get_year() + 1):
+        for year in range(self.revisions[0].timestamp.year, self.revisions[-1].timestamp.year + 1):
             for month in range(1, 13):
                 distribution[str(year) + "/" + str(month).rjust(2, "0")] = 0
         for revision in self.revisions:
-            distribution[str(revision.get_year()) + "/" + str(revision.get_month()).rjust(2, "0")] += 1
+            distribution[str(revision.timestamp.year) + "/" + str(revision.timestamp.month).rjust(2, "0")] += 1
 
         plt.figure(figsize=(int(len(distribution) * 0.15), 10), dpi=150)
         plt.title(self.name + " Revision Distribition")

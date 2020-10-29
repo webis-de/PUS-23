@@ -7,8 +7,13 @@ class Timestamp:
 
     Attributes:
         datetime: Timestamp as datetime object.
+        year: The year of the timestamp.
+        month: The month of the timestamp.
+        day: The day of the timestamp.
+        hour: The hour of the timestamp.
+        minute: The minute of the timestamp.
+        second: The second of the timestamp.
         string: Timestamp as string.
-        index: Timestamp as 0-indexed position in revision history.
     """    
     
     def __init__(self, timestamp_string):
@@ -17,10 +22,15 @@ class Timestamp:
 
         Args:
             timestamp_string: Timestamp as string as extracted from revision history.
-            index: Timestamp as 0-indexed position in revision history.
         """
 
         self.datetime = datetime.strptime(timestamp_string, "%Y-%m-%dT%H:%M:%SZ")
+        self.year = self.datetime.year
+        self.month = self.datetime.month
+        self.day = self.datetime.day
+        self.hour = self.datetime.hour
+        self.minute = self.datetime.minute
+        self.second = self.datetime.second
         self.string = str(self.datetime)
 
     def __str__(self):
@@ -30,3 +40,9 @@ if __name__ == "__main__":
 
     timestamp = Timestamp("2020-7-6T17:10:20Z")
     print(timestamp)
+    print(timestamp.year)
+    print(timestamp.month)
+    print(timestamp.day)
+    print(timestamp.hour)
+    print(timestamp.minute)
+    print(timestamp.second)

@@ -46,7 +46,7 @@ class Revision:
         self.url = url
         self.user = user
         self.userid = userid
-        self.timestamp = timestamp
+        self.timestamp = Timestamp(timestamp)
         self.size = size
         self.html = html
         self.comment = comment
@@ -204,21 +204,6 @@ class Revision:
                 DOIs.append(element.text)
             dois.append([doi for doi in list(set(DOIs)) if " " not in doi])
         return dois
-
-    def serial_timestamp(self):
-        return Timestamp(self.timestamp)
-
-    def timestamp_pretty_string(self):
-        return self.serial_timestamp().string
-
-    def get_day(self):
-        return self.serial_timestamp().datetime.day
-
-    def get_month(self):
-        return self.serial_timestamp().datetime.month
-
-    def get_year(self):
-        return self.serial_timestamp().datetime.year
 
     def __str__(self):
         return pformat(self.__dict__)
