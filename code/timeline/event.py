@@ -80,8 +80,6 @@ class Event:
         copy["bib_keys"] = {paper.key:{"fields":paper.fields._dict.copy(),"persons":paper.persons._dict.copy()} for paper in self.bib_keys}
         for bib_key in copy["bib_keys"]:
             for role in copy["bib_keys"][bib_key]["persons"]:
-                print(copy["bib_keys"][bib_key]["persons"][role])
-                input()
                 copy["bib_keys"][bib_key]["persons"][role] = [self.replace_braces(person.last_names[0]) + ", " + self.replace_braces(person.first_names[0]) for person in copy["bib_keys"][bib_key]["persons"][role]]
         return copy
 
