@@ -1,9 +1,10 @@
 class Account:
 
-    def __init__(self, account_id, url, type, genre, dynamic, account_year, account_month, account_day, about, bib_keys, publisher_author, comment):
+    def __init__(self, account_id, url, account_title, type, genre, dynamic, account_year, account_month, account_day, about, bib_keys, publisher_author, comment):
 
         self.account_id = account_id
         self.url = url
+        self.account_title = account_title
         self.type = type
         self.genre = genre
         self.dynamic = dynamic
