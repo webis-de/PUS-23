@@ -19,7 +19,7 @@ from urllib.parse import quote, unquote
 ##################################################################
 
 def occurrence(revision):
-    return ["index: " + str(revision.index), "url: " + revision.url, "timestamp: " + revision.timestamp_pretty_string()]
+    return ["index: " + str(revision.index), "url: " + revision.url, "timestamp: " + revision.timestamp.string]
 
 def process(data):
     event = data[0]
