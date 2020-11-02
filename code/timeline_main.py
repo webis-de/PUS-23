@@ -10,4 +10,3 @@ for event in el.events:
     if event.sampled:
         print(event)
         print("-"*50)
-

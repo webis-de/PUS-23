@@ -62,7 +62,7 @@ class Event:
     def __str__(self):
         copy = self.__dict__.copy()
         copy["account"] = {"account_date":self.account.account_date,"account_url":self.account.url}
-        copy["bib_keys"] = {paper.key:{"fields":paper.fields._dict,"persons":paper.persons._dict} for paper in self.bib_keys}
+        copy["bib_keys"] = {paper.key:{"fields":paper.fields._dict.copy(),"persons":paper.persons._dict.copy()} for paper in self.bib_keys}
         del copy["event_year"]
         del copy["event_month"]
         del copy["event_day"]
@@ -77,10 +77,12 @@ class Event:
     def json(self):
         copy = self.__dict__.copy()
         copy["account"] = self.account.__dict__
-        copy["bib_keys"] = {paper.key:{"fields":paper.fields._dict,"persons":paper.persons._dict} for paper in self.bib_keys}
+        copy["bib_keys"] = {paper.key:{"fields":paper.fields._dict.copy(),"persons":paper.persons._dict.copy()} for paper in self.bib_keys}
         for bib_key in copy["bib_keys"]:
             for role in copy["bib_keys"][bib_key]["persons"]:
-                copy["bib_keys"][bib_key]["persons"][role] = [person.__dict__ for person in copy["bib_keys"][bib_key]["persons"][role]]
+                print(copy["bib_keys"][bib_key]["persons"][role])
+                input()
+                copy["bib_keys"][bib_key]["persons"][role] = [self.replace_braces(person.last_names[0]) + ", " + self.replace_braces(person.first_names[0]) for person in copy["bib_keys"][bib_key]["persons"][role]]
         return copy
 
     def prettyprint(self, structure, indent = ""):
