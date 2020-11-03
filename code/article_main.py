@@ -21,37 +21,50 @@ from urllib.parse import quote, unquote
 def occurrence(revision):
     return ["index: " + str(revision.index), "url: " + revision.url, "timestamp: " + revision.timestamp.string]
 
+def keyword_intersection(list1, list2):
+    return ", ".join(set(list1).intersection(set(list2)))
+
 def process(data):
     event = data[0]
     text = data[1]
     sections = data[2]
     referenced_titles = data[3]
-    referenced_authors = data[4]
-    occurrence = data[5]
-    preprocessor = data[6]
+    referenced_pmids = data[4]
+    referenced_authors = data[5]
+    occurrence = data[6]
+    preprocessor = data[7]
 
     #iterate over all event dois
-    event_doi_missing = False
     for event_doi in event.dois:
-        if event_doi in text:
-            if not event.first_occurrence["dois"][event_doi]:
-                #add revision if event doi is referenced
-                event.first_occurrence["dois"][event_doi] = occurrence
-        else:
-            event_doi_missing = True
+        event_authors_in_references = ", ".join([author for author in event.authors[event_doi] if author in referenced_authors])
+        if event_authors_in_references and event_authors_in_references not in event.first_occurrence["authors"][event_doi]:
+            event.first_occurrence["authors"][event_doi][event_authors_in_references] = occurrence
+##        if event_doi in text:
+##            if not event.first_occurrence["dois"][event_doi]:
+##                #add revision if event doi is referenced
+##                event.first_occurrence["dois"][event_doi] = occurrence
+##        else:
+##            event_doi_missing = True
 
         #iterate over all authors of event_doi:
-        for event_author in event.first_occurrence["authors"][event_doi]:
-            if not event.first_occurrence["authors"][event_doi][event_author]:
-                for referenced_author in referenced_authors:
-                    if event_author in referenced_author:
-                        event.first_occurrence["authors"][event_doi][event_author] = occurrence
-                        break
+##        for event_author in event.first_occurrence["authors"][event_doi]:
+##            if not event.first_occurrence["authors"][event_doi][event_author]:
+##                for referenced_author in referenced_authors:
+##                    if event_author in referenced_author:
+##                        event.first_occurrence["authors"][event_doi][event_author] = occurrence
+##                        break
+
+    ##############################################################################################
+
+    event_pmids_in_text = ", ".join([event_pmid for event_pmid in event.pmids if event_pmid in referenced_pmids])
+    if event_pmids_in_text and event_pmids_in_text not in event.first_occurrence["pmids"]:
+        event.first_occurrence["pmids"][event_pmids_in_text] = occurrence
+
+    ##############################################################################################
                     
-    if event.dois and not event.first_occurrence["all_dois"]:
-        if not event_doi_missing:
-            #add revision if all event dois are referenced
-            event.first_occurrence["all_dois"] = occurrence
+    event_dois_in_text = ", ".join([event_doi for event_doi in event.dois if event_doi in text])
+    if event_dois_in_text and event_dois_in_text not in event.first_occurrence["dois"]:
+        event.first_occurrence["dois"][event_dois_in_text] = occurrence
 
     ##############################################################################################
 
@@ -95,25 +108,10 @@ def process(data):
     ##############################################################################################
 
     #iterate over all event keywords
-    for event_keyword in event.keywords:
-        if not event.first_occurrence["keywords"][event_keyword]:
-            #add revision if keyword occur in text
-            if search(event_keyword, text):
-                event.first_occurrence["keywords"][event_keyword] = occurrence
-
-    if event.keywords and not event.first_occurrence["all_keywords"]:
-        #iterate over all sections
-        for section in sections:
-            #iterate over all event keywords
-            for event_keyword in event.keywords:
-                #break if keyword not in section
-                if not search(event_keyword, section):
-                    break
-            else:
-                #add revision if all keywords occur in section
-                event.first_occurrence["all_keywords"] = occurrence
-                break
-
+    words_in_text = preprocessor.preprocess(text, lower=False, stopping=True, sentenize=False, tokenize=True)[0]
+    event_keywords_in_text = keyword_intersection(words_in_text, event.keywords)
+    if event_keywords_in_text and event_keywords_in_text not in event.first_occurrence["keywords"]:
+        event.first_occurrence["keywords"][event_keywords_in_text] = occurrence
     return event
     
 
@@ -192,13 +190,15 @@ if __name__ == "__main__":
             references_and_further_reading = revision.get_references() + revision.get_further_reading()
             ### All titles occuring in 'References' and 'Further Reading'.
             referenced_titles = set([title.lower() for title in revision.get_referenced_titles(language, references_and_further_reading)])
+            ### All PMIDs occuring in 'References' and 'Further Reading'.
+            referenced_pmids = set(flatten_list_of_lists(revision.get_referenced_pmids(references_and_further_reading)))
             ### All authors occuring in 'References' and 'Further Reading'.
             referenced_authors = set([author[0] for author in flatten_list_of_lists(revision.get_referenced_authors(language, references_and_further_reading))])
             ### Format occurrence
             formatted_occurence = occurrence(revision)
             
             with Pool(10) as pool:
-                eventlist.events = pool.map(process, [(event, text, sections, referenced_titles, referenced_authors, formatted_occurence, preprocessor) for event in eventlist.events])
+                eventlist.events = pool.map(process, [(event, text, sections, referenced_titles, referenced_pmids, referenced_authors, formatted_occurence, preprocessor) for event in eventlist.events])
                          
             revision = next(revisions, None)
 
