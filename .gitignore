@@ -1,6 +1,7 @@
 /analysis*
 /articles*
 test
+extractions
 
 /**/__pycache__
 /**/logs
