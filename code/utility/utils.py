@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     print(flatten_list_of_lists([[1,2,3],["a","b","c","d","e"]]))
     
-    items = list([1,2,3,4,5,6,7,8,9,10,11,12,13])
+    items = list([1,2,3,4])
 
     start = datetime.now()
     ps1 = powerset1(items, min_len_sub = 0)
