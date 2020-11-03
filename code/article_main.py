@@ -32,7 +32,7 @@ def process(data):
     referenced_pmids = data[4]
     referenced_authors = data[5]
     occurrence = data[6]
-    preprocessor = data[7]
+    preprocessor = Preprocessor(data[7])
 
     #iterate over all event dois
     for event_doi in event.dois:
@@ -153,8 +153,6 @@ if __name__ == "__main__":
         wikipedia_articles = [article.strip() for article in split(" *, *", ARTICLES)]
     language = args["language"]
 
-    preprocessor = Preprocessor(language)
-
     bibliography = Bibliography("../data/tracing-innovations-lit.bib")
     accountlist = AccountList("../data/CRISPR_events - accounts.csv")
 
@@ -198,7 +196,7 @@ if __name__ == "__main__":
             formatted_occurence = occurrence(revision)
             
             with Pool(10) as pool:
-                eventlist.events = pool.map(process, [(event, text, sections, referenced_titles, referenced_pmids, referenced_authors, formatted_occurence, preprocessor) for event in eventlist.events])
+                eventlist.events = pool.map(process, [(event, text, sections, referenced_titles, referenced_pmids, referenced_authors, formatted_occurence, language) for event in eventlist.events])
                          
             revision = next(revisions, None)
 
