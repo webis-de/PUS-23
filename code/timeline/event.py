@@ -20,15 +20,15 @@ class Event:
         self.places = [place.strip() for place in split("[,;] *", places.strip()) if place.strip()]
         self.bib_keys = [bibliography.bibentries.get(paper) for paper in split("; *", bib_keys.strip()) if bibliography.bibentries.get(paper)]
         self.comment = comment
-        authors = {paper.fields.get("doi"):[self.replace_braces(person.last_names[0]) for person in paper.persons.get("author")] for paper in self.bib_keys if paper.fields.get("doi")}
-        dois = [paper.fields.get("doi") for paper in self.bib_keys if paper.fields.get("doi")]
-        titles = [self.replace_braces(paper.fields.get("title")) for paper in self.bib_keys if self.replace_braces(paper.fields.get("title"))]
+        self.authors = {paper.fields.get("doi"):[self.replace_braces(person.last_names[0]) for person in paper.persons.get("author")] for paper in self.bib_keys if paper.fields.get("doi")}
+        self.dois = [paper.fields.get("doi") for paper in self.bib_keys if paper.fields.get("doi")]
+        self.titles = [self.replace_braces(paper.fields.get("title")) for paper in self.bib_keys if self.replace_braces(paper.fields.get("title"))]
         self.keywords = [keyword.replace("\"", "").strip() for keyword in split("; *", keywords) if keyword.strip()]
         self.extracted_from = extracted_from
-        self.first_occurrence = {"authors":{doi:{author:None for author in authors[doi]} for doi in dois},
-                                 "dois":{doi:None for doi in dois},
+        self.first_occurrence = {"authors":{doi:{author:None for author in self.authors[doi]} for doi in self.dois},
+                                 "dois":{doi:None for doi in self.dois},
                                  "all_dois":None,
-                                 "titles":{title:{"full":None, "processed":None} for title in titles},
+                                 "titles":{title:{"full":None, "processed":None} for title in self.titles},
                                  "all_titles":{"full":None, "processed":None},
                                  "keywords":{keyword:None for keyword in self.keywords},
                                  "all_keywords":None,
@@ -70,6 +70,10 @@ class Event:
         del copy["event_day"]
         del copy["comment"]
         del copy["sampled"]
+        del copy["authors"]
+        del copy["dois"]
+        del copy["titles"]
+        del copy["keywords"]
         del copy["extracted_from"]
         return self.prettyprint(copy)
 
