@@ -15,47 +15,62 @@ def heading(text, file):
 
 if __name__ == "__main__":
 
-    processing = ["", "_raw", "_preprocessor", "_spacy"][0]
+    PROCESSING = ["", "_raw", "_preprocessor", "_spacy"][0]
+    SELECTION = ["index", "revid", "random"][0]
+    LANGUAGE = ["en", "de"][0]
 
-    if processing == "_preprocessor":
+    if PROCESSING == "_preprocessor":
         from preprocessor.preprocessor import Preprocessor
-        preprocessor = Preprocessor("en", ["prokaryotic antiviral system"])
-    if processing == "_spacy":
-        from spacy.lang.en import English
-        spacy = English()
+        preprocessor = Preprocessor(LANGUAGE, ["prokaryotic antiviral system"])
+    if PROCESSING == "_spacy":
+        if LANGUAGE == "en":
+            from spacy.lang.en import English
+            spacy = English()
+        if LANGUAGE == "de":
+            from spacy.lang.de import German
+            spacy = German()
 
-    with open("revision_extraction" + processing + ".txt", "w", encoding="utf-8") as file:
-
-        #Select a language: en or de
-        LANGUAGE = "en"
+    with open("revision_extraction" + PROCESSING + ".txt", "w", encoding="utf-8") as file:        
 
         #Open scraped article and get random revision.
-        if processing:
-            if LANGUAGE == "en":
-                index = 1935
-            if LANGUAGE == "de":
-                index = 100
+        if SELECTION == "index":
+            #reasonable index for en 1935, for de 100
+            index = 1935
+            line = 0
+            with open("../articles/CRISPR_" + LANGUAGE) as article:
+                while line < index:
+                    article.readline()
+                    line += 1
+                revision = Revision(**loads(article.readline()))
+        elif SELECTION == "revid":
+            revid = 648831944
+            with open("../articles/CRISPR_" + LANGUAGE) as article:
+                for line in article:
+                    revision = Revision(**loads(line))
+                    if revision.revid == 648831944:
+                        break
+            index = revision.index
         else:
             revision_count = 0
             with open("../articles/CRISPR_" + LANGUAGE) as file_to_count:
                 for line in file_to_count:
                     revision_count += 1
-            index = randint(0,revision_count - 1)
-        line = 0
-        with open("../articles/CRISPR_" + LANGUAGE) as article:
-            while line < index:
-                article.readline()
-                line += 1
-            revision = Revision(**loads(article.readline()))
+            index = randint(0, revision_count - 1)
+            line = 0
+            with open("../articles/CRISPR_" + LANGUAGE) as article:
+                while line < index:
+                    article.readline()
+                    line += 1
+                revision = Revision(**loads(article.readline()))
         
         start = datetime.now()
-        if processing == "_raw" or processing == "":
+        if PROCESSING == "_raw" or PROCESSING == "":
             #RAW TEXT
             TEXT = revision.get_text().strip() + "\n"
-        if processing == "_preprocessor":
+        if PROCESSING == "_preprocessor":
             #TOKENIZED USING PREPROCESSOR
             TEXT = "|".join(preprocessor.preprocess(revision.get_text().strip() + "\n", lower=False, stopping=False, sentenize=False, tokenize=True)[0])
-        if processing == "_spacy":
+        if PROCESSING == "_spacy":
             #TOKENIZED USING SPACY
             TEXT = "|".join([str(token) for token in spacy(revision.get_text().strip() + "\n")])
         end = datetime.now()
@@ -67,11 +82,11 @@ if __name__ == "__main__":
 
         #Print text from html
         heading("\nTEXT", file)
-        if processing: file.write("Processing text took : " + str(end - start) + "\n\n")
+        if PROCESSING: file.write("Processing text took : " + str(end - start) + "\n\n")
 
         file.write(TEXT)
 
-        if not processing:
+        if not PROCESSING:
 
             #Print paragraphs from html
             heading("\nPARAGRAPHS", file)
@@ -111,14 +126,16 @@ if __name__ == "__main__":
                 authors = revision.get_referenced_authors(CITATION_STYLE, source[1])
                 titles = revision.get_referenced_titles(CITATION_STYLE, source[1])
                 dois = revision.get_referenced_dois(source[1])
+                pmids = revision.get_referenced_pmids(source[1])
                 heading("\n" + source[0] + " " + "(" + str(len(source[1])) + ")", file)
-                for reference, author, title, doi in zip(source[1], authors, titles, dois):
+                for reference, author, title, doi, pmid in zip(source[1], authors, titles, dois, pmids):
                     file.write("NUMBER: " + str(reference.number) + "\n")
                     file.write("REFERENCE TEXT: " + reference.text().strip() + "\n")
                     file.write("\n")
                     file.write("AUTHORS: " + str(author) + "\n")
                     file.write("TITLE: " + str(title) + "\n")
-                    file.write("DOIS: " + str(doi) + "\n")
+                    file.write("DOIs: " + str(doi) + "\n")
+                    file.write("PMIDs: " + str(pmid) + "\n")
                     file.write("\nLINKED PARAGRAPHS:" + "\n")
                     backlinks = reference.backlinks()
                     if backlinks:

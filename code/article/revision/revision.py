@@ -4,7 +4,7 @@ from .section import Section
 from pprint import pformat
 from requests import get
 from lxml import html, etree
-from re import finditer, split, sub, S
+from re import findall, finditer, search, split, sub, S
 
 class Revision:
     """
@@ -196,14 +196,25 @@ class Revision:
     def get_referenced_dois(self, source):
         dois = []
         for reference in source:
-            DOIs = []
+            DOIs = set()
             for element in reference.source.xpath(".//a[contains(@href, 'doi.org/')]"):
                 #dois from links
-                DOIs.append(element.get("href").split("doi.org/")[-1].replace("%2F","/"))
+                DOIs.add(element.get("href").split("doi.org/")[-1].replace("%2F","/"))
                 #dois from element text
-                DOIs.append(element.text)
-            dois.append([doi for doi in list(set(DOIs)) if " " not in doi])
+                DOIs.add(element.text)
+            dois.append([doi for doi in DOIs if " " not in doi])
         return dois
+
+    def get_referenced_pmids(self, source):
+        pmids = []
+        for reference in source:
+            PMIDs = set()
+            for pmid in findall("pmid.*?\d+", reference.text().lower()):
+                pmid = search("\d+", pmid)
+                if pmid:
+                    PMIDs.add(pmid.group(0))
+            pmids.append([pmid for pmid in PMIDs if pmid])
+        return pmids
 
     def __str__(self):
         return pformat(self.__dict__)
