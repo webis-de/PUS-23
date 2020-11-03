@@ -88,16 +88,16 @@ class Event:
 
     def prettyprint(self, structure, indent = ""):
         if structure and type(structure) == dict:
-            return "\n".join([indent + str(pair[0]) + ":\n" + self.prettyprint(pair[1], indent + "    ") if type(pair[1]) in [dict, list] else indent + str(pair[0]) + ": " + (str(pair[1]) if pair[1] else "-") for pair in structure.items()])
+            return "\n".join([indent + str(pair[0]) + (":\n" + self.prettyprint(pair[1], indent + "    ") if type(pair[1]) in [dict, list] else ": " + self.prettyprint(pair[1], "")) for pair in structure.items()])
         elif structure and type(structure) == list:
-            return "\n".join([self.prettyprint(item, "    " + indent) for item in structure])
+            return indent + "[\n" + ",\n".join([self.prettyprint(item, indent + "    ") for item in structure]) + "\n" + indent + "]"
         else:
             if structure:
                 return indent + str(structure)
             else:
                 return indent + "-"
 
-    def powerset(items, min_len):
+    def powerset(self, items, min_len):
         """
         Calculate the powerset of given list.
 
