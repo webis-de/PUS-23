@@ -27,12 +27,13 @@ def keyword_intersection(list1, list2):
 def process(data):
     event = data[0]
     text = data[1]
-    sections = data[2]
-    referenced_titles = data[3]
-    referenced_pmids = data[4]
-    referenced_authors = data[5]
-    occurrence = data[6]
-    preprocessor = Preprocessor(data[7])
+    words_in_text = data[2]
+    sections = data[3]
+    referenced_titles = data[4]
+    referenced_pmids = data[5]
+    referenced_authors = data[6]
+    occurrence = data[7]
+    preprocessor = data[8]
 
     #iterate over all event dois
     for event_doi in event.dois:
@@ -108,8 +109,7 @@ def process(data):
     ##############################################################################################
 
     #iterate over all event keywords
-    words_in_text = preprocessor.preprocess(text, lower=False, stopping=True, sentenize=False, tokenize=True)[0]
-    event_keywords_in_text = keyword_intersection(words_in_text, event.keywords)
+    event_keywords_in_text = ", ".join(words_in_text.intersection(set(event.keywords)))
     if event_keywords_in_text and event_keywords_in_text not in event.first_occurrence["keywords"]:
         event.first_occurrence["keywords"][event_keywords_in_text] = occurrence
     return event
@@ -158,6 +158,8 @@ if __name__ == "__main__":
 
     logger.start("Analysing articles " + ", ".join(wikipedia_articles))
 
+    preprocessor = Preprocessor(language)
+
     for wikipedia_article in wikipedia_articles:
 
         logger.start_check(wikipedia_article)
@@ -181,6 +183,8 @@ if __name__ == "__main__":
 
             ### The full text of the article.
             text = revision.get_text()
+            ### All words in the article
+            words_in_text = set(preprocessor.preprocess(text, lower=False, stopping=True, sentenize=False, tokenize=True)[0])
             ### All sentences/paragraphs and captions in the article.
             #sections = preprocessor.preprocess(text, lower=True, stopping=False, sentenize=True, tokenize=False)
             sections = [section.text() for section in (revision.get_paragraphs() + revision.get_captions())]
@@ -196,7 +200,7 @@ if __name__ == "__main__":
             formatted_occurence = occurrence(revision)
             
             with Pool(10) as pool:
-                eventlist.events = pool.map(process, [(event, text, sections, referenced_titles, referenced_pmids, referenced_authors, formatted_occurence, language) for event in eventlist.events])
+                eventlist.events = pool.map(process, [(event, text, words_in_text, sections, referenced_titles, referenced_pmids, referenced_authors, formatted_occurence, preprocessor) for event in eventlist.events])
                          
             revision = next(revisions, None)
 
