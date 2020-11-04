@@ -206,7 +206,8 @@ if __name__ == "__main__":
             words_in_text = set(preprocessor.preprocess(text, lower=False, stopping=True, sentenize=False, tokenize=True)[0])
             ### All sentences/paragraphs and captions in the article.
             #sections = preprocessor.preprocess(text, lower=True, stopping=False, sentenize=True, tokenize=False)
-            sections = [section.text() for section in (revision.get_paragraphs() + revision.get_captions())]
+            #sections = [section.text() for section in (revision.get_paragraphs() + revision.get_captions())]
+            sections = []
             ### All 'References' and 'Further Reading' elements.
             references_and_further_reading = revision.get_references() + revision.get_further_reading()
             ### All titles occuring in 'References' and 'Further Reading'.
