@@ -18,14 +18,22 @@ from urllib.parse import quote, unquote
 # This file serves as an entry point to test the entire pipeline.#
 ##################################################################
 
-def occurrence(revision, found = None, total = None):
+def occurrence(revision, found = None, total = None, jacc = False):
     if found and total:
-        return {"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"score":round(len(found)/len(total), 2)}
+        if jacc:
+            return {"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"jaccard":round(jacc,5)}
+        else:
+            return {"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"share":round(len(found)/len(total), 2)}
     else:
         return {"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string}
 
 def list_to_key(values):
     return "|".join(values)
+
+def jaccard(list1, list2):
+    intersection = set(list1).intersection(set(list2))
+    union = set(list1).union(set(list2))
+    return len(intersection)/len(union)
 
 def list_intersection(list1, list2):
     return "|".join(sorted(set(list1).intersection(set(list2))))
@@ -43,13 +51,25 @@ def process(data):
 
     #FIND EVENT AUTHORS (PER BIBKEY)
     for event_bibkey in event.authors:
-        event_authors_in_references = [author for author in event.authors[event_bibkey] if author in referenced_authors]
-        event_authors_in_references_as_key = list_to_key(event_authors_in_references)
-        if event_authors_in_references:
-            if event_bibkey not in event.first_occurrence["authors"]:
-                event.first_occurrence["authors"][event_bibkey] = {}
-            if event_authors_in_references_as_key not in event.first_occurrence["authors"][event_bibkey]:
-                event.first_occurrence["authors"][event_bibkey][event_authors_in_references_as_key] = occurrence(revision, event_authors_in_references, event.authors[event_bibkey])
+        event_authors_in_text = [author for author in event.authors[event_bibkey] if author in words_in_text]
+        event_authors_in_text_as_key = list_to_key(event_authors_in_text)
+        
+        if event_authors_in_text:
+            if event_bibkey not in event.first_occurrence["authors"]["text"]:
+                event.first_occurrence["authors"]["text"][event_bibkey] = {}
+            if event_authors_in_text_as_key not in event.first_occurrence["authors"]["text"][event_bibkey]:
+                event.first_occurrence["authors"]["text"][event_bibkey][event_authors_in_text_as_key] = occurrence(revision, event_authors_in_text, event.authors[event_bibkey])
+
+        jaccard_score = 0
+        for referenced_authors_subset in referenced_authors:
+            new_jaccard_score = jaccard(event.authors[event_bibkey], referenced_authors_subset)
+            if new_jaccard_score > jaccard_score:
+                jaccard_score = new_jaccard_score
+        if jaccard_score > 0:
+            if event_bibkey not in event.first_occurrence["authors"]["references"]:
+                event.first_occurrence["authors"]["references"][event_bibkey] = []
+            event.first_occurrence["authors"]["references"][event_bibkey].append(occurrence(revision, True, True, jaccard_score))
+            event.first_occurrence["authors"]["references"][event_bibkey] = sorted(event.first_occurrence["authors"]["references"][event_bibkey], key=lambda x: x["jaccard"], reverse=True)[:10]
 
     ##############################################################################################
 
@@ -194,7 +214,7 @@ if __name__ == "__main__":
             ### All PMIDs occuring in 'References' and 'Further Reading'.
             referenced_pmids = set(flatten_list_of_lists(revision.get_referenced_pmids(references_and_further_reading)))
             ### All authors occuring in 'References' and 'Further Reading'.
-            referenced_authors = set([author[0] for author in flatten_list_of_lists(revision.get_referenced_authors(language, references_and_further_reading))])
+            referenced_authors = [[author[0] for author in reference] for reference in revision.get_referenced_authors(language, references_and_further_reading)]
             
             with Pool(10) as pool:
                 eventlist.events = pool.map(process, [(event, text, words_in_text, sections, referenced_titles, referenced_pmids, referenced_authors, revision, preprocessor) for event in eventlist.events])
@@ -204,13 +224,13 @@ if __name__ == "__main__":
         logger.end_check("Done.")
 
         for i in range(len(eventlist.events)):
-            for doi in eventlist.events[i].first_occurrence["authors"]:
-                eventlist.events[i].first_occurrence["authors"][doi] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["authors"][doi].items(), key=lambda item: item[1]["score"], reverse=True)}
-            eventlist.events[i].first_occurrence["dois"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["dois"].items(), key=lambda item: item[1]["score"], reverse=True)}
-            eventlist.events[i].first_occurrence["pmids"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["pmids"].items(), key=lambda item: item[1]["score"], reverse=True)}
+            for bibkey in eventlist.events[i].first_occurrence["authors"]["text"]:
+                eventlist.events[i].first_occurrence["authors"]["text"][bibkey] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["authors"]["text"][bibkey].items(), key=lambda item: item[1]["share"], reverse=True)}
+            eventlist.events[i].first_occurrence["dois"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["dois"].items(), key=lambda item: item[1]["share"], reverse=True)}
+            eventlist.events[i].first_occurrence["pmids"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["pmids"].items(), key=lambda item: item[1]["share"], reverse=True)}
             for method in eventlist.events[i].first_occurrence["titles"]:
-                eventlist.events[i].first_occurrence["titles"][method] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["titles"][method].items(), key=lambda item: item[1]["score"], reverse=True)}
-            eventlist.events[i].first_occurrence["keywords"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["keywords"].items(), key=lambda item: item[1]["score"], reverse=True)}
+                eventlist.events[i].first_occurrence["titles"][method] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["titles"][method].items(), key=lambda item: item[1]["share"], reverse=True)}
+            eventlist.events[i].first_occurrence["keywords"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["keywords"].items(), key=lambda item: item[1]["share"], reverse=True)}
 
         with open(output_directory + sep + filename + "_" + language + "." + "txt", "w") as file:
             file.write(("\n"+"-"*50+"\n").join([str(event) for event in eventlist.events]))
