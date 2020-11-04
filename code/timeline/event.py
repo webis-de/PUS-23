@@ -26,12 +26,12 @@ class Event:
         self.titles = [self.replace_braces(paper.fields.get("title")) for paper in self.bib_keys if self.replace_braces(paper.fields.get("title"))]
         self.keywords = [keyword.replace("\"", "").strip() for keyword in split("; *", keywords) if keyword.strip()]
         self.extracted_from = extracted_from
-        self.first_occurrence = {"authors":{doi:{} for doi in self.dois},
+        self.first_occurrence = {"authors":{},
                                  "dois":{},
                                  "pmids":{},
                                  "keywords":{},
-                                 "titles":{title:{"full":None, "processed":None} for title in self.titles},
-                                 "all_titles":{"full":None, "processed":None}#,
+                                 "titles":{"full":{}, "processed":{}}#,
+                                 #"all_titles":{"full":None, "processed":None},
                                  #"actors":{},
                                  #"places":{}
                                  }

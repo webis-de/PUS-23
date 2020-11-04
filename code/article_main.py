@@ -18,11 +18,17 @@ from urllib.parse import quote, unquote
 # This file serves as an entry point to test the entire pipeline.#
 ##################################################################
 
-def occurrence(revision):
-    return ["index: " + str(revision.index), "url: " + revision.url, "timestamp: " + revision.timestamp.string]
+def occurrence(revision, found = None, total = None):
+    if found and total:
+        return {"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"score":round(len(found)/len(total), 2)}
+    else:
+        return {"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string}
 
-def keyword_intersection(list1, list2):
-    return ", ".join(set(list1).intersection(set(list2)))
+def list_to_key(values):
+    return "|".join(values)
+
+def list_intersection(list1, list2):
+    return "|".join(sorted(set(list1).intersection(set(list2))))
 
 def process(data):
     event = data[0]
@@ -32,54 +38,47 @@ def process(data):
     referenced_titles = data[4]
     referenced_pmids = data[5]
     referenced_authors = data[6]
-    occurrence = data[7]
+    revision = data[7]
     preprocessor = data[8]
 
-    #iterate over all event dois
-    for event_doi in event.dois:
-        event_authors_in_references = ", ".join([author for author in event.authors[event_doi] if author in referenced_authors])
-        if event_authors_in_references and event_authors_in_references not in event.first_occurrence["authors"][event_doi]:
-            event.first_occurrence["authors"][event_doi][event_authors_in_references] = occurrence
-##        if event_doi in text:
-##            if not event.first_occurrence["dois"][event_doi]:
-##                #add revision if event doi is referenced
-##                event.first_occurrence["dois"][event_doi] = occurrence
-##        else:
-##            event_doi_missing = True
-
-        #iterate over all authors of event_doi:
-##        for event_author in event.first_occurrence["authors"][event_doi]:
-##            if not event.first_occurrence["authors"][event_doi][event_author]:
-##                for referenced_author in referenced_authors:
-##                    if event_author in referenced_author:
-##                        event.first_occurrence["authors"][event_doi][event_author] = occurrence
-##                        break
+    #FIND EVENT AUTHORS
+    for event_doi in event.authors:
+        event_authors_in_references = [author for author in event.authors[event_doi] if author in referenced_authors]
+        event_authors_in_references_as_key = list_to_key(event_authors_in_references)
+        if event_authors_in_references:
+            if event_doi not in event.first_occurrence["authors"]:
+                event.first_occurrence["authors"][event_doi] = {}
+            if event_authors_in_references_as_key not in event.first_occurrence["authors"][event_doi]:
+                event.first_occurrence["authors"][event_doi][event_authors_in_references_as_key] = occurrence(revision, event_authors_in_references, event.authors[event_doi])
 
     ##############################################################################################
 
-    event_pmids_in_text = ", ".join([event_pmid for event_pmid in event.pmids if event_pmid in referenced_pmids])
-    if event_pmids_in_text and event_pmids_in_text not in event.first_occurrence["pmids"]:
-        event.first_occurrence["pmids"][event_pmids_in_text] = occurrence
-
-    ##############################################################################################
-                    
-    event_dois_in_text = ", ".join([event_doi for event_doi in event.dois if event_doi in text])
-    if event_dois_in_text and event_dois_in_text not in event.first_occurrence["dois"]:
-        event.first_occurrence["dois"][event_dois_in_text] = occurrence
+    #FIND EVENT PMIDS
+    event_pmids_in_text = [event_pmid for event_pmid in event.pmids if event_pmid in referenced_pmids]
+    event_pmids_in_text_as_key = list_to_key(event_pmids_in_text)
+    if event_pmids_in_text and event_pmids_in_text_as_key not in event.first_occurrence["pmids"]:
+        event.first_occurrence["pmids"][event_pmids_in_text_as_key] = occurrence(revision, event_pmids_in_text, event.pmids)
 
     ##############################################################################################
 
-    #iterate over all event titles
+    #FIND EVENT DOIS
+    event_dois_in_text = [event_doi for event_doi in event.dois if event_doi in text]
+    event_dois_in_text_as_key = list_to_key(event_dois_in_text)
+    if event_dois_in_text and event_dois_in_text_as_key not in event.first_occurrence["dois"]:
+        event.first_occurrence["dois"][event_dois_in_text_as_key] = occurrence(revision, event_dois_in_text, event.dois)
+
+    ##############################################################################################
+
+    #FIND EVENT TITLES
     event_title_full_missing = False
     event_title_processed_missing = False
     
     for event_title in event.titles:
         
-        
         if event_title.lower() in referenced_titles:
-            if not event.first_occurrence["titles"][event_title]["full"]:
+            if event_title not in event.first_occurrence["titles"]["full"]:
                 #add revision if full event title is referenced
-                event.first_occurrence["titles"][event_title]["full"] = occurrence
+                event.first_occurrence["titles"]["full"][event_title] = occurrence(revision)
         else:
             event_title_full_missing = True
         
@@ -91,29 +90,34 @@ def process(data):
             match_count = sum([1 if word in preprocessed_referenced_title else 0 for word in preprocessed_event_title])
             #add revision if processed event title is partially referenced
             if match_count >= len(preprocessed_event_title) * 0.8:
-                if not event.first_occurrence["titles"][event_title]["processed"]:
-                    event.first_occurrence["titles"][event_title]["processed"] = occurrence
+                if event_title not in event.first_occurrence["titles"]["processed"]:
+                    event.first_occurrence["titles"]["processed"][event_title] = occurrence(revision)
                 break
         else:
             event_title_processed_missing = True
 
     if event.titles:
-        if not event.first_occurrence["all_titles"]["full"]:
-            if not event_title_full_missing:
-                event.first_occurrence["all_titles"]["full"] = occurrence
-
-        if not event.first_occurrence["all_titles"]["processed"]:
-            if not event_title_processed_missing:
-                event.first_occurrence["all_titles"]["processed"] = occurrence
+        all_event_titles_as_key = list_to_key(event.titles)
+        if not event_title_full_missing:
+            if all_event_titles_as_key not in event.first_occurrence["titles"]["full"]:
+                event.first_occurrence["titles"]["full"][all_event_titles_as_key] = occurrence(revision)
+        if not event_title_processed_missing:
+            if all_event_titles_as_key not in event.first_occurrence["titles"]["processed"]:
+                event.first_occurrence["titles"]["processed"][all_event_titles_as_key] = occurrence(revision)
 
     ##############################################################################################
 
-    #iterate over all event keywords
-    event_keywords_in_text = ", ".join(words_in_text.intersection(set(event.keywords)))
-    if event_keywords_in_text and event_keywords_in_text not in event.first_occurrence["keywords"]:
-        event.first_occurrence["keywords"][event_keywords_in_text] = occurrence
+    #FIND EVENT KEYWORDS AND KEYPHRASES
+    keywords_and_keyphrases = set(event.keywords)
+    keywords = set([keyword for keyword in keywords_and_keyphrases if " " not in keyword])
+    keyphrases = set([keyphrase for keyphrase in keywords_and_keyphrases if " " in keyphrase])
+    keyword_intersection = keywords.intersection(words_in_text)
+    keyphrase_intersection = set([keyphrase for keyphrase in keyphrases if keyphrase in text])
+    keywords_and_keyphrases_in_text = sorted(keyword_intersection.union(keyphrase_intersection))
+    keywords_and_keyphrases_in_text_as_key = "|".join(keywords_and_keyphrases_in_text)
+    if keywords_and_keyphrases_in_text and keywords_and_keyphrases_in_text_as_key not in event.first_occurrence["keywords"]:
+        event.first_occurrence["keywords"][keywords_and_keyphrases_in_text_as_key] = occurrence(revision, keywords_and_keyphrases_in_text, keywords_and_keyphrases)
     return event
-    
 
 if __name__ == "__main__":
 
@@ -196,15 +200,20 @@ if __name__ == "__main__":
             referenced_pmids = set(flatten_list_of_lists(revision.get_referenced_pmids(references_and_further_reading)))
             ### All authors occuring in 'References' and 'Further Reading'.
             referenced_authors = set([author[0] for author in flatten_list_of_lists(revision.get_referenced_authors(language, references_and_further_reading))])
-            ### Format occurrence
-            formatted_occurence = occurrence(revision)
             
             with Pool(10) as pool:
-                eventlist.events = pool.map(process, [(event, text, words_in_text, sections, referenced_titles, referenced_pmids, referenced_authors, formatted_occurence, preprocessor) for event in eventlist.events])
+                eventlist.events = pool.map(process, [(event, text, words_in_text, sections, referenced_titles, referenced_pmids, referenced_authors, revision, preprocessor) for event in eventlist.events])
                          
             revision = next(revisions, None)
 
         logger.end_check("Done.")
+
+        for i in range(len(eventlist.events)):
+            for doi in eventlist.events[i].first_occurrence["authors"]:
+                eventlist.events[i].first_occurrence["authors"][doi] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["authors"][doi].items(), key=lambda item: item[1]["score"], reverse=True)}
+            eventlist.events[i].first_occurrence["dois"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["dois"].items(), key=lambda item: item[1]["score"], reverse=True)}
+            eventlist.events[i].first_occurrence["pmids"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["pmids"].items(), key=lambda item: item[1]["score"], reverse=True)}
+            eventlist.events[i].first_occurrence["keywords"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["keywords"].items(), key=lambda item: item[1]["score"], reverse=True)}
 
         with open(output_directory + sep + filename + "_" + language + "." + "txt", "w") as file:
             file.write(("\n"+"-"*50+"\n").join([str(event) for event in eventlist.events]))
