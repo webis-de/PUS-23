@@ -20,20 +20,17 @@ class Event:
         #self.places = [place.strip() for place in split("[,;] *", places.strip()) if place.strip()]
         self.bib_keys = [bibliography.bibentries.get(paper) for paper in split("; *", bib_keys.strip()) if bibliography.bibentries.get(paper)]
         self.comment = comment
-        self.authors = {paper.fields.get("doi"):[self.replace_braces(person.last_names[0]) for person in paper.persons.get("author")] for paper in self.bib_keys if paper.fields.get("doi")}
+        self.titles = [self.replace_braces(paper.fields.get("title")) for paper in self.bib_keys if self.replace_braces(paper.fields.get("title"))]
+        self.authors = {paper.key:[self.replace_braces(person.last_names[0]) for person in paper.persons.get("author")] for paper in self.bib_keys}
         self.dois = [paper.fields.get("doi") for paper in self.bib_keys if paper.fields.get("doi")]
         self.pmids = [paper.fields.get("pmid") for paper in self.bib_keys if paper.fields.get("pmid")]
-        self.titles = [self.replace_braces(paper.fields.get("title")) for paper in self.bib_keys if self.replace_braces(paper.fields.get("title"))]
         self.keywords = [keyword.replace("\"", "").strip() for keyword in split("; *", keywords) if keyword.strip()]
         self.extracted_from = extracted_from
-        self.first_occurrence = {"authors":{},
+        self.first_occurrence = {"titles":{"full":{}, "processed":{}},
+                                 "authors":{},
                                  "dois":{},
                                  "pmids":{},
-                                 "keywords":{},
-                                 "titles":{"full":{}, "processed":{}}#,
-                                 #"all_titles":{"full":None, "processed":None},
-                                 #"actors":{},
-                                 #"places":{}
+                                 "keywords":{}
                                  }
 
     def parse_int(self, value):
@@ -55,26 +52,31 @@ class Event:
     def replace_braces(self, value):
         if type(value) == str:
             return value.replace("{","").replace("}","")
-        if type(value) == list:
+        elif type(value) == list:
             return [string.replace("{","").replace("}","") for string in value]
-        if type(value) == tuple:
+        elif type(value) == tuple:
             return tuple(string.replace("{","").replace("}","") for string in value)
+        else:
+            ""
 
     def __str__(self):
-        copy = self.json() #deepcopy(self.__dict__)
+        copy = self.json()
         copy["account"] = {"account_date":self.account.account_date,"account_url":self.account.url}
-        #copy["bib_keys"] = {paper.key:{"fields":paper.fields._dict.copy(),"persons":paper.persons._dict.copy()} for paper in copy["bib_keys"]}
         del copy["event_year"]
         del copy["event_month"]
         del copy["event_day"]
         del copy["comment"]
         del copy["sampled"]
-        del copy["authors"]
-        del copy["dois"]
-        del copy["pmids"]
-        del copy["titles"]
-        del copy["keywords"]
         del copy["extracted_from"]
+        for bib_key in copy["bib_keys"]:
+            copy["bib_keys"][bib_key]["fields"]["title"] = self.replace_braces(copy["bib_keys"][bib_key]["fields"]["title"])
+            for role in copy["bib_keys"][bib_key]["persons"]:
+                copy["bib_keys"][bib_key]["persons"][role] = [self.format_person(person) for person in copy["bib_keys"][bib_key]["persons"][role]]
+##        del copy["authors"]
+##        del copy["dois"]
+##        del copy["pmids"]
+##        del copy["titles"]
+##        del copy["keywords"]
         return self.prettyprint(copy)
 
     def json(self):
@@ -84,30 +86,29 @@ class Event:
         for bib_key in copy["bib_keys"]:
             copy["bib_keys"][bib_key]["fields"]["title"] = self.replace_braces(copy["bib_keys"][bib_key]["fields"]["title"])
             for role in copy["bib_keys"][bib_key]["persons"]:
-                copy["bib_keys"][bib_key]["persons"][role] = [self.format_person(person) for person in copy["bib_keys"][bib_key]["persons"][role]]
+                copy["bib_keys"][bib_key]["persons"][role] = [person.__dict__ for person in copy["bib_keys"][bib_key]["persons"][role]]
         return copy
 
     def format_person(self, person):
-        return self.replace_braces(person.last_names[0]) + ", " + self.replace_braces(person.first_names[0])
+        return self.replace_braces(person["last_names"][0]) + ", " + self.replace_braces(person["first_names"][0])
 
-    def prettyprint(self, structure, indent = ""):
+    def prettyprint(self, structure, indent = "", linebreaking = False):
         if structure and type(structure) == dict:
-            return "\n".join([indent + str(pair[0]) + (":\n" + self.prettyprint(pair[1], indent + "    ") if type(pair[1]) in [dict, list] else ": " + self.prettyprint(pair[1], "")) for pair in structure.items()])
+            return "\n".join([indent + self.linebreak(item[0], indent) +
+                              ((":\n" + self.prettyprint(item[1], indent + "    ", (type(item[1] == str and len(item[1]) > 80))))
+                              if (type(item[1]) in [dict, list] or (type(item[1]) == str and len(item[1]) > 80))
+                              else (": " + self.prettyprint(item[1], "", False)))
+                              for item in structure.items()])
         elif structure and type(structure) == list:
-            return indent + "[\n" + ",\n".join([self.prettyprint(item, indent + "    ") for item in structure]) + "\n" + indent + "]"
+            return indent + "[\n" + ",\n".join([self.prettyprint(item, indent + "    ", False) for item in structure]) + "\n" + indent + "]"
         else:
             if structure:
-                return indent + str(structure)
+                if linebreaking:
+                    return indent + self.linebreak(structure, indent)
+                else:
+                    return indent + str(structure)
             else:
                 return indent + "-"
 
-    def powerset(self, items, min_len):
-        """
-        Calculate the powerset of given list.
-
-        Args:
-            items: The list for which the powerset should be calculated.
-        Returns:
-            The powerset.
-        """
-        return [list(x) for length in range(len(items)+1, min_len-1, -1) for x in combinations(items, length)]
+    def linebreak(self, structure, indent):
+        return ("\n" + indent).join([str(structure)[i:i+80] for i in range(0,len(str(structure)),80)])

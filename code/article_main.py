@@ -41,15 +41,15 @@ def process(data):
     revision = data[7]
     preprocessor = data[8]
 
-    #FIND EVENT AUTHORS
-    for event_doi in event.authors:
-        event_authors_in_references = [author for author in event.authors[event_doi] if author in referenced_authors]
+    #FIND EVENT AUTHORS (PER BIBKEY)
+    for event_bibkey in event.authors:
+        event_authors_in_references = [author for author in event.authors[event_bibkey] if author in referenced_authors]
         event_authors_in_references_as_key = list_to_key(event_authors_in_references)
         if event_authors_in_references:
-            if event_doi not in event.first_occurrence["authors"]:
-                event.first_occurrence["authors"][event_doi] = {}
-            if event_authors_in_references_as_key not in event.first_occurrence["authors"][event_doi]:
-                event.first_occurrence["authors"][event_doi][event_authors_in_references_as_key] = occurrence(revision, event_authors_in_references, event.authors[event_doi])
+            if event_bibkey not in event.first_occurrence["authors"]:
+                event.first_occurrence["authors"][event_bibkey] = {}
+            if event_authors_in_references_as_key not in event.first_occurrence["authors"][event_bibkey]:
+                event.first_occurrence["authors"][event_bibkey][event_authors_in_references_as_key] = occurrence(revision, event_authors_in_references, event.authors[event_bibkey])
 
     ##############################################################################################
 
@@ -70,40 +70,35 @@ def process(data):
     ##############################################################################################
 
     #FIND EVENT TITLES
-    event_title_full_missing = False
-    event_title_processed_missing = False
+    event_titles_full_in_references = []
+    event_titles_processed_in_references = []
     
     for event_title in event.titles:
         
         if event_title.lower() in referenced_titles:
-            if event_title not in event.first_occurrence["titles"]["full"]:
-                #add revision if full event title is referenced
-                event.first_occurrence["titles"]["full"][event_title] = occurrence(revision)
-        else:
-            event_title_full_missing = True
+            event_titles_full_in_references.append(event_title)
         
         #lower, stop and tokenize event title
         preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=True, sentenize=False, tokenize=True)[0]
+        
         for referenced_title in referenced_titles:
             #lower, stop and tokenize referenced title
             preprocessed_referenced_title = preprocessor.preprocess(referenced_title, lower=True, stopping=True, sentenize=False, tokenize=True)[0]
+            #calculate number of matching content words
             match_count = sum([1 if word in preprocessed_referenced_title else 0 for word in preprocessed_event_title])
             #add revision if processed event title is partially referenced
             if match_count >= len(preprocessed_event_title) * 0.8:
-                if event_title not in event.first_occurrence["titles"]["processed"]:
-                    event.first_occurrence["titles"]["processed"][event_title] = occurrence(revision)
+                event_titles_processed_in_references.append(event_title)
                 break
-        else:
-            event_title_processed_missing = True
 
-    if event.titles:
-        all_event_titles_as_key = list_to_key(event.titles)
-        if not event_title_full_missing:
-            if all_event_titles_as_key not in event.first_occurrence["titles"]["full"]:
-                event.first_occurrence["titles"]["full"][all_event_titles_as_key] = occurrence(revision)
-        if not event_title_processed_missing:
-            if all_event_titles_as_key not in event.first_occurrence["titles"]["processed"]:
-                event.first_occurrence["titles"]["processed"][all_event_titles_as_key] = occurrence(revision)
+    if event_titles_full_in_references:
+        event_titles_full_in_references_as_key = list_to_key(event_titles_full_in_references)
+        if event_titles_full_in_references_as_key not in event.first_occurrence["titles"]["full"]:
+                event.first_occurrence["titles"]["full"][event_titles_full_in_references_as_key] = occurrence(revision, event_titles_full_in_references, event.titles)
+    if event_titles_processed_in_references:
+        event_titles_processed_in_references_as_key = list_to_key(event_titles_processed_in_references)
+        if event_titles_processed_in_references_as_key not in event.first_occurrence["titles"]["processed"]:
+                event.first_occurrence["titles"]["processed"][event_titles_processed_in_references_as_key] = occurrence(revision, event_titles_processed_in_references, event.titles)
 
     ##############################################################################################
 
@@ -213,6 +208,8 @@ if __name__ == "__main__":
                 eventlist.events[i].first_occurrence["authors"][doi] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["authors"][doi].items(), key=lambda item: item[1]["score"], reverse=True)}
             eventlist.events[i].first_occurrence["dois"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["dois"].items(), key=lambda item: item[1]["score"], reverse=True)}
             eventlist.events[i].first_occurrence["pmids"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["pmids"].items(), key=lambda item: item[1]["score"], reverse=True)}
+            for method in eventlist.events[i].first_occurrence["titles"]:
+                eventlist.events[i].first_occurrence["titles"][method] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["titles"][method].items(), key=lambda item: item[1]["score"], reverse=True)}
             eventlist.events[i].first_occurrence["keywords"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["keywords"].items(), key=lambda item: item[1]["score"], reverse=True)}
 
         with open(output_directory + sep + filename + "_" + language + "." + "txt", "w") as file:
