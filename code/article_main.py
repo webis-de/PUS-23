@@ -107,7 +107,7 @@ def process(data):
     keywords = set([keyword for keyword in keywords_and_keyphrases if " " not in keyword])
     keyphrases = set([keyphrase for keyphrase in keywords_and_keyphrases if " " in keyphrase])
     keyword_intersection = keywords.intersection(words_in_text)
-    keyphrase_intersection = set([keyphrase for keyphrase in keyphrases if keyphrase in text])
+    keyphrase_intersection = set([keyphrase for keyphrase in keyphrases if keyphrase.lower() in text.lower()])
     keywords_and_keyphrases_in_text = sorted(keyword_intersection.union(keyphrase_intersection))
     keywords_and_keyphrases_in_text_as_key = "|".join(keywords_and_keyphrases_in_text)
     if keywords_and_keyphrases_in_text and keywords_and_keyphrases_in_text_as_key not in event.first_occurrence["keywords"]:
