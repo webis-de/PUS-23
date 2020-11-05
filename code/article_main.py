@@ -13,17 +13,19 @@ from os import makedirs
 from re import split
 from json import load, dump
 from urllib.parse import quote, unquote
+from math import log
 
 ##################################################################
 # This file serves as an entry point to test the entire pipeline.#
 ##################################################################
 
-def occurrence(revision, found = None, total = None, jacc = False):
-    if found and total:
-        if jacc:
-            return {"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"jaccard":round(jacc,5)}
-        else:
-            return {"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"share":round(len(found)/len(total), 2)}
+def occurrence(revision, found = None, total = None, jacc = False, ndcg = False, referenced_authors = []):
+    if jacc:
+        return {"referenced_authors":referenced_authors,"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"jaccard":round(jacc,5)}
+    elif ndcg:
+        return {"referenced_authors":referenced_authors,"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"ndcg":round(ndcg,5)}
+    elif found and total:
+        return {"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"share":round(len(found)/len(total), 2)}
     else:
         return {"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string}
 
@@ -51,25 +53,48 @@ def process(data):
 
     #FIND EVENT AUTHORS (PER BIBKEY)
     for event_bibkey in event.authors:
-        event_authors_in_text = [author for author in event.authors[event_bibkey] if author in words_in_text]
+        event_authors = event.authors[event_bibkey]
+        event_authors_in_text = [author for author in event_authors if author in words_in_text]
         event_authors_in_text_as_key = list_to_key(event_authors_in_text)
         
         if event_authors_in_text:
             if event_bibkey not in event.first_occurrence["authors"]["text"]:
                 event.first_occurrence["authors"]["text"][event_bibkey] = {}
             if event_authors_in_text_as_key not in event.first_occurrence["authors"]["text"][event_bibkey]:
-                event.first_occurrence["authors"]["text"][event_bibkey][event_authors_in_text_as_key] = occurrence(revision, event_authors_in_text, event.authors[event_bibkey])
+                event.first_occurrence["authors"]["text"][event_bibkey][event_authors_in_text_as_key] = occurrence(revision, found=event_authors_in_text, total=event_authors)
 
         jaccard_score = 0
+        REFERENCED_AUTHORS = ""
+        
         for referenced_authors_subset in referenced_authors:
-            new_jaccard_score = jaccard(event.authors[event_bibkey], referenced_authors_subset)
-            if new_jaccard_score > jaccard_score:
+            new_jaccard_score = jaccard(event_authors, referenced_authors_subset)
+            new_REFERENCED_AUTHORS = "|".join(referenced_authors_subset)
+            if new_jaccard_score > jaccard_score and new_REFERENCED_AUTHORS not in [result["referenced_authors"] for result in event.first_occurrence["authors"]["jaccard"].get(event_bibkey, [])]:
                 jaccard_score = new_jaccard_score
+                REFERENCED_AUTHORS = new_REFERENCED_AUTHORS
         if jaccard_score > 0:
-            if event_bibkey not in event.first_occurrence["authors"]["references"]:
-                event.first_occurrence["authors"]["references"][event_bibkey] = []
-            event.first_occurrence["authors"]["references"][event_bibkey].append(occurrence(revision, True, True, jaccard_score))
-            event.first_occurrence["authors"]["references"][event_bibkey] = sorted(event.first_occurrence["authors"]["references"][event_bibkey], key=lambda x: x["jaccard"], reverse=True)[:10]
+            if event_bibkey not in event.first_occurrence["authors"]["jaccard"]:
+                event.first_occurrence["authors"]["jaccard"][event_bibkey] = []
+            event.first_occurrence["authors"]["jaccard"][event_bibkey].append(occurrence(revision, jacc=jaccard_score, referenced_authors=REFERENCED_AUTHORS))
+            event.first_occurrence["authors"]["jaccard"][event_bibkey] = sorted(event.first_occurrence["authors"]["jaccard"][event_bibkey], key=lambda x: x["jaccard"], reverse=True)[:5]
+
+        nDCG = 0
+        REFERENCED_AUTHORS = ""
+        
+        gains = {author:len(event_authors)-event_authors.index(author) for author in event_authors}
+        iDCG = sum([(2**gains[event_authors[i]]-1)/log(i+2,2) for i in range(len(event_authors))])
+        for referenced_authors_subset in referenced_authors:
+            DCG = sum([(2**gains[referenced_authors_subset[i]]-1)/log(i+2,2) if referenced_authors_subset[i] in gains else 0 for i in range(len(referenced_authors_subset))])
+            new_nDCG = DCG/iDCG
+            new_REFERENCED_AUTHORS = "|".join(referenced_authors_subset)
+            if new_nDCG > nDCG and new_REFERENCED_AUTHORS not in [result["referenced_authors"] for result in event.first_occurrence["authors"]["ndcg"].get(event_bibkey, [])]:
+                nDCG = new_nDCG
+                REFERENCED_AUTHORS = new_REFERENCED_AUTHORS
+        if nDCG > 0:
+            if event_bibkey not in event.first_occurrence["authors"]["ndcg"]:
+                event.first_occurrence["authors"]["ndcg"][event_bibkey] = []
+            event.first_occurrence["authors"]["ndcg"][event_bibkey].append(occurrence(revision, ndcg=nDCG, referenced_authors=REFERENCED_AUTHORS))
+            event.first_occurrence["authors"]["ndcg"][event_bibkey] = sorted(event.first_occurrence["authors"]["ndcg"][event_bibkey], key=lambda x: x["ndcg"], reverse=True)[:5]
 
     ##############################################################################################
 
@@ -77,7 +102,7 @@ def process(data):
     event_pmids_in_text = [event_pmid for event_pmid in event.pmids if event_pmid in referenced_pmids]
     event_pmids_in_text_as_key = list_to_key(event_pmids_in_text)
     if event_pmids_in_text and event_pmids_in_text_as_key not in event.first_occurrence["pmids"]:
-        event.first_occurrence["pmids"][event_pmids_in_text_as_key] = occurrence(revision, event_pmids_in_text, event.pmids)
+        event.first_occurrence["pmids"][event_pmids_in_text_as_key] = occurrence(revision, found=event_pmids_in_text, total=event.pmids)
 
     ##############################################################################################
 
@@ -85,7 +110,7 @@ def process(data):
     event_dois_in_text = [event_doi for event_doi in event.dois if event_doi in text]
     event_dois_in_text_as_key = list_to_key(event_dois_in_text)
     if event_dois_in_text and event_dois_in_text_as_key not in event.first_occurrence["dois"]:
-        event.first_occurrence["dois"][event_dois_in_text_as_key] = occurrence(revision, event_dois_in_text, event.dois)
+        event.first_occurrence["dois"][event_dois_in_text_as_key] = occurrence(revision, found=event_dois_in_text, total=event.dois)
 
     ##############################################################################################
 
@@ -114,11 +139,11 @@ def process(data):
     if event_titles_full_in_references:
         event_titles_full_in_references_as_key = list_to_key(event_titles_full_in_references)
         if event_titles_full_in_references_as_key not in event.first_occurrence["titles"]["full"]:
-                event.first_occurrence["titles"]["full"][event_titles_full_in_references_as_key] = occurrence(revision, event_titles_full_in_references, event.titles)
+                event.first_occurrence["titles"]["full"][event_titles_full_in_references_as_key] = occurrence(revision, found=event_titles_full_in_references, total=event.titles)
     if event_titles_processed_in_references:
         event_titles_processed_in_references_as_key = list_to_key(event_titles_processed_in_references)
         if event_titles_processed_in_references_as_key not in event.first_occurrence["titles"]["processed"]:
-                event.first_occurrence["titles"]["processed"][event_titles_processed_in_references_as_key] = occurrence(revision, event_titles_processed_in_references, event.titles)
+                event.first_occurrence["titles"]["processed"][event_titles_processed_in_references_as_key] = occurrence(revision, found=event_titles_processed_in_references, total=event.titles)
 
     ##############################################################################################
 
@@ -131,7 +156,7 @@ def process(data):
     keywords_and_keyphrases_in_text = sorted(keyword_intersection.union(keyphrase_intersection))
     keywords_and_keyphrases_in_text_as_key = "|".join(keywords_and_keyphrases_in_text)
     if keywords_and_keyphrases_in_text and keywords_and_keyphrases_in_text_as_key not in event.first_occurrence["keywords"]:
-        event.first_occurrence["keywords"][keywords_and_keyphrases_in_text_as_key] = occurrence(revision, keywords_and_keyphrases_in_text, keywords_and_keyphrases)
+        event.first_occurrence["keywords"][keywords_and_keyphrases_in_text_as_key] = occurrence(revision, found=keywords_and_keyphrases_in_text, total=keywords_and_keyphrases)
     return event
 
 if __name__ == "__main__":

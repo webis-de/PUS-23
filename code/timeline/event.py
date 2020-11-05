@@ -27,7 +27,7 @@ class Event:
         self.keywords = [keyword.replace("\"", "").strip() for keyword in split("; *", keywords) if keyword.strip()]
         self.extracted_from = extracted_from
         self.first_occurrence = {"titles":{"full":{}, "processed":{}},
-                                 "authors":{"text":{}, "references":{}},
+                                 "authors":{"text":{}, "jaccard":{}, "ndcg":{}},
                                  "dois":{},
                                  "pmids":{},
                                  "keywords":{}
