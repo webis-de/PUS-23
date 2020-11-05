@@ -257,7 +257,9 @@ if __name__ == "__main__":
         for i in range(len(eventlist.events)):
             for bibkey in eventlist.events[i].first_occurrence["authors"]["text"]:
                 eventlist.events[i].first_occurrence["authors"]["text"][bibkey] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["authors"]["text"][bibkey].items(), key=lambda item: item[1]["share"], reverse=True)}
+            for bibkey in eventlist.events[i].first_occurrence["authors"]["jaccard"]:
                 eventlist.events[i].first_occurrence["authors"]["jaccard"][bibkey] = sorted(eventlist.events[i].first_occurrence["authors"]["jaccard"][bibkey], key=lambda x: x["jaccard"], reverse=True)[:5]
+            for bibkey in eventlist.events[i].first_occurrence["authors"]["ndcg"]:
                 eventlist.events[i].first_occurrence["authors"]["ndcg"][bibkey] = sorted(eventlist.events[i].first_occurrence["authors"]["ndcg"][bibkey], key=lambda x: x["ndcg"], reverse=True)[:5]
             eventlist.events[i].first_occurrence["dois"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["dois"].items(), key=lambda item: item[1]["share"], reverse=True)}
             eventlist.events[i].first_occurrence["pmids"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["pmids"].items(), key=lambda item: item[1]["share"], reverse=True)}
