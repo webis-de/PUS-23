@@ -48,12 +48,13 @@ def analyse(data):
     event = data[0]
     text = data[1]
     words_in_text = data[2]
-    references_and_further_reading = data[3]
-    referenced_titles = data[4]
-    referenced_pmids = data[5]
-    revision = data[6]
-    preprocessor = data[7]
-    language = data[8]
+    referenced_authors_subsets = data[3]
+    reference_texts = data[4]
+    referenced_titles = data[5]
+    referenced_pmids = data[6]
+    revision = data[7]
+    preprocessor = data[8]
+    language = data[9]    
 
     #FIND EVENT AUTHORS (PER BIBKEY)
     for event_bibkey in event.authors:
@@ -75,10 +76,7 @@ def analyse(data):
         nDCG = 0
         NCDG_REFERENCE_TEXT = ""
         
-        for reference in references_and_further_reading:
-
-            referenced_authors_subset = [author[0] for author in reference.get_authors(language)]
-            reference_text = reference.text().replace("\n","")
+        for referenced_authors_subset, reference_text in zip(referenced_authors_subsets, reference_texts):
 
             new_jaccard_score = jaccard(event_authors, referenced_authors_subset)
             if new_jaccard_score > jaccard_score:
@@ -245,10 +243,13 @@ if __name__ == "__main__":
             ### All PMIDs occuring in 'References' and 'Further Reading'.
             referenced_pmids = set(flatten_list_of_lists([reference.get_pmids() for reference in references_and_further_reading]))
             ### All authors occuring in 'References' and 'Further Reading'.
-            #referenced_authors = [[author[0] for author in reference.get_authors(language)] for reference in references_and_further_reading]
+            referenced_authors = [[author[0] for author in reference.get_authors(language)] for reference in references_and_further_reading]
+            ### All reference texts
+            reference_texts = [reference.text().replace("\n","") for reference in references_and_further_reading]
+            
             with Pool(10) as pool:
-                eventlist.events = [analyse((event, text, words_in_text, references_and_further_reading, referenced_titles, referenced_pmids, revision, preprocessor, language)) for event in eventlist.events]
-                #eventlist.events = pool.map(analyse, [(event, text, words_in_text, references_and_further_reading, referenced_titles, referenced_pmids, revision, preprocessor, language) for event in eventlist.events])
+                #eventlist.events = [analyse((event, text, words_in_text, referenced_authors, reference_texts, referenced_titles, referenced_pmids, revision, preprocessor, language)) for event in eventlist.events]
+                eventlist.events = pool.map(analyse, [(event, text, words_in_text, referenced_authors, reference_texts, referenced_titles, referenced_pmids, revision, preprocessor, language) for event in eventlist.events])
                          
             revision = next(revisions, None)
 
