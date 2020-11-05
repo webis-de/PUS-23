@@ -92,12 +92,11 @@ def analyse(data):
             if event_bibkey not in event.first_occurrence["authors"]["jaccard"]:
                 event.first_occurrence["authors"]["jaccard"][event_bibkey] = []
             event.first_occurrence["authors"]["jaccard"][event_bibkey].append(occurrence(revision, jacc=jaccard_score, reference_text=JACCARD_REFERENCE_TEXT))
-            event.first_occurrence["authors"]["jaccard"][event_bibkey] = sorted(event.first_occurrence["authors"]["jaccard"][event_bibkey], key=lambda x: x["jaccard"], reverse=True)[:5]
+            
         if nDCG > 0 and NCDG_REFERENCE_TEXT not in [result["reference_text"] for result in event.first_occurrence["authors"]["ndcg"].get(event_bibkey, [])]:
             if event_bibkey not in event.first_occurrence["authors"]["ndcg"]:
                 event.first_occurrence["authors"]["ndcg"][event_bibkey] = []
             event.first_occurrence["authors"]["ndcg"][event_bibkey].append(occurrence(revision, ndcg=nDCG, reference_text=NCDG_REFERENCE_TEXT))
-            event.first_occurrence["authors"]["ndcg"][event_bibkey] = sorted(event.first_occurrence["authors"]["ndcg"][event_bibkey], key=lambda x: x["ndcg"], reverse=True)[:5]
 
     ##############################################################################################
 
@@ -258,6 +257,8 @@ if __name__ == "__main__":
         for i in range(len(eventlist.events)):
             for bibkey in eventlist.events[i].first_occurrence["authors"]["text"]:
                 eventlist.events[i].first_occurrence["authors"]["text"][bibkey] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["authors"]["text"][bibkey].items(), key=lambda item: item[1]["share"], reverse=True)}
+                eventlist.events[i].first_occurrence["authors"]["jaccard"][bibkey] = sorted(eventlist.events[i].first_occurrence["authors"]["jaccard"][bibkey], key=lambda x: x["jaccard"], reverse=True)[:5]
+                eventlist.events[i].first_occurrence["authors"]["ndcg"][bibkey] = sorted(eventlist.events[i].first_occurrence["authors"]["ndcg"][bibkey], key=lambda x: x["ndcg"], reverse=True)[:5]
             eventlist.events[i].first_occurrence["dois"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["dois"].items(), key=lambda item: item[1]["share"], reverse=True)}
             eventlist.events[i].first_occurrence["pmids"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["pmids"].items(), key=lambda item: item[1]["share"], reverse=True)}
             for method in eventlist.events[i].first_occurrence["titles"]:
