@@ -115,106 +115,16 @@ class Revision:
         return [Reference(reference[1], None) for reference in enumerate(self.etree_from_html().xpath(".//ul/li/cite"))]
 
     def get_referenced_authors(self, language, source):
-        authors = []
-        for reference in source:
-            if language == "en":
-                #get full text of reference
-                text = reference.text()
-                AUTHORS = []
-                if "(" in text:
-                    #remove everything after first (
-                    text = sub(r"\(.*", "", text)
-                    #remove et al.
-                    text = sub(r",? *et al\.?", "", text).strip()
-                    #get surnames and fistnames
-                    for author in split(r", ?", text):
-                        try:
-                            match = next(finditer(r".* ", author))
-                            AUTHORS.append((author[0:match.end()-1], author[match.end():]))
-                        except StopIteration:
-                            pass
-                authors.append(AUTHORS)
-            if language == "de":
-                #get full text of reference
-                text = reference.text()
-                AUTHORS = []
-                try:
-                    #split at :
-                    text = text.split(":")[0]
-                    #remove et al.
-                    text = sub(r",? *et al\.?", "", text).strip()
-                    #get surnames and fist names
-                    for author in split(r", ?", text):
-                        try:
-                            match = next(finditer(r".*\. ", author))
-                            AUTHORS.append((author[match.end():], author[0:match.end()-1]))
-                        except StopIteration:
-                            pass
-                except IndexError:
-                    pass
-                authors.append(AUTHORS)
-        return authors
+        return [reference.get_authors(language) for reference in source]
 
     def get_referenced_titles(self, language, source):
-        titles = []
-        for reference in source:
-            if language == "en":
-                try:
-                    #get full text of reference
-                    text = reference.text()
-                    #split at year
-                    text = split(r"\(.*?\)\.? ?", text, 1)[1].strip()
-                    try:
-                        #try to find quoted title
-                        match = next(finditer(r"\".*?\"", text))
-                        #get span of first match
-                        text = text[match.start():match.end()]
-                        #remove quotation marks
-                        title = text.replace("\"", "")
-                    except StopIteration:
-                        #split at stop
-                        text = text.split(".")[0]
-                        #remove quotation marks
-                        title = text.replace("\"", "")
-                    titles.append(title)
-                except IndexError:
-                    titles.append("")
-            if language == "de":
-                #get full text of reference
-                text = reference.text()
-                try:
-                    #split at :
-                    text = split(":", text, 1)[1].strip()
-                    #split at .
-                    title = text.split(".")[0].strip()
-                    
-                    titles.append(title)
-                except IndexError:
-                    titles.append("")  
-        return titles
+        return [reference.get_title(language) for reference in source]
 
     def get_referenced_dois(self, source):
-        dois = []
-        for reference in source:
-            DOIs = set()
-            for element in reference.source.xpath(".//a[contains(@href, 'doi.org/')]"):
-                #dois from links
-                DOIs.add(element.get("href").split("doi.org/")[-1].replace("%2F","/"))
-                #dois from element text
-                DOIs.add(element.text)
-            dois.append([doi for doi in DOIs if " " not in doi])
-        return dois
+        return [reference.get_dois() for reference in source]
 
     def get_referenced_pmids(self, source):
-        pmids = []
-        for reference in source:
-            PMIDs = set()
-            for pmid in findall("pmid.*?\d+", reference.text().lower()):
-                pmid = search("\d+", pmid)
-                if pmid:
-                    PMIDs.add(pmid.group(0))
-            pmids.append([pmid for pmid in PMIDs if pmid])
-        return pmids
+        return [reference.get_pmids() for reference in source]
 
     def __str__(self):
         return pformat(self.__dict__)

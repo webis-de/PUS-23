@@ -19,11 +19,11 @@ from math import log
 # This file serves as an entry point to test the entire pipeline.#
 ##################################################################
 
-def occurrence(revision, found = None, total = None, jacc = False, ndcg = False, referenced_authors = []):
+def occurrence(revision, found = None, total = None, jacc = False, ndcg = False, reference_text = ""):
     if jacc:
-        return {"referenced_authors":referenced_authors,"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"jaccard":round(jacc,5)}
+        return {"reference_text":reference_text,"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"jaccard":round(jacc,5)}
     elif ndcg:
-        return {"referenced_authors":referenced_authors,"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"ndcg":round(ndcg,5)}
+        return {"reference_text":reference_text,"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"ndcg":round(ndcg,5)}
     elif found and total:
         return {"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"share":round(len(found)/len(total), 2)}
     else:
@@ -37,19 +37,23 @@ def jaccard(list1, list2):
     union = set(list1).union(set(list2))
     return len(intersection)/len(union)
 
+def ndcg(gains, iDCG, referenced_authors_subset):
+    DCG = sum([(2**gains[referenced_authors_subset[i]]-1)/log(i+2,2) if referenced_authors_subset[i] in gains else 0 for i in range(len(referenced_authors_subset))])
+    return DCG/iDCG
+
 def list_intersection(list1, list2):
     return "|".join(sorted(set(list1).intersection(set(list2))))
 
-def process(data):
+def analyse(data):
     event = data[0]
     text = data[1]
     words_in_text = data[2]
-    sections = data[3]
+    references_and_further_reading = data[3]
     referenced_titles = data[4]
     referenced_pmids = data[5]
-    referenced_authors = data[6]
-    revision = data[7]
-    preprocessor = data[8]
+    revision = data[6]
+    preprocessor = data[7]
+    language = data[8]
 
     #FIND EVENT AUTHORS (PER BIBKEY)
     for event_bibkey in event.authors:
@@ -63,37 +67,38 @@ def process(data):
             if event_authors_in_text_as_key not in event.first_occurrence["authors"]["text"][event_bibkey]:
                 event.first_occurrence["authors"]["text"][event_bibkey][event_authors_in_text_as_key] = occurrence(revision, found=event_authors_in_text, total=event_authors)
 
-        jaccard_score = 0
-        REFERENCED_AUTHORS = ""
-        
-        for referenced_authors_subset in referenced_authors:
-            new_jaccard_score = jaccard(event_authors, referenced_authors_subset)
-            new_REFERENCED_AUTHORS = "|".join(referenced_authors_subset)
-            if new_jaccard_score > jaccard_score and new_REFERENCED_AUTHORS not in [result["referenced_authors"] for result in event.first_occurrence["authors"]["jaccard"].get(event_bibkey, [])]:
-                jaccard_score = new_jaccard_score
-                REFERENCED_AUTHORS = new_REFERENCED_AUTHORS
-        if jaccard_score > 0:
-            if event_bibkey not in event.first_occurrence["authors"]["jaccard"]:
-                event.first_occurrence["authors"]["jaccard"][event_bibkey] = []
-            event.first_occurrence["authors"]["jaccard"][event_bibkey].append(occurrence(revision, jacc=jaccard_score, referenced_authors=REFERENCED_AUTHORS))
-            event.first_occurrence["authors"]["jaccard"][event_bibkey] = sorted(event.first_occurrence["authors"]["jaccard"][event_bibkey], key=lambda x: x["jaccard"], reverse=True)[:5]
-
-        nDCG = 0
-        REFERENCED_AUTHORS = ""
-        
         gains = {author:len(event_authors)-event_authors.index(author) for author in event_authors}
         iDCG = sum([(2**gains[event_authors[i]]-1)/log(i+2,2) for i in range(len(event_authors))])
-        for referenced_authors_subset in referenced_authors:
-            DCG = sum([(2**gains[referenced_authors_subset[i]]-1)/log(i+2,2) if referenced_authors_subset[i] in gains else 0 for i in range(len(referenced_authors_subset))])
-            new_nDCG = DCG/iDCG
-            new_REFERENCED_AUTHORS = "|".join(referenced_authors_subset)
-            if new_nDCG > nDCG and new_REFERENCED_AUTHORS not in [result["referenced_authors"] for result in event.first_occurrence["authors"]["ndcg"].get(event_bibkey, [])]:
+        
+        jaccard_score = 0
+        JACCARD_REFERENCE_TEXT = ""
+        nDCG = 0
+        NCDG_REFERENCE_TEXT = ""
+        
+        for reference in references_and_further_reading:
+
+            referenced_authors_subset = [author[0] for author in reference.get_authors(language)]
+            reference_text = reference.text().replace("\n","")
+
+            new_jaccard_score = jaccard(event_authors, referenced_authors_subset)
+            if new_jaccard_score > jaccard_score:
+                jaccard_score = new_jaccard_score
+                JACCARD_REFERENCE_TEXT = reference_text
+            
+            new_nDCG = ndcg(gains, iDCG, referenced_authors_subset)
+            if new_nDCG > nDCG:
                 nDCG = new_nDCG
-                REFERENCED_AUTHORS = new_REFERENCED_AUTHORS
-        if nDCG > 0:
+                NCDG_REFERENCE_TEXT = reference_text
+
+        if jaccard_score > 0 and JACCARD_REFERENCE_TEXT not in [result["reference_text"] for result in event.first_occurrence["authors"]["jaccard"].get(event_bibkey, [])]:
+            if event_bibkey not in event.first_occurrence["authors"]["jaccard"]:
+                event.first_occurrence["authors"]["jaccard"][event_bibkey] = []
+            event.first_occurrence["authors"]["jaccard"][event_bibkey].append(occurrence(revision, jacc=jaccard_score, reference_text=JACCARD_REFERENCE_TEXT))
+            event.first_occurrence["authors"]["jaccard"][event_bibkey] = sorted(event.first_occurrence["authors"]["jaccard"][event_bibkey], key=lambda x: x["jaccard"], reverse=True)[:5]
+        if nDCG > 0 and NCDG_REFERENCE_TEXT not in [result["reference_text"] for result in event.first_occurrence["authors"]["ndcg"].get(event_bibkey, [])]:
             if event_bibkey not in event.first_occurrence["authors"]["ndcg"]:
                 event.first_occurrence["authors"]["ndcg"][event_bibkey] = []
-            event.first_occurrence["authors"]["ndcg"][event_bibkey].append(occurrence(revision, ndcg=nDCG, referenced_authors=REFERENCED_AUTHORS))
+            event.first_occurrence["authors"]["ndcg"][event_bibkey].append(occurrence(revision, ndcg=nDCG, reference_text=NCDG_REFERENCE_TEXT))
             event.first_occurrence["authors"]["ndcg"][event_bibkey] = sorted(event.first_occurrence["authors"]["ndcg"][event_bibkey], key=lambda x: x["ndcg"], reverse=True)[:5]
 
     ##############################################################################################
@@ -232,18 +237,18 @@ if __name__ == "__main__":
             ### All sentences/paragraphs and captions in the article.
             #sections = preprocessor.preprocess(text, lower=True, stopping=False, sentenize=True, tokenize=False)
             #sections = [section.text() for section in (revision.get_paragraphs() + revision.get_captions())]
-            sections = []
+            #sections = []
             ### All 'References' and 'Further Reading' elements.
             references_and_further_reading = revision.get_references() + revision.get_further_reading()
             ### All titles occuring in 'References' and 'Further Reading'.
-            referenced_titles = set([title.lower() for title in revision.get_referenced_titles(language, references_and_further_reading)])
+            referenced_titles = set([reference.get_title(language).lower() for reference in references_and_further_reading])
             ### All PMIDs occuring in 'References' and 'Further Reading'.
-            referenced_pmids = set(flatten_list_of_lists(revision.get_referenced_pmids(references_and_further_reading)))
+            referenced_pmids = set(flatten_list_of_lists([reference.get_pmids() for reference in references_and_further_reading]))
             ### All authors occuring in 'References' and 'Further Reading'.
-            referenced_authors = [[author[0] for author in reference] for reference in revision.get_referenced_authors(language, references_and_further_reading)]
-            
+            #referenced_authors = [[author[0] for author in reference.get_authors(language)] for reference in references_and_further_reading]
             with Pool(10) as pool:
-                eventlist.events = pool.map(process, [(event, text, words_in_text, sections, referenced_titles, referenced_pmids, referenced_authors, revision, preprocessor) for event in eventlist.events])
+                eventlist.events = [analyse((event, text, words_in_text, references_and_further_reading, referenced_titles, referenced_pmids, revision, preprocessor, language)) for event in eventlist.events]
+                #eventlist.events = pool.map(analyse, [(event, text, words_in_text, references_and_further_reading, referenced_titles, referenced_pmids, revision, preprocessor, language) for event in eventlist.events])
                          
             revision = next(revisions, None)
 

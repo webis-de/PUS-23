@@ -75,6 +75,8 @@ if __name__ == "__main__":
             TEXT = "|".join([str(token) for token in spacy(revision.get_text().strip() + "\n")])
         end = datetime.now()
 
+        foobar = datetime.now()
+
         file.write("You are looking at revision number " + str(index) + " from " + revision.timestamp.string + "." + "\n")
         #URL of revsions
         heading("\nURL OF REVISION", file)
@@ -123,19 +125,15 @@ if __name__ == "__main__":
             sources = {"REFERENCES": revision.get_references(), "FURTHER READING":revision.get_further_reading()}
             sections = paragraphs + headings + lists + captions + tables
             for source in sources.items():
-                authors = revision.get_referenced_authors(CITATION_STYLE, source[1])
-                titles = revision.get_referenced_titles(CITATION_STYLE, source[1])
-                dois = revision.get_referenced_dois(source[1])
-                pmids = revision.get_referenced_pmids(source[1])
                 heading("\n" + source[0] + " " + "(" + str(len(source[1])) + ")", file)
-                for reference, author, title, doi, pmid in zip(source[1], authors, titles, dois, pmids):
+                for reference in source[1]:
                     file.write("NUMBER: " + str(reference.number) + "\n")
                     file.write("REFERENCE TEXT: " + reference.text().strip() + "\n")
                     file.write("\n")
-                    file.write("AUTHORS: " + str(author) + "\n")
-                    file.write("TITLE: " + str(title) + "\n")
-                    file.write("DOIs: " + str(doi) + "\n")
-                    file.write("PMIDs: " + str(pmid) + "\n")
+                    file.write("AUTHORS: " + str(reference.get_authors(LANGUAGE)) + "\n")
+                    file.write("TITLE: " + str(reference.get_title(LANGUAGE)) + "\n")
+                    file.write("DOIs: " + str(reference.get_dois()) + "\n")
+                    file.write("PMIDs: " + str(reference.get_pmids()) + "\n")
                     file.write("\nLINKED PARAGRAPHS:" + "\n")
                     backlinks = reference.backlinks()
                     if backlinks:
@@ -143,3 +141,4 @@ if __name__ == "__main__":
                     else:
                         file.write("-" + "\n")
                     file.write("-"*50 + "\n")
+    print(datetime.now() - foobar)
