@@ -113,9 +113,10 @@ def analyse(event, text, words_in_text, referenced_authors_subsets, reference_te
     event_titles_processed_in_references = []
     
     for event_title in event.titles:
-        
-        if event_title.lower() in referenced_titles[1]:
-            event_titles_full_in_references.append(event_title)
+
+        if referenced_titles:
+            if event_title.lower() in referenced_titles[1]:
+                event_titles_full_in_references.append(event_title)
         
         #lower, stop and tokenize event title
         preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
@@ -246,7 +247,6 @@ if __name__ == "__main__":
             referenced_authors_subsets = [[author[0] for author in reference.get_authors(language)] for reference in references_and_further_reading]
             ### All reference texts
             reference_texts = [reference.text().replace("\n","") for reference in references_and_further_reading]
-            
             with Pool(10) as pool:
                 eventlist.events = pool.starmap(analyse,
                                                 [(event, text, words_in_text, referenced_authors_subsets, reference_texts, referenced_titles, referenced_pmids, revision, preprocessor, language)
