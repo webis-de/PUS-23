@@ -46,7 +46,7 @@ def ndcg(gains, iDCG, referenced_authors_subset):
 def list_intersection(list1, list2):
     return "|".join(sorted(set(list1).intersection(set(list2))))
 
-def analyse(event, text, words_in_text, referenced_authors_subsets, reference_texts, referenced_titles, referenced_pmids, revision, preprocessor, language): 
+def analyse(event, text, words_in_text, referenced_authors_subsets, reference_texts, referenced_titles, referenced_pmids, revision, preprocessor, language):
 
     #FIND EVENT AUTHORS (PER BIBKEY)
     for event_bibkey in event.authors:
@@ -114,19 +114,19 @@ def analyse(event, text, words_in_text, referenced_authors_subsets, reference_te
     
     for event_title in event.titles:
         
-        if event_title.lower() in referenced_titles:
+        if event_title.lower() in referenced_titles[1]:
             event_titles_full_in_references.append(event_title)
         
         #lower, stop and tokenize event title
         preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
         for referenced_title, reference_text in zip(referenced_titles, reference_texts):
             #lower, stop and tokenize referenced title
-            preprocessed_referenced_title = preprocessor.preprocess(referenced_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
+            preprocessed_referenced_title = preprocessor.preprocess(referenced_title[1], lower=True, stopping=False, sentenize=False, tokenize=True)[0]
             #calculate token-based edit distance
             edit_distance_ratio = levenshtein(preprocessed_event_title, preprocessed_referenced_title)/len(preprocessed_event_title)
             #add referenced_title if edit distance to length of event title ratio is less than 0.1
             if edit_distance_ratio < 0.2:
-                event_titles_processed_in_references.append((referenced_title, reference_text, edit_distance_ratio))
+                event_titles_processed_in_references.append((referenced_title[0], reference_text, edit_distance_ratio))
                 break
 
     if event_titles_full_in_references:
@@ -239,7 +239,7 @@ if __name__ == "__main__":
             ### All 'References' and 'Further Reading' elements.
             references_and_further_reading = revision.get_references() + revision.get_further_reading()
             ### All titles occuring in 'References' and 'Further Reading'.
-            referenced_titles = [reference.get_title(language).lower() for reference in references_and_further_reading]
+            referenced_titles = [(title, title.lower()) for title in [reference.get_title(language) for reference in references_and_further_reading]]
             ### All PMIDs occuring in 'References' and 'Further Reading'.
             referenced_pmids = set(flatten_list_of_lists([reference.get_pmids() for reference in references_and_further_reading]))
             ### All authors occuring in 'References' and 'Further Reading'.

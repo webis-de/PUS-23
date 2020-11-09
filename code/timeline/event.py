@@ -1,4 +1,4 @@
-from re import split
+from re import split, sub
 from copy import deepcopy
 from itertools import combinations
 
@@ -92,23 +92,27 @@ class Event:
     def format_person(self, person):
         return self.replace_braces(person["last_names"][0]) + ", " + self.replace_braces(person["first_names"][0])
 
-    def prettyprint(self, structure, indent = "", linebreaking = False):
+    def prettyprint(self, structure, indent = ""):
         if structure and type(structure) == dict:
             return "\n".join([indent + self.linebreak(item[0], indent) +
-                              ((":\n" + self.prettyprint(item[1], indent + "    ", (type(item[1] == str and len(item[1]) > 80))))
+                              ((":\n" + self.prettyprint(self.linebreak(item[1], indent), indent + "    "))
                               if (type(item[1]) in [dict, list] or (type(item[1]) == str and len(item[1]) > 80))
-                              else (": " + self.prettyprint(item[1], "", False)))
+                              else (": " + self.prettyprint(self.linebreak(item[1], indent), "")))
                               for item in structure.items()])
         elif structure and type(structure) == list:
-            return indent + "[\n" + ",\n".join([self.prettyprint(item, indent + "    ", False) for item in structure]) + "\n" + indent + "]"
+            return indent + "[\n" + ",\n".join([self.prettyprint(self.linebreak(item, indent), indent + "    ") for item in structure]) + "\n" + indent + "]"
         else:
             if structure not in ["", [], {}, None]:
-                if linebreaking:
-                    return indent + self.linebreak(structure, indent)
-                else:
-                    return indent + str(structure)
+                return indent + self.linebreak(structure, indent)
             else:
                 return indent + "-"
 
     def linebreak(self, structure, indent):
-        return ("\n" + indent).join([str(structure)[i:i+80] for i in range(0,len(str(structure)),80)])
+        if type(structure) not in [dict, list]:
+            if type(structure) == str and len(structure) > 80:
+                structure = sub(" +", " ", structure.replace("\n", ""))
+                return ("\n" + indent).join([str(structure)[i:i+80] for i in range(0,len(str(structure)),80)])
+            else:
+                return sub(" +", " ", str(structure).replace("\n", ""))
+        else:
+            return structure
