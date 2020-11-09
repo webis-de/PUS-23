@@ -13,40 +13,7 @@ def flatten_list_of_lists(list_of_lists):
     """
     return [item for sublist in list_of_lists for item in sublist]
 
-def calc_powerset(items, result = [], subset = [], min_len_sub = 1):
-    """
-    Calculate the powerset of subsets of given list.
-
-    Args:
-        items: The list for which the powerset should be calculated.
-        result: The resulting powerset.
-        subset: Holds subset during recursion.
-        min_len_sub: The minimum length of subsets to return.
-    Returns:
-        The powerset.
-    """
-    if len(items) + len(subset) < min_len_sub:
-        return ()
-    elif not items:
-        result.append(tuple(subset))
-    else:
-        calc_powerset(items[1:], result, subset + [items[0]], min_len_sub)
-        calc_powerset(items[1:], result, subset, min_len_sub)
-    return result
-
-def powerset1(items, min_len_sub):
-    """
-    Calculate the powerset of given list.
-
-    Args:
-        items: The list for which the powerset should be calculated.
-        min_len_sub: The minimum length of subsets to return.
-    Returns:
-        The powerset.
-    """
-    return calc_powerset(items, [], [], min_len_sub)
-
-def powerset2(items, min_len):
+def powerset(items, min_len):
     """
     Calculate the powerset of given list.
 
@@ -57,46 +24,39 @@ def powerset2(items, min_len):
     """
     return [x for length in range(len(items)+1, min_len-1, -1) for x in combinations(items, length)]
 
-def powerset3(items, min_len):
+def levenshtein(word1, word2, verbose = False):
     """
-    Calculate the powerset of given list.
+    Calculate the edit distance between two words.
 
     Args:
-        items: The list for which the powerset should be calculated.
+        word1: The first string.
+        word2: The second string.
     Returns:
-        The powerset.
+        The edit distance between the two strings.
     """
-    return [x for length in range(len(items)+1, min_len-1, -1) for x in my_combinations(items, length, [], [])]
+    k = len(word1) + 1
+    l = len(word2) + 1
+    matrix = [[0 for x in range(0, l)] for y in range(0, k)]
 
-def my_combinations(items, r, result, subset):
-    if r > len(items):
-        result.append(subset)
-    else:
-        for i in range(r):
-            my_combinations(items[i+1:], r-i, result, subset + [items[i]])
-    return result
+    for i in range(0, k):
+        matrix[i][0] = i
+
+    for j in range(0, l):
+        matrix[0][j] = j
+    
+    for i in range(0, k-1):
+        for j in range(0, l-1):
+            matrix[i+1][j+1] = min([matrix[i][j+1] + 1, matrix[i+1][j] + 1, matrix[i][j] + int(word1[i] != word2[j])])
+    if verbose:
+        print_levenshtein_matrix(matrix, word1, word2)
+    return matrix[len(word1)][len(word2)]
+
+def print_levenshtein_matrix(matrix, word1, word2):
+    print("    " + " ".join((x for x in word2)))
+    for i in range(0, len(matrix)):
+        print((" " + word1)[i] + " " + " ".join(str(x) for x in matrix[i]))
+    print("\n" + "EDIT DISTANCE = " + str(matrix[len(word1)][len(word2)]) + "\n")
 
 if __name__ == "__main__":
 
-    from datetime import datetime
-
-    #print(comb([1,2,3,4,5],[],[],4))
-
-    print(flatten_list_of_lists([[1,2,3],["a","b","c","d","e"]]))
-    
-    items = list([1,2,3,4])
-
-    start = datetime.now()
-    ps1 = powerset1(items, min_len_sub = 0)
-    print(ps1)
-    print(datetime.now() - start)
-
-    start = datetime.now()
-    ps2 = powerset2(items, min_len = 0)
-    print(ps2)
-    print(datetime.now() - start)
-
-    start = datetime.now()
-    ps3 = powerset3(items, min_len = 0)
-    print(ps3)
-    print(datetime.now() - start)
+    levenshtein("haus","aush",True)

@@ -102,7 +102,7 @@ class Event:
         elif structure and type(structure) == list:
             return indent + "[\n" + ",\n".join([self.prettyprint(item, indent + "    ", False) for item in structure]) + "\n" + indent + "]"
         else:
-            if structure:
+            if structure not in ["", [], {}, None]:
                 if linebreaking:
                     return indent + self.linebreak(structure, indent)
                 else:

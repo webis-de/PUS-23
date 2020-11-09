@@ -2,7 +2,7 @@ from article.article import Article
 from timeline.eventlist import EventList
 from timeline.accountlist import AccountList
 from bibliography.bibliography import Bibliography
-from utility.utils import flatten_list_of_lists
+from utility.utils import flatten_list_of_lists, levenshtein
 from utility.logger import Logger
 from preprocessor.preprocessor import Preprocessor
 from multiprocessing import Pool
@@ -19,11 +19,13 @@ from math import log
 # This file serves as an entry point to test the entire pipeline.#
 ##################################################################
 
-def occurrence(revision, found = None, total = None, jacc = False, ndcg = False, reference_text = ""):
+def occurrence(revision, found = None, total = None, jacc = False, ndcg = False, lev = False, reference_text = ""):
     if jacc:
         return {"reference_text":reference_text,"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"jaccard":round(jacc,5)}
     elif ndcg:
         return {"reference_text":reference_text,"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"ndcg":round(ndcg,5)}
+    elif lev:
+        return {"reference_text":reference_text,"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"levenshtein":lev}
     elif found and total:
         return {"index":str(revision.index),"url":revision.url,"timestamp":revision.timestamp.string,"share":round(len(found)/len(total), 2)}
     else:
@@ -44,17 +46,7 @@ def ndcg(gains, iDCG, referenced_authors_subset):
 def list_intersection(list1, list2):
     return "|".join(sorted(set(list1).intersection(set(list2))))
 
-def analyse(data):
-    event = data[0]
-    text = data[1]
-    words_in_text = data[2]
-    referenced_authors_subsets = data[3]
-    reference_texts = data[4]
-    referenced_titles = data[5]
-    referenced_pmids = data[6]
-    revision = data[7]
-    preprocessor = data[8]
-    language = data[9]    
+def analyse(event, text, words_in_text, referenced_authors_subsets, reference_texts, referenced_titles, referenced_pmids, revision, preprocessor, language): 
 
     #FIND EVENT AUTHORS (PER BIBKEY)
     for event_bibkey in event.authors:
@@ -101,10 +93,10 @@ def analyse(data):
     ##############################################################################################
 
     #FIND EVENT PMIDS
-    event_pmids_in_text = [event_pmid for event_pmid in event.pmids if event_pmid in referenced_pmids]
-    event_pmids_in_text_as_key = list_to_key(event_pmids_in_text)
-    if event_pmids_in_text and event_pmids_in_text_as_key not in event.first_occurrence["pmids"]:
-        event.first_occurrence["pmids"][event_pmids_in_text_as_key] = occurrence(revision, found=event_pmids_in_text, total=event.pmids)
+    event_pmids_in_references = [event_pmid for event_pmid in event.pmids if event_pmid in referenced_pmids]
+    event_pmids_in_references_as_key = list_to_key(event_pmids_in_references)
+    if event_pmids_in_references and event_pmids_in_references_as_key not in event.first_occurrence["pmids"]:
+        event.first_occurrence["pmids"][event_pmids_in_references_as_key] = occurrence(revision, found=event_pmids_in_references, total=event.pmids)
 
     ##############################################################################################
 
@@ -126,16 +118,15 @@ def analyse(data):
             event_titles_full_in_references.append(event_title)
         
         #lower, stop and tokenize event title
-        preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=True, sentenize=False, tokenize=True)[0]
-        
-        for referenced_title in referenced_titles:
+        preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
+        for referenced_title, reference_text in zip(referenced_titles, reference_texts):
             #lower, stop and tokenize referenced title
-            preprocessed_referenced_title = preprocessor.preprocess(referenced_title, lower=True, stopping=True, sentenize=False, tokenize=True)[0]
-            #calculate number of matching content words
-            match_count = sum([1 if word in preprocessed_referenced_title else 0 for word in preprocessed_event_title])
-            #add revision if processed event title is partially referenced
-            if match_count >= len(preprocessed_event_title) * 0.8:
-                event_titles_processed_in_references.append(event_title)
+            preprocessed_referenced_title = preprocessor.preprocess(referenced_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
+            #calculate token-based edit distance
+            edit_distance_ratio = levenshtein(preprocessed_event_title, preprocessed_referenced_title)/len(preprocessed_event_title)
+            #add referenced_title if edit distance to length of event title ratio is less than 0.1
+            if edit_distance_ratio < 0.2:
+                event_titles_processed_in_references.append((referenced_title, reference_text, edit_distance_ratio))
                 break
 
     if event_titles_full_in_references:
@@ -143,20 +134,30 @@ def analyse(data):
         if event_titles_full_in_references_as_key not in event.first_occurrence["titles"]["full"]:
                 event.first_occurrence["titles"]["full"][event_titles_full_in_references_as_key] = occurrence(revision, found=event_titles_full_in_references, total=event.titles)
     if event_titles_processed_in_references:
-        event_titles_processed_in_references_as_key = list_to_key(event_titles_processed_in_references)
+        event_titles_processed_in_references_as_key = list_to_key([item[0] for item in event_titles_processed_in_references])
+        reference_texts_of_processed_event_titles_in_references = [item[1] for item in event_titles_processed_in_references]
+        edit_distance_ratios_of_processed_event_titles_in_references = [item[2] for item in event_titles_processed_in_references]
         if event_titles_processed_in_references_as_key not in event.first_occurrence["titles"]["processed"]:
-                event.first_occurrence["titles"]["processed"][event_titles_processed_in_references_as_key] = occurrence(revision, found=event_titles_processed_in_references, total=event.titles)
+                event.first_occurrence["titles"]["processed"][event_titles_processed_in_references_as_key] = occurrence(revision,
+                                                                                                                        reference_text=reference_texts_of_processed_event_titles_in_references,
+                                                                                                                        lev=edit_distance_ratios_of_processed_event_titles_in_references)
 
     ##############################################################################################
 
     #FIND EVENT KEYWORDS AND KEYPHRASES
     keywords_and_keyphrases = set(event.keywords)
+    #select keywords: no spaces
     keywords = set([keyword for keyword in keywords_and_keyphrases if " " not in keyword])
+    #select keyphrases: spaces
     keyphrases = set([keyphrase for keyphrase in keywords_and_keyphrases if " " in keyphrase])
+    #intersection of keywords and words in text
     keyword_intersection = keywords.intersection(words_in_text)
+    #intersection of keyphrases and raw text
     keyphrase_intersection = set([keyphrase for keyphrase in keyphrases if keyphrase.lower() in text.lower()])
+    #union of keywords and keyphrases in text
     keywords_and_keyphrases_in_text = sorted(keyword_intersection.union(keyphrase_intersection))
-    keywords_and_keyphrases_in_text_as_key = "|".join(keywords_and_keyphrases_in_text)
+    
+    keywords_and_keyphrases_in_text_as_key = list_to_key(keywords_and_keyphrases_in_text)
     if keywords_and_keyphrases_in_text and keywords_and_keyphrases_in_text_as_key not in event.first_occurrence["keywords"]:
         event.first_occurrence["keywords"][keywords_and_keyphrases_in_text_as_key] = occurrence(revision, found=keywords_and_keyphrases_in_text, total=keywords_and_keyphrases)
     return event
@@ -238,17 +239,18 @@ if __name__ == "__main__":
             ### All 'References' and 'Further Reading' elements.
             references_and_further_reading = revision.get_references() + revision.get_further_reading()
             ### All titles occuring in 'References' and 'Further Reading'.
-            referenced_titles = set([reference.get_title(language).lower() for reference in references_and_further_reading])
+            referenced_titles = [reference.get_title(language).lower() for reference in references_and_further_reading]
             ### All PMIDs occuring in 'References' and 'Further Reading'.
             referenced_pmids = set(flatten_list_of_lists([reference.get_pmids() for reference in references_and_further_reading]))
             ### All authors occuring in 'References' and 'Further Reading'.
-            referenced_authors = [[author[0] for author in reference.get_authors(language)] for reference in references_and_further_reading]
+            referenced_authors_subsets = [[author[0] for author in reference.get_authors(language)] for reference in references_and_further_reading]
             ### All reference texts
             reference_texts = [reference.text().replace("\n","") for reference in references_and_further_reading]
             
             with Pool(10) as pool:
-                #eventlist.events = [analyse((event, text, words_in_text, referenced_authors, reference_texts, referenced_titles, referenced_pmids, revision, preprocessor, language)) for event in eventlist.events]
-                eventlist.events = pool.map(analyse, [(event, text, words_in_text, referenced_authors, reference_texts, referenced_titles, referenced_pmids, revision, preprocessor, language) for event in eventlist.events])
+                eventlist.events = pool.starmap(analyse,
+                                                [(event, text, words_in_text, referenced_authors_subsets, reference_texts, referenced_titles, referenced_pmids, revision, preprocessor, language)
+                                                 for event in eventlist.events])
                          
             revision = next(revisions, None)
 
@@ -263,8 +265,8 @@ if __name__ == "__main__":
                 eventlist.events[i].first_occurrence["authors"]["ndcg"][bibkey] = sorted(eventlist.events[i].first_occurrence["authors"]["ndcg"][bibkey], key=lambda x: x["ndcg"], reverse=True)[:5]
             eventlist.events[i].first_occurrence["dois"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["dois"].items(), key=lambda item: item[1]["share"], reverse=True)}
             eventlist.events[i].first_occurrence["pmids"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["pmids"].items(), key=lambda item: item[1]["share"], reverse=True)}
-            for method in eventlist.events[i].first_occurrence["titles"]:
-                eventlist.events[i].first_occurrence["titles"][method] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["titles"][method].items(), key=lambda item: item[1]["share"], reverse=True)}
+            eventlist.events[i].first_occurrence["titles"]["full"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["titles"]["full"].items(), key=lambda item: item[1]["share"], reverse=True)}
+            eventlist.events[i].first_occurrence["titles"]["processed"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["titles"]["processed"].items(), key=lambda item: sum(item[1]["levenshtein"])/len(item[1]["levenshtein"]), reverse=True)}
             eventlist.events[i].first_occurrence["keywords"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["keywords"].items(), key=lambda item: item[1]["share"], reverse=True)}
 
         with open(output_directory + sep + filename + "_" + language + "." + "txt", "w") as file:
