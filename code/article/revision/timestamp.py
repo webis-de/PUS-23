@@ -40,6 +40,7 @@ if __name__ == "__main__":
 
     timestamp = Timestamp("2020-7-6T17:10:20Z")
     print(timestamp)
+    print(timestamp.string)
     print(timestamp.year)
     print(timestamp.month)
     print(timestamp.day)

@@ -1,6 +1,7 @@
 from article.revision.revision import Revision
 from random import randint
 from json import loads
+from lxml import html
 from re import sub
 from datetime import datetime
 
@@ -18,6 +19,7 @@ if __name__ == "__main__":
     PROCESSING = ["", "_raw", "_preprocessor", "_spacy"][0]
     SELECTION = ["index", "revid", "random"][0]
     LANGUAGE = ["en", "de"][0]
+    FILEPATH = "../articles/CRISPR_" + LANGUAGE
 
     if PROCESSING == "_preprocessor":
         from preprocessor.preprocessor import Preprocessor
@@ -35,16 +37,16 @@ if __name__ == "__main__":
         #Open scraped article and get random revision.
         if SELECTION == "index":
             #reasonable index for en 1935, for de 100
-            index = 1935
+            index = 280
             line = 0
-            with open("../articles/CRISPR_" + LANGUAGE) as article:
+            with open(FILEPATH) as article:
                 while line < index:
                     article.readline()
                     line += 1
                 revision = Revision(**loads(article.readline()))
         elif SELECTION == "revid":
             revid = 648831944
-            with open("../articles/CRISPR_" + LANGUAGE) as article:
+            with open(FILEPATH) as article:
                 for line in article:
                     revision = Revision(**loads(line))
                     if revision.revid == 648831944:
@@ -52,12 +54,12 @@ if __name__ == "__main__":
             index = revision.index
         else:
             revision_count = 0
-            with open("../articles/CRISPR_" + LANGUAGE) as file_to_count:
+            with open(FILEPATH) as file_to_count:
                 for line in file_to_count:
                     revision_count += 1
             index = randint(0, revision_count - 1)
             line = 0
-            with open("../articles/CRISPR_" + LANGUAGE) as article:
+            with open(FILEPATH) as article:
                 while line < index:
                     article.readline()
                     line += 1
@@ -93,27 +95,27 @@ if __name__ == "__main__":
             #Print paragraphs from html
             heading("\nPARAGRAPHS", file)
             paragraphs = revision.get_paragraphs()
-            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([section.text() for section in paragraphs])) + "\n")
+            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([section.get_text() for section in paragraphs])) + "\n")
 
             #Print headings from html
             heading("\nHEADINGS", file)
             headings = revision.get_headings()
-            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([section.text() for section in headings])) + "\n")
+            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([section.get_text() for section in headings])) + "\n")
 
             #Print lists from html
             heading("\nLISTS", file)
             lists = revision.get_lists()
-            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([section.text() for section in lists])) + "\n")
+            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([section.get_text() for section in lists])) + "\n")
 
             #Print captions from html
             heading("\nCAPTIONS", file)
             captions = revision.get_captions()
-            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([section.text() for section in captions])) + "\n")
+            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([section.get_text() for section in captions])) + "\n")
 
             #Print tables from html
             heading("\nTABLES", file)
             tables = revision.get_tables()
-            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([section.text() for section in tables])) + "\n")
+            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([section.get_text() for section in tables])) + "\n")
 
             #Print all categories.
             heading("\nCATEGORIES", file)
@@ -127,17 +129,18 @@ if __name__ == "__main__":
             for source in sources.items():
                 heading("\n" + source[0] + " " + "(" + str(len(source[1])) + ")", file)
                 for reference in source[1]:
+                    file.write("SOURCE: " + html.tostring(reference.source).decode("utf-8") + "\n")
                     file.write("NUMBER: " + str(reference.number) + "\n")
-                    file.write("REFERENCE TEXT: " + reference.text().strip() + "\n")
+                    file.write("REFERENCE TEXT: " + reference.get_text().strip() + "\n")
                     file.write("\n")
                     file.write("AUTHORS: " + str(reference.get_authors(LANGUAGE)) + "\n")
                     file.write("TITLE: " + str(reference.get_title(LANGUAGE)) + "\n")
                     file.write("DOIs: " + str(reference.get_dois()) + "\n")
                     file.write("PMIDs: " + str(reference.get_pmids()) + "\n")
                     file.write("\nLINKED PARAGRAPHS:" + "\n")
-                    backlinks = reference.backlinks()
+                    backlinks = reference.get_backlinks()
                     if backlinks:
-                        file.write("\n".join(["=>" + str(backlink) + "\n" + linked_section.text().strip() for backlink, linked_section in zip(backlinks, reference.linked_sections(sections))]) + "\n")
+                        file.write("\n".join(["=>" + str(backlink) + "\n" + linked_section.get_text().strip() for backlink, linked_section in zip(backlinks, reference.linked_sections(sections))]) + "\n")
                     else:
                         file.write("-" + "\n")
                     file.write("-"*50 + "\n")

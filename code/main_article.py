@@ -15,9 +15,9 @@ from json import load, dump
 from urllib.parse import quote, unquote
 from math import log
 
-##################################################################
-# This file serves as an entry point to test the entire pipeline.#
-##################################################################
+#####################################################################
+# This file serves as an entry point to test the article extraction.#
+#####################################################################
 
 def occurrence(revision, found = None, total = None, jacc = False, ndcg = False, lev = False, reference_text = ""):
     if jacc:
@@ -46,7 +46,44 @@ def ndcg(gains, iDCG, referenced_authors_subset):
 def list_intersection(list1, list2):
     return "|".join(sorted(set(list1).intersection(set(list2))))
 
-def analyse(event, revision, revision_text, revision_words, reference_texts, referenced_author_sets, referenced_titles, referenced_pmids, preprocessor, language):
+def analyse(event, revision, revision_text, revision_text_lowered, revision_words, reference_texts, referenced_author_sets, referenced_titles, referenced_titles_lowered, referenced_pmids, preprocessor, language):
+
+    #FIND EVENT TITLES
+    event_titles_full_in_references = []
+    event_titles_processed_in_references = []
+    
+    for event_title in event.titles:
+
+        #check for full string match of lowered event title in lowered revision text
+        if event_title.lower() in revision_text_lowered:
+            event_titles_full_in_references.append(event_title)
+        
+        #lower, stop and tokenize event title
+        preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
+        for referenced_title, reference_text in zip(referenced_titles, reference_texts):
+            #lower, stop and tokenize referenced title
+            preprocessed_referenced_title = preprocessor.preprocess(referenced_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
+            #calculate token-based edit distance ratio
+            edit_distance_ratio = levenshtein(preprocessed_event_title, preprocessed_referenced_title)/len(preprocessed_event_title)
+            #add referenced_title if edit distance to length of event title ratio is less than 0.2
+            if edit_distance_ratio < 0.2:
+                event_titles_processed_in_references.append((referenced_title, reference_text, edit_distance_ratio))
+                break
+
+    if event_titles_full_in_references:
+        event_titles_full_in_references_as_key = list_to_key(event_titles_full_in_references)
+        if event_titles_full_in_references_as_key not in event.first_occurrence["titles"]["full"]:
+                event.first_occurrence["titles"]["full"][event_titles_full_in_references_as_key] = occurrence(revision, found=event_titles_full_in_references, total=event.titles)
+    if event_titles_processed_in_references:
+        event_titles_processed_in_references_as_key = list_to_key([item[0] for item in event_titles_processed_in_references])
+        reference_texts_of_processed_event_titles_in_references = [item[1] for item in event_titles_processed_in_references]
+        edit_distance_ratios_of_processed_event_titles_in_references = [item[2] for item in event_titles_processed_in_references]
+        if event_titles_processed_in_references_as_key not in event.first_occurrence["titles"]["processed"]:
+                event.first_occurrence["titles"]["processed"][event_titles_processed_in_references_as_key] = occurrence(revision,
+                                                                                                                        reference_text=reference_texts_of_processed_event_titles_in_references,
+                                                                                                                        lev=edit_distance_ratios_of_processed_event_titles_in_references)
+
+    ##############################################################################################
 
     #FIND EVENT AUTHORS (PER BIBKEY)
     for event_bibkey in event.authors:
@@ -101,46 +138,10 @@ def analyse(event, revision, revision_text, revision_words, reference_texts, ref
     ##############################################################################################
 
     #FIND EVENT DOIS
-    event_dois_in_text = [event_doi for event_doi in event.dois if event_doi in revision_text]
+    event_dois_in_text = [event_doi for event_doi in event.dois if event_doi.lower() in revision_text_lowered]
     event_dois_in_text_as_key = list_to_key(event_dois_in_text)
     if event_dois_in_text and event_dois_in_text_as_key not in event.first_occurrence["dois"]:
         event.first_occurrence["dois"][event_dois_in_text_as_key] = occurrence(revision, found=event_dois_in_text, total=event.dois)
-
-    ##############################################################################################
-
-    #FIND EVENT TITLES
-    event_titles_full_in_references = []
-    event_titles_processed_in_references = []
-    
-    for event_title in event.titles:
-
-        if event_title.lower() in [title[1] for title in referenced_titles]:
-            event_titles_full_in_references.append(event_title)
-        
-        #lower, stop and tokenize event title
-        preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
-        for referenced_title, reference_text in zip(referenced_titles, reference_texts):
-            #lower, stop and tokenize referenced title
-            preprocessed_referenced_title = preprocessor.preprocess(referenced_title[1], lower=True, stopping=False, sentenize=False, tokenize=True)[0]
-            #calculate token-based edit distance
-            edit_distance_ratio = levenshtein(preprocessed_event_title, preprocessed_referenced_title)/len(preprocessed_event_title)
-            #add referenced_title if edit distance to length of event title ratio is less than 0.2
-            if edit_distance_ratio < 0.2:
-                event_titles_processed_in_references.append((referenced_title[0], reference_text, edit_distance_ratio))
-                break
-
-    if event_titles_full_in_references:
-        event_titles_full_in_references_as_key = list_to_key(event_titles_full_in_references)
-        if event_titles_full_in_references_as_key not in event.first_occurrence["titles"]["full"]:
-                event.first_occurrence["titles"]["full"][event_titles_full_in_references_as_key] = occurrence(revision, found=event_titles_full_in_references, total=event.titles)
-    if event_titles_processed_in_references:
-        event_titles_processed_in_references_as_key = list_to_key([item[0] for item in event_titles_processed_in_references])
-        reference_texts_of_processed_event_titles_in_references = [item[1] for item in event_titles_processed_in_references]
-        edit_distance_ratios_of_processed_event_titles_in_references = [item[2] for item in event_titles_processed_in_references]
-        if event_titles_processed_in_references_as_key not in event.first_occurrence["titles"]["processed"]:
-                event.first_occurrence["titles"]["processed"][event_titles_processed_in_references_as_key] = occurrence(revision,
-                                                                                                                        reference_text=reference_texts_of_processed_event_titles_in_references,
-                                                                                                                        lev=edit_distance_ratios_of_processed_event_titles_in_references)
 
     ##############################################################################################
 
@@ -153,7 +154,7 @@ def analyse(event, revision, revision_text, revision_words, reference_texts, ref
     #intersection of keywords and words in text
     keyword_intersection = keywords.intersection(revision_words)
     #intersection of keyphrases and raw text
-    keyphrase_intersection = set([keyphrase for keyphrase in keyphrases if keyphrase.lower() in revision_text.lower()])
+    keyphrase_intersection = set([keyphrase for keyphrase in keyphrases if keyphrase.lower() in revision_text_lowered])
     #union of keywords and keyphrases in text
     keywords_and_keyphrases_in_text = sorted(keyword_intersection.union(keyphrase_intersection))
     
@@ -230,21 +231,23 @@ if __name__ == "__main__":
 
             ### The full text of the article.
             revision_text = revision.get_text()
+            revision_text_lowered = revision_text.lower()
             ### All words in the article
             revision_words = set(preprocessor.preprocess(revision_text, lower=False, stopping=True, sentenize=False, tokenize=True)[0])
             ### All 'References' and 'Further Reading' elements.
             references_and_further_reading = revision.get_references() + revision.get_further_reading()
             ### All titles occuring in 'References' and 'Further Reading'.
-            referenced_titles = [(title, title.lower()) for title in [reference.get_title(language) for reference in references_and_further_reading]]
+            referenced_titles = [reference.get_title(language) for reference in references_and_further_reading]
+            referenced_titles_lowered = [title.lower() for title in referenced_titles]
             ### All PMIDs occuring in 'References' and 'Further Reading'.
             referenced_pmids = set(flatten_list_of_lists([reference.get_pmids() for reference in references_and_further_reading]))
             ### All authors occuring in 'References' and 'Further Reading'.
             referenced_author_sets = [[author[0] for author in reference.get_authors(language)] for reference in references_and_further_reading]
             ### All reference texts
-            reference_texts = [reference.text().replace("\n","") for reference in references_and_further_reading]
+            reference_texts = [reference.get_text().replace("\n","") for reference in references_and_further_reading]
             with Pool(10) as pool:
                 eventlist.events = pool.starmap(analyse,
-                                                [(event, revision, revision_text, revision_words, reference_texts, referenced_author_sets, referenced_titles, referenced_pmids, preprocessor, language)
+                                                [(event, revision, revision_text, revision_text_lowered, revision_words, reference_texts, referenced_author_sets, referenced_titles, referenced_titles_lowered, referenced_pmids, preprocessor, language)
                                                  for event in eventlist.events])
                          
             revision = next(revisions, None)

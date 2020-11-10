@@ -6,10 +6,10 @@ class Section:
 
         self.source = source
 
-    def text(self):
+    def get_text(self):
         return sub(r" +", " ", " ".join(self.source.xpath(".//text()")))
 
-    def backlink(self, backlink):
+    def get_backlink(self, backlink):
         try:
             return self.source.xpath(".//span[@class='mw-cite-backlink']//a")[0].get("href")[1:]
         except IndexError:
