@@ -46,12 +46,12 @@ def ndcg(gains, iDCG, referenced_authors_subset):
 def list_intersection(list1, list2):
     return "|".join(sorted(set(list1).intersection(set(list2))))
 
-def analyse(event, text, words_in_text, referenced_authors_subsets, reference_texts, referenced_titles, referenced_pmids, revision, preprocessor, language):
+def analyse(event, revision, revision_text, revision_words, reference_texts, referenced_author_sets, referenced_titles, referenced_pmids, preprocessor, language):
 
     #FIND EVENT AUTHORS (PER BIBKEY)
     for event_bibkey in event.authors:
         event_authors = event.authors[event_bibkey]
-        event_authors_in_text = [author for author in event_authors if author in words_in_text]
+        event_authors_in_text = [author for author in event_authors if author in revision_words]
         event_authors_in_text_as_key = list_to_key(event_authors_in_text)
         
         if event_authors_in_text:
@@ -68,7 +68,7 @@ def analyse(event, text, words_in_text, referenced_authors_subsets, reference_te
         nDCG = 0
         NCDG_REFERENCE_TEXT = ""
         
-        for referenced_authors_subset, reference_text in zip(referenced_authors_subsets, reference_texts):
+        for referenced_authors_subset, reference_text in zip(referenced_author_sets, reference_texts):
 
             new_jaccard_score = jaccard(event_authors, referenced_authors_subset)
             if new_jaccard_score > jaccard_score:
@@ -101,7 +101,7 @@ def analyse(event, text, words_in_text, referenced_authors_subsets, reference_te
     ##############################################################################################
 
     #FIND EVENT DOIS
-    event_dois_in_text = [event_doi for event_doi in event.dois if event_doi in text]
+    event_dois_in_text = [event_doi for event_doi in event.dois if event_doi in revision_text]
     event_dois_in_text_as_key = list_to_key(event_dois_in_text)
     if event_dois_in_text and event_dois_in_text_as_key not in event.first_occurrence["dois"]:
         event.first_occurrence["dois"][event_dois_in_text_as_key] = occurrence(revision, found=event_dois_in_text, total=event.dois)
@@ -114,9 +114,8 @@ def analyse(event, text, words_in_text, referenced_authors_subsets, reference_te
     
     for event_title in event.titles:
 
-        if referenced_titles:
-            if event_title.lower() in referenced_titles[1]:
-                event_titles_full_in_references.append(event_title)
+        if event_title.lower() in [title[1] for title in referenced_titles]:
+            event_titles_full_in_references.append(event_title)
         
         #lower, stop and tokenize event title
         preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
@@ -125,7 +124,7 @@ def analyse(event, text, words_in_text, referenced_authors_subsets, reference_te
             preprocessed_referenced_title = preprocessor.preprocess(referenced_title[1], lower=True, stopping=False, sentenize=False, tokenize=True)[0]
             #calculate token-based edit distance
             edit_distance_ratio = levenshtein(preprocessed_event_title, preprocessed_referenced_title)/len(preprocessed_event_title)
-            #add referenced_title if edit distance to length of event title ratio is less than 0.1
+            #add referenced_title if edit distance to length of event title ratio is less than 0.2
             if edit_distance_ratio < 0.2:
                 event_titles_processed_in_references.append((referenced_title[0], reference_text, edit_distance_ratio))
                 break
@@ -152,9 +151,9 @@ def analyse(event, text, words_in_text, referenced_authors_subsets, reference_te
     #select keyphrases: spaces
     keyphrases = set([keyphrase for keyphrase in keywords_and_keyphrases if " " in keyphrase])
     #intersection of keywords and words in text
-    keyword_intersection = keywords.intersection(words_in_text)
+    keyword_intersection = keywords.intersection(revision_words)
     #intersection of keyphrases and raw text
-    keyphrase_intersection = set([keyphrase for keyphrase in keyphrases if keyphrase.lower() in text.lower()])
+    keyphrase_intersection = set([keyphrase for keyphrase in keyphrases if keyphrase.lower() in revision_text.lower()])
     #union of keywords and keyphrases in text
     keywords_and_keyphrases_in_text = sorted(keyword_intersection.union(keyphrase_intersection))
     
@@ -230,13 +229,9 @@ if __name__ == "__main__":
             print(revision.index)
 
             ### The full text of the article.
-            text = revision.get_text()
+            revision_text = revision.get_text()
             ### All words in the article
-            words_in_text = set(preprocessor.preprocess(text, lower=False, stopping=True, sentenize=False, tokenize=True)[0])
-            ### All sentences/paragraphs and captions in the article.
-            #sections = preprocessor.preprocess(text, lower=True, stopping=False, sentenize=True, tokenize=False)
-            #sections = [section.text() for section in (revision.get_paragraphs() + revision.get_captions())]
-            #sections = []
+            revision_words = set(preprocessor.preprocess(revision_text, lower=False, stopping=True, sentenize=False, tokenize=True)[0])
             ### All 'References' and 'Further Reading' elements.
             references_and_further_reading = revision.get_references() + revision.get_further_reading()
             ### All titles occuring in 'References' and 'Further Reading'.
@@ -244,12 +239,12 @@ if __name__ == "__main__":
             ### All PMIDs occuring in 'References' and 'Further Reading'.
             referenced_pmids = set(flatten_list_of_lists([reference.get_pmids() for reference in references_and_further_reading]))
             ### All authors occuring in 'References' and 'Further Reading'.
-            referenced_authors_subsets = [[author[0] for author in reference.get_authors(language)] for reference in references_and_further_reading]
+            referenced_author_sets = [[author[0] for author in reference.get_authors(language)] for reference in references_and_further_reading]
             ### All reference texts
             reference_texts = [reference.text().replace("\n","") for reference in references_and_further_reading]
             with Pool(10) as pool:
                 eventlist.events = pool.starmap(analyse,
-                                                [(event, text, words_in_text, referenced_authors_subsets, reference_texts, referenced_titles, referenced_pmids, revision, preprocessor, language)
+                                                [(event, revision, revision_text, revision_words, reference_texts, referenced_author_sets, referenced_titles, referenced_pmids, preprocessor, language)
                                                  for event in eventlist.events])
                          
             revision = next(revisions, None)
