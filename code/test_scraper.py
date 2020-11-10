@@ -22,6 +22,7 @@ def file_checksum(filepath):
 def revisions_checksum(revisions):
     sha256_hash = sha256()
     for revision in revisions:
+        revision.timestamp = revision.timestamp.datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
         sha256_hash.update(str(revision.__dict__).encode("utf-8"))
     return sha256_hash.hexdigest()
 
@@ -54,7 +55,7 @@ def test_single_scrape(logger):
         assert revisions[0].parentid == 0
         assert "Cas-Komplexes in Einzelteile zerlegt" in revisions[0].get_text()
         assert revisions[0].user == "Tinz"
-        assert revisions[0].timestamp == '2010-01-11T02:11:54Z'
+        assert revisions[0].timestamp.string == '2010-01-11 02:11:54'
         assert revisions[0].index == 0
 
         #assert attributes of fifth revision
@@ -62,7 +63,7 @@ def test_single_scrape(logger):
         assert revisions[-1].parentid == 70862725
         assert "Cas-Komplexes (Cascade) in Einzelteile zerlegt" in revisions[4].get_text()
         assert revisions[-1].user == "Hydro"
-        assert revisions[-1].timestamp == '2010-03-01T09:04:35Z'
+        assert revisions[-1].timestamp.string == '2010-03-01 09:04:35'
         assert revisions[-1].index == 4
 
     logger.stop("Single scrape test successful.", 1)
@@ -111,12 +112,13 @@ def test_full_and_updated_scrape(logger):
     full_article = Article(FILEPATH)
     full_article.get_revisions()
     full_article_revisions_checksum = revisions_checksum(full_article.revisions)
+    print(full_article_revisions_checksum)
     assert full_article.revisions[0].index == 0
     assert full_article.revisions[7].index == 7
     assert full_article.revisions[14].index == 14
     remove(FILEPATH)
     logger.end_check("Done.")
-
+    
     #scrape first five revisions
     logger.start_check("Singlescraping (update)...")
     with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
@@ -131,6 +133,7 @@ def test_full_and_updated_scrape(logger):
     update_article = Article(FILEPATH)
     update_article.get_revisions()
     update_scrape_revisions_checksum = revisions_checksum(update_article.revisions)
+    print(update_scrape_revisions_checksum)
     assert update_article.revisions[0].index == 0
     assert update_article.revisions[11].index == 11
     assert update_article.revisions[14].index == 14
@@ -145,68 +148,9 @@ def test_full_and_updated_scrape(logger):
 
     logger.stop("Full and updated scrape test successful.", 1)
 
-def test_preprocessor(logger):
-    logger.start("Testing preprocessor...")
-    TEXT = "This is a text with an abbr., i.e. common shortened words and phrases. It also contains a filter word. (It's this one!)"
-    preprocessor = Preprocessor("en", ["filter word"])
-    preprocessed_text = preprocessor.preprocess(TEXT, lower=False, stopping=False, sentenize=False, tokenize=True)[0]
-    assert len(preprocessed_text) == 28
-    assert "abbr." in preprocessed_text
-    assert "i.e." in preprocessed_text
-    assert "filter word" in preprocessed_text
-    preprocessed_text = preprocessor.preprocess(TEXT, lower=False, stopping=True, sentenize=False, tokenize=True)[0]
-    assert len(preprocessed_text) == 11
-    assert "abbr." in preprocessed_text
-    assert "i.e." in preprocessed_text
-    assert "filter word" in preprocessed_text
-    assert "is" not in preprocessed_text
-    assert "a" not in preprocessed_text
-    assert "and" not in preprocessed_text
-    assert "s" not in preprocessed_text
-
-def test_pipeline(logger): #deprecated
-    DIRECTORY = TEST_DIRECTORY + sep + "test_pipeline"
-    LANGUAGE = "de"
-
-    assert not exists(DIRECTORY)
-    
-    FILEPATH = DIRECTORY + sep + TITLE + "_" + LANGUAGE
-
-    logger.start("Testing pipeline...")
-    
-    #scrape article
-    with Scraper(logger = logger, title = TITLE, language = LANGUAGE) as scraper:
-        scraper.scrape(DIRECTORY)
-
-    #load article from file
-    article = Article(FILEPATH)
-    article.plot_revision_distribution_to_file(DIRECTORY)
-
-    #load bibliography from file
-    bibliography = Bibliography(".." + sep + "data" + sep + "tracing-innovations-lit.bib")
-    bibliography.plot_publication_distribution_to_file(DIRECTORY)
-
-    #track bibkeys and print/plot
-    tracks = article.track_field_values_in_article(["titles", "dois", "authors"], bibliography)
-    for track in tracks.items():
-        article.write_track_to_file(track, DIRECTORY)
-        article.plot_track_to_file(track, DIRECTORY)
-
-    #assert revision information
-    assert article.revisions[0].revid == 69137443
-    assert article.revisions[0].timestamp_pretty_string() == "2010-01-11 02:11:54"
-    assert article.revisions[0].user == "Tinz"
-    assert article.revisions[0].userid == 92881
-    assert article.revisions[0].comment == "neu, wird noch erweitert"
-
-    rmtree(DIRECTORY)
-
-    logger.stop("Pipeline test successful.", 1)
-
 if __name__ == "__main__":     
     
     with Logger(TEST_DIRECTORY) as LOGGER:
-        test_preprocessor(LOGGER)
         test_single_scrape(LOGGER)
         test_multi_scrape(LOGGER)
         test_full_and_updated_scrape(LOGGER)
