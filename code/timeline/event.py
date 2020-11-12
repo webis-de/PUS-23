@@ -20,14 +20,14 @@ class Event:
         #self.places = [place.strip() for place in split("[,;] *", places.strip()) if place.strip()]
         self.bib_keys = [bibliography.bibentries.get(paper) for paper in split("; *", bib_keys.strip()) if bibliography.bibentries.get(paper)]
         self.comment = comment
-        self.titles = [self.replace_braces(paper.fields.get("title")) for paper in self.bib_keys if self.replace_braces(paper.fields.get("title"))]
+        self.titles = {paper.key:self.replace_braces(paper.fields.get("title")) for paper in self.bib_keys if self.replace_braces(paper.fields.get("title"))}
         self.authors = {paper.key:[self.replace_braces(person.last_names[0]) for person in paper.persons.get("author")] for paper in self.bib_keys}
         self.dois = [paper.fields.get("doi") for paper in self.bib_keys if paper.fields.get("doi")]
         self.pmids = [paper.fields.get("pmid") for paper in self.bib_keys if paper.fields.get("pmid")]
         self.keywords = [keyword.replace("\"", "").strip() for keyword in split("; *", keywords) if keyword.strip()]
         self.extracted_from = extracted_from
-        self.first_occurrence = {"titles":{"full":{}, "processed":{}},
-                                 "authors":{"text":{}, "jaccard":{}, "ndcg":{}},
+        self.first_occurrence = {"titles":{"full":{}, "processed":[]},
+                                 "authors":{"text":[], "jaccard":[], "ndcg":[]},
                                  "dois":{},
                                  "pmids":{},
                                  "keywords":{}
