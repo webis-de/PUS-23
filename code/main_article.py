@@ -23,7 +23,7 @@ LEVENSHTEIN_THRESHOLD = 0.2
 
 def occurrence(revision, result = False, mean = False, found = None, total = None):
     if result:
-        return {"index":revision.index,"url":revision.url,"timestamp":revision.timestamp.string,"result":result,"mean":round(mean, 2)}
+        return {"index":revision.index,"url":revision.url,"timestamp":revision.timestamp.string,"result":result,"mean":round(mean, 5)}
     elif found and total:
         return {"index":revision.index,"url":revision.url,"timestamp":revision.timestamp.string,"share":round(len(found)/len(total), 2)}
     else:
@@ -69,8 +69,8 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
             new_edit_distance_ratio = levenshtein(preprocessed_event_title, preprocessed_referenced_title)/len(preprocessed_event_title)
             #add referenced_title if edit distance to length of event title ratio is less than 0.2
             if new_edit_distance_ratio < LEVENSHTEIN_THRESHOLD and new_edit_distance_ratio < edit_distance_ratio:
-                result = {"reference_text":reference_text,"edit_distance_ratio":edit_distance_ratio}
                 edit_distance_ratio = new_edit_distance_ratio
+                result = {"reference_text":reference_text,"edit_distance_ratio":edit_distance_ratio}
         if edit_distance_ratio < LEVENSHTEIN_THRESHOLD:
             event_titles_processed_in_references[event_bibkey] = result
     
