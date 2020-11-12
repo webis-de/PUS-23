@@ -15,8 +15,6 @@ from json import load, dump
 from urllib.parse import quote, unquote
 from math import log
 
-LEVENSHTEIN_THRESHOLD = 0.2
-
 #####################################################################
 # This file serves as an entry point to test the article extraction.#
 #####################################################################
@@ -59,7 +57,8 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
     #RELAXED REFERENCE SEARCH
     event_titles_processed_in_references = {}
     for event_bibkey, event_title in event.titles.items():
-        edit_distance_ratio = LEVENSHTEIN_THRESHOLD
+        edit_distance_ratio = 0.2
+        result = {"reference_text":"n/a","edit_distance_ratio":1.0}
         #lower and tokenize event title
         preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
         for referenced_title, reference_text in zip(referenced_titles, reference_texts):
@@ -68,11 +67,10 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
             #calculate token-based edit distance ratio
             new_edit_distance_ratio = levenshtein(preprocessed_event_title, preprocessed_referenced_title)/len(preprocessed_event_title)
             #add referenced_title if edit distance to length of event title ratio is less than 0.2
-            if new_edit_distance_ratio < LEVENSHTEIN_THRESHOLD and new_edit_distance_ratio < edit_distance_ratio:
+            if new_edit_distance_ratio < edit_distance_ratio:
                 edit_distance_ratio = new_edit_distance_ratio
                 result = {"reference_text":reference_text,"edit_distance_ratio":edit_distance_ratio}
-        if edit_distance_ratio < LEVENSHTEIN_THRESHOLD:
-            event_titles_processed_in_references[event_bibkey] = result
+        event_titles_processed_in_references[event_bibkey] = result
     
     if event_titles_processed_in_references:
         mean_edit_distance_ratio = sum([item["edit_distance_ratio"] for item in event_titles_processed_in_references.values()])/len(event_titles_processed_in_references)
@@ -103,7 +101,10 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
         iDCG = ndcg(gains=gains, iDCG=1, results=event_authors)
         
         jaccard_score = 0
+        jaccard_result = {"reference_text":"n/a", "jaccard_score":0.0}
+        
         ndcg_score = 0
+        nDCG_result = {"reference_text":"n/a", "ncdg_score":0.0}
         
         for referenced_authors_subset, reference_text in zip(referenced_author_sets, reference_texts):
 
@@ -117,11 +118,9 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
                 ndcg_score = new_ndcg_score
                 nDCG_result = {"reference_text":reference_text, "ncdg_score":ndcg_score}
 
-        if jaccard_score > 0:
-            events_in_text_by_authors_jaccard[event_bibkey] = jaccard_result
+        events_in_text_by_authors_jaccard[event_bibkey] = jaccard_result
             
-        if ndcg_score > 0:
-            events_in_text_by_authors_ndcg[event_bibkey] = nDCG_result
+        events_in_text_by_authors_ndcg[event_bibkey] = nDCG_result
 
     if events_in_text_by_authors_jaccard:
         mean_jaccard_score = sum([item["jaccard_score"] for item in events_in_text_by_authors_jaccard.values()])/len(events_in_text_by_authors_jaccard)
