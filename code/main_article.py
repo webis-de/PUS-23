@@ -15,6 +15,8 @@ from json import load, dump
 from urllib.parse import quote, unquote
 from math import log
 
+LEVENSHTEIN_THRESHOLD = 0.2
+
 #####################################################################
 # This file serves as an entry point to test the article extraction.#
 #####################################################################
@@ -57,7 +59,7 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
     #RELAXED REFERENCE SEARCH
     event_titles_processed_in_references = {}
     for event_bibkey, event_title in event.titles.items():
-        edit_distance_ratio = 0
+        edit_distance_ratio = LEVENSHTEIN_THRESHOLD
         #lower and tokenize event title
         preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
         for referenced_title, reference_text in zip(referenced_titles, reference_texts):
@@ -66,10 +68,10 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
             #calculate token-based edit distance ratio
             new_edit_distance_ratio = levenshtein(preprocessed_event_title, preprocessed_referenced_title)/len(preprocessed_event_title)
             #add referenced_title if edit distance to length of event title ratio is less than 0.2
-            if new_edit_distance_ratio < 0.2 and new_edit_distance_ratio > edit_distance_ratio:
+            if new_edit_distance_ratio < LEVENSHTEIN_THRESHOLD and new_edit_distance_ratio < edit_distance_ratio:
                 result = {"reference_text":reference_text,"edit_distance_ratio":edit_distance_ratio}
                 edit_distance_ratio = new_edit_distance_ratio
-        if edit_distance_ratio > 0:
+        if edit_distance_ratio < LEVENSHTEIN_THRESHOLD:
             event_titles_processed_in_references[event_bibkey] = result
     
     if event_titles_processed_in_references:
