@@ -30,6 +30,9 @@ def occurrence(revision, result = False, mean = False, found = None, total = Non
 def concatenate_list(values):
     return "|".join(values)
 
+def scroll_to_url(url, string):
+    return url + "#:~:text=" + quote(string)   
+
 def jaccard(list1, list2):
     intersection = set(list1).intersection(set(list2))
     union = set(list1).union(set(list2))
@@ -69,7 +72,7 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
             #add referenced_title if edit distance to length of event title ratio is less than 0.2
             if new_edit_distance_ratio < edit_distance_ratio:
                 edit_distance_ratio = new_edit_distance_ratio
-                result = {"reference_text":reference_text,"edit_distance_ratio":edit_distance_ratio}
+                result = {"reference_text":scroll_to_url(revision.url, reference_text),"edit_distance_ratio":edit_distance_ratio}
         event_titles_processed_in_references[event_bibkey] = result
     
     if event_titles_processed_in_references:
@@ -111,12 +114,12 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
             new_jaccard_score = jaccard(event_authors, referenced_authors_subset)
             if new_jaccard_score > jaccard_score:
                 jaccard_score = new_jaccard_score
-                jaccard_result = {"reference_text":reference_text, "jaccard_score":jaccard_score}
+                jaccard_result = {"reference_text":scroll_to_url(revision.url, reference_text), "jaccard_score":jaccard_score}
             
             new_ndcg_score = ndcg(gains, iDCG, referenced_authors_subset)
             if new_ndcg_score > ndcg_score:
                 ndcg_score = new_ndcg_score
-                nDCG_result = {"reference_text":reference_text, "ncdg_score":ndcg_score}
+                nDCG_result = {"reference_text":scroll_to_url(revision.url, reference_text), "ncdg_score":ndcg_score}
 
         events_in_text_by_authors_jaccard[event_bibkey] = jaccard_result
             
@@ -246,7 +249,7 @@ if __name__ == "__main__":
             ### All authors occuring in 'References' and 'Further Reading'.
             referenced_author_sets = [[author[0] for author in reference.get_authors(language)] for reference in references_and_further_reading]
             ### All reference texts
-            reference_texts = [reference.get_text().replace("\n","").replace("↑","").strip() for reference in references_and_further_reading]
+            reference_texts = [reference.get_text().strip() for reference in references_and_further_reading]
             with Pool(10) as pool:
                 eventlist.events = pool.starmap(analyse,
                                                 [(event,
@@ -280,8 +283,14 @@ if __name__ == "__main__":
         with open(output_directory + sep + filename + "_" + language + "." + "txt", "w") as file:
             file.write(("\n"+"-"*50+"\n").join([str(event) for event in eventlist.events]))
         with open(output_directory + sep + filename + "_" + language + "." + "json", "w") as file:
+            file.write("[\n")
+            first_line = True
             for event in eventlist.events:
+                if not first_line:
+                    file.write(",\n")
+                else:
+                    first_line = False
                 dump(event.json(), file)
-                file.write("\n")
+            file.write("\n]")
 
     logger.close()
