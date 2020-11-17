@@ -30,6 +30,12 @@ def occurrence(revision, result = False, mean = False, found = None, total = Non
 def concatenate_list(values):
     return "|".join(values)
 
+def first_or_none(dictionary):
+    try:
+        return list(dictionary.values())[0]
+    except:
+        return None
+
 def scroll_to_url(url, string):
     return url + "#:~:text=" + quote(string)   
 
@@ -60,24 +66,25 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
     #RELAXED REFERENCE SEARCH
     event_titles_processed_in_references = {}
     for event_bibkey, event_title in event.titles.items():
-        edit_distance_ratio = 0.2
-        result = {"reference_text":"n/a","edit_distance_ratio":1.0}
+        normalised_edit_distance = 1.0
+        result = {"reference_text":"n/a","normalised_edit_distance":normalised_edit_distance}
         #lower and tokenize event title
         preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
         for referenced_title, reference_text in zip(referenced_titles, reference_texts):
             #lower and tokenize referenced title
             preprocessed_referenced_title = preprocessor.preprocess(referenced_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
             #calculate token-based edit distance ratio
-            new_edit_distance_ratio = levenshtein(preprocessed_event_title, preprocessed_referenced_title)/len(preprocessed_event_title)
-            #add referenced_title if edit distance to length of event title ratio is less than 0.2
-            if new_edit_distance_ratio < edit_distance_ratio:
-                edit_distance_ratio = new_edit_distance_ratio
-                result = {"reference_text":scroll_to_url(revision.url, reference_text),"edit_distance_ratio":edit_distance_ratio}
+            new_normalised_edit_distance = levenshtein(preprocessed_event_title, preprocessed_referenced_title)/len(preprocessed_event_title)
+            #add referenced_title if 
+            if new_normalised_edit_distance < normalised_edit_distance:
+                normalised_edit_distance = new_normalised_edit_distance
+                result = {"reference_text":scroll_to_url(revision.url, reference_text),"normalised_edit_distance":normalised_edit_distance}
         event_titles_processed_in_references[event_bibkey] = result
     
     if event_titles_processed_in_references:
-        mean_edit_distance_ratio = sum([item["edit_distance_ratio"] for item in event_titles_processed_in_references.values()])/len(event_titles_processed_in_references)
-        event.first_occurrence["titles"]["processed"].append(occurrence(revision, result=event_titles_processed_in_references, mean=mean_edit_distance_ratio))
+        mean_normalised_edit_distance = sum([item["normalised_edit_distance"] for item in event_titles_processed_in_references.values()])/len(event_titles_processed_in_references)
+        if mean_normalised_edit_distance < 0.2:
+            event.first_occurrence["titles"]["processed"].append(occurrence(revision, result=event_titles_processed_in_references, mean=mean_normalised_edit_distance))
 
     ##############################################################################################
 
@@ -107,7 +114,7 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
         jaccard_result = {"reference_text":"n/a", "jaccard_score":0.0}
         
         ndcg_score = 0
-        nDCG_result = {"reference_text":"n/a", "ncdg_score":0.0}
+        nDCG_result = {"reference_text":"n/a", "ndcg_score":0.0}
         
         for referenced_authors_subset, reference_text in zip(referenced_author_sets, reference_texts):
 
@@ -119,7 +126,7 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
             new_ndcg_score = ndcg(gains, iDCG, referenced_authors_subset)
             if new_ndcg_score > ndcg_score:
                 ndcg_score = new_ndcg_score
-                nDCG_result = {"reference_text":scroll_to_url(revision.url, reference_text), "ncdg_score":ndcg_score}
+                nDCG_result = {"reference_text":scroll_to_url(revision.url, reference_text), "ndcg_score":ndcg_score}
 
         events_in_text_by_authors_jaccard[event_bibkey] = jaccard_result
             
@@ -127,10 +134,12 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
 
     if events_in_text_by_authors_jaccard:
         mean_jaccard_score = sum([item["jaccard_score"] for item in events_in_text_by_authors_jaccard.values()])/len(events_in_text_by_authors_jaccard)
-        event.first_occurrence["authors"]["jaccard"].append(occurrence(revision, result=events_in_text_by_authors_jaccard, mean=mean_jaccard_score))
+        if mean_jaccard_score > 0.8:
+            event.first_occurrence["authors"]["jaccard"].append(occurrence(revision, result=events_in_text_by_authors_jaccard, mean=mean_jaccard_score))
     if events_in_text_by_authors_ndcg:
-        mean_ndcg_score = sum([item["ncdg_score"] for item in events_in_text_by_authors_ndcg.values()])/len(events_in_text_by_authors_ndcg)
-        event.first_occurrence["authors"]["ndcg"].append(occurrence(revision, result=events_in_text_by_authors_ndcg, mean=mean_ndcg_score))
+        mean_ndcg_score = sum([item["ndcg_score"] for item in events_in_text_by_authors_ndcg.values()])/len(events_in_text_by_authors_ndcg)
+        if mean_ndcg_score > 0.8:
+            event.first_occurrence["authors"]["ndcg"].append(occurrence(revision, result=events_in_text_by_authors_ndcg, mean=mean_ndcg_score))
 
     ##############################################################################################
 
@@ -271,13 +280,12 @@ if __name__ == "__main__":
         logger.end_check("Done.")
 
         for i in range(len(eventlist.events)):
-            eventlist.events[i].first_occurrence["titles"]["full"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["titles"]["full"].items(), key=lambda item: item[1]["share"], reverse=True)}
-            eventlist.events[i].first_occurrence["titles"]["processed"] = {r[0]+1:r[1] for r in enumerate(sorted(eventlist.events[i].first_occurrence["titles"]["processed"], key=lambda item: item["mean"])[:5])}
+            eventlist.events[i].first_occurrence["titles"]["full"] = first_or_none({k:v for k,v in sorted(eventlist.events[i].first_occurrence["titles"]["full"].items(), key=lambda item: item[1]["share"], reverse=True)})
+            eventlist.events[i].first_occurrence["titles"]["processed"] = first_or_none({r[0]+1:r[1] for r in enumerate(eventlist.events[i].first_occurrence["titles"]["processed"][:5])})
             for metric in ["text", "jaccard", "ndcg"]:
-                eventlist.events[i].first_occurrence["authors"][metric] = {r[0]+1:r[1] for r in enumerate(sorted(eventlist.events[i].first_occurrence["authors"][metric], key=lambda item: item["mean"], reverse=True)[:5])}
+                eventlist.events[i].first_occurrence["authors"][metric] = first_or_none({r[0]+1:r[1] for r in enumerate(eventlist.events[i].first_occurrence["authors"][metric][:5])})
             eventlist.events[i].first_occurrence["dois"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["dois"].items(), key=lambda item: item[1]["share"], reverse=True)}
             eventlist.events[i].first_occurrence["pmids"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["pmids"].items(), key=lambda item: item[1]["share"], reverse=True)}
-            
             eventlist.events[i].first_occurrence["keywords"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["keywords"].items(), key=lambda item: item[1]["share"], reverse=True)}
 
         with open(output_directory + sep + filename + "_" + language + "." + "txt", "w") as file:
