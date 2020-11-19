@@ -266,6 +266,9 @@ if __name__ == "__main__":
     accountlist = AccountList("../data/CRISPR_events - accounts.csv")
 
     logger.start("Analysing articles " + ", ".join(wikipedia_articles))
+    logger.log("Using the below thresholds:")
+    for threshold in thresholds:
+        logger.log(threshold + ": " + str(thresholds[threshold]))
 
     preprocessor = Preprocessor(language)
 
