@@ -26,10 +26,8 @@ class Event:
         self.pmids = [paper.fields.get("pmid") for paper in self.bib_keys if paper.fields.get("pmid")]
         self.keywords = [keyword.replace("\"", "").strip() for keyword in split("; *", keywords) if keyword.strip()]
         self.extracted_from = extracted_from
-        self.first_occurrence = {"titles":{"full":{}, "processed":[]},
-                                 "authors":{"text":[], "jaccard":[], "ndcg":[]},
-                                 "dois":{},
-                                 "pmids":{},
+        self.first_occurrence = {"in_text":{"titles":None, "authors":None, "dois":{}},
+                                 "in_references":{"titles":None, "authors":{"raw":None, "jaccard":None, "ndcg":None}, "pmids":{}},
                                  "keywords":{}
                                  }
 
