@@ -20,16 +20,13 @@ from math import log
 # This file serves as an entry point to test the article extraction.#
 #####################################################################
 
-def occurrence(revision, result = None, mean = False, ratio = False):
-    if mean:
+def occurrence(revision, result = None, mean = None, ratio = None):
+    if result is not None and mean is not None:
         return {"index":revision.index,"url":revision.url,"timestamp":revision.timestamp.string,"result":result,"mean":round(mean, 5)}
-    elif ratio:
-        if result:
-            return {"index":revision.index,"url":revision.url,"timestamp":revision.timestamp.string,"result":result,"ratio":round(ratio, 2)}
-        else:
-            return {"index":revision.index,"url":revision.url,"timestamp":revision.timestamp.string,"ratio":round(ratio, 2)}
+    elif result is not None and ratio is not None:
+        return {"index":revision.index,"url":revision.url,"timestamp":revision.timestamp.string,"result":result,"ratio":round(ratio, 2)}
     else:
-        return {"index":revision.index,"url":revision.url,"timestamp":revision.timestamp.string}
+        return {"index":revision.index,"url":revision.url,"timestamp":revision.timestamp.string,"ratio":round(ratio, 2)}
 
 def concatenate_list(values):
     return "|".join(values)
@@ -76,7 +73,7 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
         event_titles_processed_in_references = {}
         for event_bibkey, event_title in event.titles.items():
             normalised_edit_distance = 1.0
-            result = {"reference_text":"n/a","normalised_edit_distance":normalised_edit_distance}
+            titles_result = {"reference_text":"n/a","normalised_edit_distance":normalised_edit_distance}
             #lower and tokenize event title
             preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
             for referenced_title, reference_text in zip(referenced_titles, reference_texts):
@@ -87,13 +84,13 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
                 #update referenced_title if newly calculated normalised edit distance is smaller than old normalised edit distance
                 if new_normalised_edit_distance < normalised_edit_distance:
                     normalised_edit_distance = new_normalised_edit_distance
-                    result = {"reference_text":scroll_to_url(revision.url, reference_text),"normalised_edit_distance":normalised_edit_distance}
-            event_titles_processed_in_references[event_bibkey] = result
+                    titles_result = {"reference_text":scroll_to_url(revision.url, reference_text),"normalised_edit_distance":normalised_edit_distance}
+            event_titles_processed_in_references[event_bibkey] = titles_result
         
         if event_titles_processed_in_references:
             mean_normalised_edit_distance = sum([item["normalised_edit_distance"] for item in event_titles_processed_in_references.values()])/len(event_titles_processed_in_references)
             if mean_normalised_edit_distance <= MEAN_NORMALISED_EDIT_DISTANCE:
-                 event.first_occurrence["in_references"]["titles"] = occurrence(revision, result=event_titles_processed_in_references, mean=mean_normalised_edit_distance)
+                event.first_occurrence["in_references"]["titles"] = occurrence(revision, result=event_titles_processed_in_references, mean=mean_normalised_edit_distance)
 
     ##############################################################################################
 
