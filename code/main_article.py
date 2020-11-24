@@ -20,16 +20,8 @@ from math import log
 # This file serves as an entry point to test the article extraction.#
 #####################################################################
 
-def occurrence(revision, result = None, mean = None, ratio = None):
-    if result is not None and mean is not None:
-        return {"index":revision.index,"url":revision.url,"timestamp":revision.timestamp.string,"result":result,"mean":round(mean, 5)}
-    elif result is not None and ratio is not None:
-        return {"index":revision.index,"url":revision.url,"timestamp":revision.timestamp.string,"result":result,"ratio":round(ratio, 2)}
-    else:
-        return {"index":revision.index,"url":revision.url,"timestamp":revision.timestamp.string,"ratio":round(ratio, 2)}
-
-def concatenate_list(values):
-    return "|".join(values)
+def occurrence(revision, result):
+    return {"index":revision.index,"url":revision.url,"timestamp":revision.timestamp.string,"result":result}
 
 def to_ascii(string):
     return unicodedata.normalize("NFD",string).encode("ASCII","ignore").decode("ASCII")
@@ -50,30 +42,20 @@ def ndcg(gains, iDCG, results):
     return DCG/iDCG
 
 def analyse(event, revision, revision_text, revision_text_lowered, revision_words, reference_texts, referenced_author_sets, referenced_titles, referenced_pmids, preprocessor, language, thresholds):
-
-    MEAN_TITLE_RATIO = thresholds["MEAN_TITLE_RATIO"]
-    MEAN_NORMALISED_EDIT_DISTANCE = thresholds["MEAN_NORMALISED_EDIT_DISTANCE"]
-    MEAN_AUTHOR_RATIO = thresholds["MEAN_AUTHOR_RATIO"]
-    MEAN_RAW_RATIO = thresholds["MEAN_RAW_RATIO"]
-    MEAN_JACCARD_SCORE = thresholds["MEAN_JACCARD_SCORE"]
-    MEAN_NDCG_SCORE = thresholds["MEAN_NDCG_SCORE"]
     
     #FIND EVENT TITLES
     
     #FULL TEXT SEARCH
-    if not event.first_occurrence["in_text"]["titles"]:
+    if event.titles and not event.first_occurrence["in_text"]["titles"]:
         event_titles_full_in_text = {event_title:scroll_to_url(revision.url, event_title) for event_title in event.titles.values() if event_title.lower() in revision_text_lowered}
-        if event_titles_full_in_text:
-            mean_title_ratio = len(event_titles_full_in_text) / len(event.titles.values())
-            if mean_title_ratio >= MEAN_TITLE_RATIO:
-                    event.first_occurrence["in_text"]["titles"] = occurrence(revision, result=event_titles_full_in_text, ratio=mean_title_ratio)
+        if len(event_titles_full_in_text) == len(event.titles.values()):
+            event.first_occurrence["in_text"]["titles"] = occurrence(revision, result=event_titles_full_in_text)
 
     #RELAXED REFERENCE SEARCH
-    if not event.first_occurrence["in_references"]["titles"]:
+    if event.titles and not event.first_occurrence["in_references"]["titles"]:
         event_titles_processed_in_references = {}
         for event_bibkey, event_title in event.titles.items():
-            normalised_edit_distance = 1.0
-            titles_result = {"reference_text":"n/a","normalised_edit_distance":normalised_edit_distance}
+            normalised_edit_distance = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLD"]
             #lower and tokenize event title
             preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
             for referenced_title, reference_text in zip(referenced_titles, reference_texts):
@@ -82,116 +64,95 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
                 #calculate token-based normalised edit distance
                 new_normalised_edit_distance = levenshtein(preprocessed_event_title, preprocessed_referenced_title)/len(preprocessed_event_title)
                 #update referenced_title if newly calculated normalised edit distance is smaller than old normalised edit distance
-                if new_normalised_edit_distance < normalised_edit_distance:
+                if new_normalised_edit_distance <= normalised_edit_distance:
                     normalised_edit_distance = new_normalised_edit_distance
-                    titles_result = {"reference_text":scroll_to_url(revision.url, reference_text),"normalised_edit_distance":normalised_edit_distance}
-            event_titles_processed_in_references[event_bibkey] = titles_result
+                    event_titles_processed_in_references[event_bibkey] = {"reference_text":scroll_to_url(revision.url, reference_text),"normalised_edit_distance":normalised_edit_distance}
         
-        if event_titles_processed_in_references:
-            mean_normalised_edit_distance = sum([item["normalised_edit_distance"] for item in event_titles_processed_in_references.values()])/len(event_titles_processed_in_references)
-            if mean_normalised_edit_distance <= MEAN_NORMALISED_EDIT_DISTANCE:
-                event.first_occurrence["in_references"]["titles"] = occurrence(revision, result=event_titles_processed_in_references, mean=mean_normalised_edit_distance)
+        if len(event_titles_processed_in_references) == len(event.titles):
+            event.first_occurrence["in_references"]["titles"] = occurrence(revision, result=event_titles_processed_in_references)
 
     ##############################################################################################
 
     #FIND EVENT AUTHORS (PER BIBKEY)
                 
     #FULL TEXT SEARCH
-    if not event.first_occurrence["in_text"]["authors"]:
+    if event.authors and not event.first_occurrence["in_text"]["authors"]:
         revision_words_ascii = [to_ascii(word) for word in revision_words]
         revision_text_ascii = to_ascii(revision_text)
         events_in_text_by_authors = {}
         for event_bibkey in event.authors:
             event_authors = [to_ascii(author) for author in event.authors[event_bibkey]]
             event_authors_in_text = {author:scroll_to_url(revision.url, author) for author in event_authors if (" " not in author and author in revision_words_ascii) or (" " in author and author in revision_text_ascii)}
-            ratio = len(event_authors_in_text)/len(event_authors)
-            events_in_text_by_authors[event_bibkey] = {"event_authors":concatenate_list(event.authors[event_bibkey]),"in_text":event_authors_in_text,"ratio":ratio}
-        if events_in_text_by_authors:
-            mean_author_ratio = sum([item["ratio"] for item in events_in_text_by_authors.values()])/len(events_in_text_by_authors)
-            if mean_author_ratio >= MEAN_AUTHOR_RATIO:
-                event.first_occurrence["in_text"]["authors"] = occurrence(revision, result=events_in_text_by_authors, mean=mean_author_ratio)
+            author_ratio = len(event_authors_in_text)/len(event_authors)
+            if author_ratio >= thresholds["AUTHOR_RATIO_THRESHOLD"]:
+                events_in_text_by_authors[event_bibkey] = {"authors":event_authors_in_text,"author_ratio":author_ratio}
+        if len(events_in_text_by_authors) == len(event.authors):
+            event.first_occurrence["in_text"]["authors"] = occurrence(revision, result=events_in_text_by_authors)
 
     #RELAXED REFERENCE SEARCH
-    if not event.first_occurrence["in_references"]["authors"]["raw"] or not event.first_occurrence["in_references"]["authors"]["jaccard"] or not event.first_occurrence["in_references"]["authors"]["ndcg"]:
-        events_in_references_by_authors_raw = {}
-        events_in_references_by_authors_jaccard = {}
-        events_in_references_by_authors_ndcg = {}
-        for event_bibkey in event.authors:
-            event_authors = [to_ascii(author) for author in event.authors[event_bibkey]]
-            gains = {author:len(event_authors)-event_authors.index(author) for author in event_authors}
-            iDCG = ndcg(gains=gains, iDCG=1, results=event_authors)
+    if event.authors:
+        if not event.first_occurrence["in_references"]["authors"]["raw"] or not event.first_occurrence["in_references"]["authors"]["jaccard"] or not event.first_occurrence["in_references"]["authors"]["ndcg"]:
+            events_in_references_by_authors_raw = {}
+            events_in_references_by_authors_jaccard = {}
+            events_in_references_by_authors_ndcg = {}
+            for event_bibkey in event.authors:
+                event_authors = [to_ascii(author) for author in event.authors[event_bibkey]]
+                gains = {author:len(event_authors)-event_authors.index(author) for author in event_authors}
+                iDCG = ndcg(gains=gains, iDCG=1, results=event_authors)
 
-            raw_score = 0
-            raw_result = {"reference_text":"n/a", "raw_score":0.0}
-            
-            jaccard_score = 0
-            jaccard_result = {"reference_text":"n/a", "jaccard_score":0.0}
-            
-            ndcg_score = 0
-            nDCG_result = {"reference_text":"n/a", "ndcg_score":0.0}
-            
-            for referenced_author_set, reference_text in zip(referenced_author_sets, reference_texts):
-
-                new_raw_score = raw(event_authors, reference_text)
-                if new_raw_score > raw_score:
-                    raw_score = new_raw_score
-                    raw_result = {"reference_text":scroll_to_url(revision.url, reference_text), "raw_score":raw_score}                
-
-                new_jaccard_score = jaccard(event_authors, referenced_author_set)
-                if new_jaccard_score > jaccard_score:
-                    jaccard_score = new_jaccard_score
-                    jaccard_result = {"reference_text":scroll_to_url(revision.url, reference_text), "jaccard_score":jaccard_score}
+                raw_ratio = thresholds["RAW_RATIO_THRESHOLD"]
+                jaccard_score = thresholds["JACCARD_SCORE_THRESHOLD"]
+                ndcg_score = thresholds["NDCG_SCORE_THRESHOLD"]
                 
-                new_ndcg_score = ndcg(gains, iDCG, referenced_author_set)
-                if new_ndcg_score > ndcg_score:
-                    ndcg_score = new_ndcg_score
-                    nDCG_result = {"reference_text":scroll_to_url(revision.url, reference_text), "ndcg_score":ndcg_score}
+                for referenced_author_set, reference_text in zip(referenced_author_sets, reference_texts):
 
-            events_in_references_by_authors_raw[event_bibkey] = raw_result
-            events_in_references_by_authors_jaccard[event_bibkey] = jaccard_result
-            events_in_references_by_authors_ndcg[event_bibkey] = nDCG_result
-                                    
-        if not event.first_occurrence["in_references"]["authors"]["raw"] and events_in_references_by_authors_raw:
-            mean_raw_score = sum([item["raw_score"] for item in events_in_references_by_authors_raw.values()])/len(events_in_references_by_authors_raw)
-            if mean_raw_score >= MEAN_RAW_RATIO:
-                event.first_occurrence["in_references"]["authors"]["raw"] = occurrence(revision, result=events_in_references_by_authors_raw, mean=mean_raw_score)
-                
-        if not event.first_occurrence["in_references"]["authors"]["jaccard"] and events_in_references_by_authors_jaccard:
-            mean_jaccard_score = sum([item["jaccard_score"] for item in events_in_references_by_authors_jaccard.values()])/len(events_in_references_by_authors_jaccard)
-            if mean_jaccard_score >= MEAN_JACCARD_SCORE:
-                event.first_occurrence["in_references"]["authors"]["jaccard"] = occurrence(revision, result=events_in_references_by_authors_jaccard, mean=mean_jaccard_score)
+                    new_raw_ratio = raw(event_authors, reference_text)
+                    if new_raw_ratio >= raw_ratio:
+                        raw_ratio = new_raw_ratio
+                        events_in_references_by_authors_raw[event_bibkey] = {"reference_text":scroll_to_url(revision.url, reference_text), "raw_ratio":raw_ratio}                
 
-        if not event.first_occurrence["in_references"]["authors"]["ndcg"] and events_in_references_by_authors_ndcg:
-            mean_ndcg_score = sum([item["ndcg_score"] for item in events_in_references_by_authors_ndcg.values()])/len(events_in_references_by_authors_ndcg)
-            if mean_ndcg_score >= MEAN_NDCG_SCORE:
-                event.first_occurrence["in_references"]["authors"]["ndcg"] = occurrence(revision, result=events_in_references_by_authors_ndcg, mean=mean_ndcg_score)
+                    new_jaccard_score = jaccard(event_authors, referenced_author_set)
+                    if new_jaccard_score >= jaccard_score:
+                        jaccard_score = new_jaccard_score
+                        events_in_references_by_authors_jaccard[event_bibkey] = {"reference_text":scroll_to_url(revision.url, reference_text), "jaccard_score":jaccard_score}
+                    
+                    new_ndcg_score = ndcg(gains, iDCG, referenced_author_set)
+                    if new_ndcg_score >= ndcg_score:
+                        ndcg_score = new_ndcg_score
+                        events_in_references_by_authors_ndcg[event_bibkey] = {"reference_text":scroll_to_url(revision.url, reference_text), "ndcg_score":ndcg_score}
+                                        
+            if not event.first_occurrence["in_references"]["authors"]["raw"] and len(events_in_references_by_authors_raw) == len(event.authors):
+                event.first_occurrence["in_references"]["authors"]["raw"] = occurrence(revision, result=events_in_references_by_authors_raw)
+                    
+            if not event.first_occurrence["in_references"]["authors"]["jaccard"] and len(events_in_references_by_authors_jaccard) == len(event.authors):
+                event.first_occurrence["in_references"]["authors"]["jaccard"] = occurrence(revision, result=events_in_references_by_authors_jaccard)
+
+            if not event.first_occurrence["in_references"]["authors"]["ndcg"] and len(events_in_references_by_authors_ndcg) == len(event.authors):
+                event.first_occurrence["in_references"]["authors"]["ndcg"] = occurrence(revision, result=events_in_references_by_authors_ndcg)
 
     ##############################################################################################
 
     #FIND EVENT PMIDS
-    event_pmids_in_references = [event_pmid for event_pmid in event.pmids if event_pmid in referenced_pmids]
-    event_pmids_in_references_as_key = concatenate_list(event_pmids_in_references)
-    if event_pmids_in_references and event_pmids_in_references_as_key not in event.first_occurrence["in_references"]["pmids"]:
-        pmid_ratio = len(event_pmids_in_references) / len(event.pmids)
-        event.first_occurrence["in_references"]["pmids"][event_pmids_in_references_as_key] = occurrence(revision, ratio=pmid_ratio)
+    if event.pmids and not event.first_occurrence["in_references"]["pmids"]:
+        event_pmids_in_references = {event_pmid:scroll_to_url(revision.url, event_pmid) for event_pmid in event.pmids if event_pmid in referenced_pmids}
+        if len(event_pmids_in_references) == len(event.pmids):
+            event.first_occurrence["in_references"]["pmids"] = occurrence(revision, result=event_pmids_in_references)
 
     ##############################################################################################
 
     #FIND EVENT DOIS
-    event_dois_in_text = [event_doi for event_doi in event.dois if event_doi.lower() in revision_text_lowered]
-    event_dois_in_text_as_key = concatenate_list(event_dois_in_text)
-    if event_dois_in_text and event_dois_in_text_as_key not in event.first_occurrence["in_text"]["dois"]:
-        doi_ratio = len(event_dois_in_text) / len(event.dois)
-        event.first_occurrence["in_text"]["dois"][event_dois_in_text_as_key] = occurrence(revision, ratio=doi_ratio)
+    if event.dois and not event.first_occurrence["in_text"]["dois"]:
+        event_dois_in_text = {event_doi:scroll_to_url(revision.url, event_doi) for event_doi in event.dois if event_doi.lower() in revision_text_lowered}
+        if len(event_dois_in_text) == len(event.dois):
+            event.first_occurrence["in_text"]["dois"] = occurrence(revision, result=event_dois_in_text)
 
     ##############################################################################################
 
     #FIND EVENT KEYWORDS AND KEYPHRASES
-    keywords_in_text = [keyword for keyword in event.keywords if (" " not in keyword and keyword in revision_words) or (" " in keyword and keyword.lower() in revision_text_lowered)]
-    keywords_in_text_as_key = concatenate_list(keywords_in_text)
-    if keywords_in_text and keywords_in_text_as_key not in event.first_occurrence["keywords"]:
-        keyword_ratio = len(keywords_in_text) / len(event.keywords)
-        event.first_occurrence["keywords"][keywords_in_text_as_key] = occurrence(revision, ratio=keyword_ratio)
+    if event.keywords and not event.first_occurrence["keywords"]:
+        event_keywords_in_text = {keyword:scroll_to_url(revision.url, keyword) for keyword in event.keywords if (" " not in keyword and keyword in revision_words) or (" " in keyword and keyword.lower() in revision_text_lowered)}
+        if len(event_keywords_in_text) == len(event.keywords):
+            event.first_occurrence["keywords"] = occurrence(revision, result=event_keywords_in_text)
 
     return event
 
@@ -213,41 +174,37 @@ if __name__ == "__main__":
     argument_parser.add_argument("-l", "--language",
                                  default="en",
                                  help="en or de, defaults to en.")
-    argument_parser.add_argument("-mtp", "--mean_title_ratio",
-                                 type=int,
-                                 default=1.0,
-                                 help="Threshold for titles_in_text/titles_in_bibliography ratio.")
-    argument_parser.add_argument("-mned", "--mean_normalised_edit_distance",
+
+    argument_parser.add_argument("-ned", "--normalised_edit_distance_threshold",
                                  type=int,
                                  default=0.2,
-                                 help="Threshold for mean normalised edit distance for titles in references.")
-    argument_parser.add_argument("-map", "--mean_author_ratio",
+                                 help="Threshold for normalised edit distance for titles in references.")
+    argument_parser.add_argument("-art", "--author_ratio_threshold",
                                  type=int,
                                  default=1.0,
-                                 help="Threshold for mean authors_in_text/authors_in_reference ratio.")
-    argument_parser.add_argument("-mr", "--mean_raw_ratio",
+                                 help="Threshold for authors_in_text/authors_in_reference ratio.")
+    argument_parser.add_argument("-rrt", "--raw_ratio_threshold",
                                  type=int,
                                  default=1.0,
-                                 help="Mean raw score threshold.")
-    argument_parser.add_argument("-mj", "--mean_jaccard_score",
+                                 help="Raw ratio threshold for authors in reference.")
+    argument_parser.add_argument("-jst", "--jaccard_score_threshold",
                                  type=int,
                                  default=0.8,
-                                 help="Mean Jaccard score threshold.")
-    argument_parser.add_argument("-mndcg", "--mean_ndcg_score",
+                                 help="Jaccard score threshold for authors in reference.")
+    argument_parser.add_argument("-nst", "--ndcg_score_threshold",
                                  type=int,
                                  default=0.8,
-                                 help="Mean nDCG threshold.")
+                                 help="nDCG threshold for authors in reference.")
 
     args = vars(argument_parser.parse_args())
 
     input_directory = args["input_dir"]
     output_directory = args["output_dir"]
-    thresholds = {"MEAN_TITLE_RATIO":args["mean_title_ratio"],
-                  "MEAN_NORMALISED_EDIT_DISTANCE":args["mean_normalised_edit_distance"],
-                  "MEAN_AUTHOR_RATIO":args["mean_author_ratio"],
-                  "MEAN_RAW_RATIO":args["mean_raw_ratio"],
-                  "MEAN_JACCARD_SCORE":args["mean_jaccard_score"],
-                  "MEAN_NDCG_SCORE":args["mean_ndcg_score"]}
+    thresholds = {"NORMALISED_EDIT_DISTANCE_THRESHOLD":args["normalised_edit_distance_threshold"],
+                  "AUTHOR_RATIO_THRESHOLD":args["author_ratio_threshold"],
+                  "RAW_RATIO_THRESHOLD":args["raw_ratio_threshold"],
+                  "JACCARD_SCORE_THRESHOLD":args["jaccard_score_threshold"],
+                  "NDCG_SCORE_THRESHOLD":args["ndcg_score_threshold"]}
     logger = Logger(output_directory)
 
     output_directory = logger.directory
@@ -327,11 +284,6 @@ if __name__ == "__main__":
             revision = next(revisions, None)
 
         logger.end_check("Done.")
-
-        for i in range(len(eventlist.events)):
-            eventlist.events[i].first_occurrence["in_text"]["dois"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["in_text"]["dois"].items(), key=lambda item: item[1]["ratio"], reverse=True)}
-            eventlist.events[i].first_occurrence["in_references"]["pmids"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["in_references"]["pmids"].items(), key=lambda item: item[1]["ratio"], reverse=True)}
-            eventlist.events[i].first_occurrence["keywords"] = {k:v for k,v in sorted(eventlist.events[i].first_occurrence["keywords"].items(), key=lambda item: item[1]["ratio"], reverse=True)}
 
         with open(output_directory + sep + filename + "_" + language + "." + "txt", "w") as file:
             file.write(("\n"+"-"*50+"\n").join([str(event) for event in eventlist.events]))
