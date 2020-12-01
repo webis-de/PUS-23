@@ -1,8 +1,8 @@
 from re import findall, finditer, search, split, sub, S
 
-class Reference:
+class Source:
     """
-    Wrapper class for Wikipedia references.
+    Wrapper class for Wikipedia sources such as 'References' and 'Further Reading'.
 
     Attributes:
         source: The source of the reference as HTML/XML.

@@ -1,5 +1,5 @@
 from .timestamp import Timestamp
-from .reference import Reference
+from .source import Source
 from .section import Section
 from pprint import pformat
 from requests import get
@@ -109,22 +109,22 @@ class Revision:
         return [(element.text, element.get("href")) for element in self.etree_from_html().xpath(".//div[@id='mw-normal-catlinks']//a")[1:]]
 
     def get_references(self):
-        return [Reference(reference[1], reference[0] + 1) for reference in enumerate(self.etree_from_html().xpath(".//ol[@class='references']/li | .//ol/li/cite"))]
+        return [Source(source[1], source[0] + 1) for source in enumerate(self.etree_from_html().xpath(".//ol[@class='references']/li | .//ol/li/cite"))]
 
     def get_further_reading(self):
-        return [Reference(reference[1], None) for reference in enumerate(self.etree_from_html().xpath(".//ul/li/cite"))]
+        return [Source(source[1], None) for source in enumerate(self.etree_from_html().xpath(".//ul/li/cite"))]
 
-    def get_referenced_authors(self, language, source):
-        return [reference.get_authors(language) for reference in source]
+    def get_referenced_authors(self, language, sources):
+        return [source.get_authors(language) for source in sources]
 
     def get_referenced_titles(self, language, source):
-        return [reference.get_title(language) for reference in source]
+        return [source.get_title(language) for source in sources]
 
     def get_referenced_dois(self, source):
-        return [reference.get_dois() for reference in source]
+        return [source.get_dois() for source in sources]
 
     def get_referenced_pmids(self, source):
-        return [reference.get_pmids() for reference in source]
+        return [source.get_pmids() for source in sources]
 
     def __str__(self):
         return pformat(self.__dict__)

@@ -1,4 +1,4 @@
-from article.revision.reference import Reference
+from article.revision.source import Source
 from preprocessor.preprocessor import Preprocessor
 from utility.logger import Logger
 from lxml import html
@@ -32,16 +32,16 @@ SOURCE2 = '<li id="cite_note-Groenen1993-24"><span class="mw-cite-backlink"><b><
 def test_text(logger):
     logger.start("Testing reference text extraction")
     
-    reference = Reference(html.fromstring(SOURCE1), 24)
-    text = reference.get_text()
+    source = Source(html.fromstring(SOURCE1), 24)
+    text = source.get_text()
     print(text)
     assert text== 'Groenen PM, Bunschoten AE, van Soolingen D, van Emden JD (1993). ' + \
                   '"Nature of DNA polymorphism in the direct repeat cluster of Mycobacterium tuberculosis; ' + \
                   'application for strain differentiation by a novel typing method". ' + \
                   'Molecular Microbiology (10): 1057–65. doi:10.1111/j.1365-2958.1993.tb00976.x. PMID 7934856.'
 
-    reference = Reference(html.fromstring(SOURCE2), 24)
-    text = reference.get_text()
+    source = Source(html.fromstring(SOURCE2), 24)
+    text = source.get_text()
     print(text)
     assert text== 'Groenen PM; Bunschoten AE, van Soolingen D. et al. (1993). ' + \
                   'Nature of DNA polymorphism in the direct repeat cluster of Mycobacterium tuberculosis; ' + \
@@ -54,8 +54,8 @@ def test_get_title(logger):
     logger.start("Testing reference title extraction")
 
     for SOURCE in [SOURCE1, SOURCE2]:
-        reference = Reference(html.fromstring(SOURCE), 24)
-        title = reference.get_title("en")
+        source = Source(html.fromstring(SOURCE), 24)
+        title = source.get_title("en")
         assert title == "Nature of DNA polymorphism in the direct repeat cluster of Mycobacterium tuberculosis; " + \
                         "application for strain differentiation by a novel typing method"
 
@@ -64,13 +64,13 @@ def test_get_title(logger):
 def test_get_authors(logger):
     logger.start("Testing reference authors extraction")
     
-    reference = Reference(html.fromstring(SOURCE1), 24)
-    authors = reference.get_authors("en")
+    source = Source(html.fromstring(SOURCE1), 24)
+    authors = source.get_authors("en")
     print(authors)
     assert authors == [('Groenen', 'PM'), ('Bunschoten', 'AE'), ('van Soolingen', 'D'), ('van Emden', 'JD')]
 
-    reference = Reference(html.fromstring(SOURCE2), 24)
-    authors = reference.get_authors("en")
+    source = Source(html.fromstring(SOURCE2), 24)
+    authors = source.get_authors("en")
     print(authors)
     assert authors == [('Groenen', 'PM'), ('Bunschoten', 'AE'), ('van Soolingen', 'D')]
     
@@ -80,8 +80,8 @@ def test_get_dois(logger):
     logger.start("Testing reference dois extraction")
 
     for SOURCE in [SOURCE1, SOURCE2]:
-        reference = Reference(html.fromstring(SOURCE), 24)
-        dois = reference.get_dois()
+        source = Source(html.fromstring(SOURCE), 24)
+        dois = source.get_dois()
         print(dois)
         assert dois == ["10.1111/j.1365-2958.1993.tb00976.x"]
     
@@ -91,8 +91,8 @@ def test_get_pmids(logger):
     logger.start("Testing reference pmid extraction")
 
     for SOURCE in [SOURCE1, SOURCE2]:
-        reference = Reference(html.fromstring(SOURCE), 24)
-        pmids = reference.get_pmids()
+        source = Source(html.fromstring(SOURCE), 24)
+        pmids = source.get_pmids()
         print(pmids)
         assert pmids == ["7934856"]
     

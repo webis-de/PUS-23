@@ -256,15 +256,15 @@ if __name__ == "__main__":
             ### All words in the article
             revision_words = set(preprocessor.preprocess(revision_text, lower=False, stopping=True, sentenize=False, tokenize=True)[0])
             ### All 'References' and 'Further Reading' elements.
-            references_and_further_reading = revision.get_references() + revision.get_further_reading()
+            sources = revision.get_references() + revision.get_further_reading()
             ### All titles occuring in 'References' and 'Further Reading'.
-            referenced_titles = [reference.get_title(language) for reference in references_and_further_reading]
+            referenced_titles = [source.get_title(language) for source in sources]
             ### All PMIDs occuring in 'References' and 'Further Reading'.
-            referenced_pmids = set(flatten_list_of_lists([reference.get_pmids() for reference in references_and_further_reading]))
+            referenced_pmids = set(flatten_list_of_lists([source.get_pmids() for source in sources]))
             ### All authors occuring in 'References' and 'Further Reading'.
-            referenced_author_sets = [[to_ascii(author[0]) for author in reference.get_authors(language)] for reference in references_and_further_reading]
+            referenced_author_sets = [[to_ascii(author[0]) for author in source.get_authors(language)] for source in sources]
             ### All reference texts
-            reference_texts = [reference.get_text().strip() for reference in references_and_further_reading]
+            reference_texts = [source.get_text().strip() for source in sources]
             with Pool(10) as pool:
                 eventlist.events = pool.starmap(analyse,
                                                 [(event,
