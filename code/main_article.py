@@ -46,13 +46,13 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
     #FIND EVENT TITLES
     
     #FULL TEXT SEARCH
-    if event.titles and not event.first_occurrence["in_text"]["titles"]:
+    if event.titles and not event.first_mentioned["in_text"]["titles"]:
         event_titles_full_in_text = {event_title:scroll_to_url(revision.url, event_title) for event_title in event.titles.values() if event_title.lower() in revision_text_lowered}
         if len(event_titles_full_in_text) == len(event.titles.values()):
-            event.first_occurrence["in_text"]["titles"] = occurrence(revision, result=event_titles_full_in_text)
+            event.first_mentioned["in_text"]["titles"] = occurrence(revision, result=event_titles_full_in_text)
 
     #RELAXED REFERENCE SEARCH
-    if event.titles and not event.first_occurrence["in_references"]["titles"]:
+    if event.titles and not event.first_mentioned["in_references"]["titles"]:
         event_titles_processed_in_references = {}
         for event_bibkey, event_title in event.titles.items():
             normalised_edit_distance = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLD"]
@@ -69,14 +69,14 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
                     event_titles_processed_in_references[event_bibkey] = {"reference_text":scroll_to_url(revision.url, reference_text),"normalised_edit_distance":normalised_edit_distance}
         
         if len(event_titles_processed_in_references) == len(event.titles):
-            event.first_occurrence["in_references"]["titles"] = occurrence(revision, result=event_titles_processed_in_references)
+            event.first_mentioned["in_references"]["titles"] = occurrence(revision, result=event_titles_processed_in_references)
 
     ##############################################################################################
 
     #FIND EVENT AUTHORS (PER BIBKEY)
                 
     #FULL TEXT SEARCH
-    if event.authors and not event.first_occurrence["in_text"]["authors"]:
+    if event.authors and not event.first_mentioned["in_text"]["authors"]:
         revision_words_ascii = [to_ascii(word) for word in revision_words]
         revision_text_ascii = to_ascii(revision_text)
         events_in_text_by_authors = {}
@@ -87,11 +87,11 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
             if author_ratio >= thresholds["AUTHOR_RATIO_THRESHOLD"]:
                 events_in_text_by_authors[event_bibkey] = {"authors":event_authors_in_text,"author_ratio":author_ratio}
         if len(events_in_text_by_authors) == len(event.authors):
-            event.first_occurrence["in_text"]["authors"] = occurrence(revision, result=events_in_text_by_authors)
+            event.first_mentioned["in_text"]["authors"] = occurrence(revision, result=events_in_text_by_authors)
 
     #RELAXED REFERENCE SEARCH
     if event.authors:
-        if not event.first_occurrence["in_references"]["authors"]["raw"] or not event.first_occurrence["in_references"]["authors"]["jaccard"] or not event.first_occurrence["in_references"]["authors"]["ndcg"]:
+        if not event.first_mentioned["in_references"]["authors"]["raw"] or not event.first_mentioned["in_references"]["authors"]["jaccard"] or not event.first_mentioned["in_references"]["authors"]["ndcg"]:
             events_in_references_by_authors_raw = {}
             events_in_references_by_authors_jaccard = {}
             events_in_references_by_authors_ndcg = {}
@@ -121,38 +121,38 @@ def analyse(event, revision, revision_text, revision_text_lowered, revision_word
                         ndcg_score = new_ndcg_score
                         events_in_references_by_authors_ndcg[event_bibkey] = {"reference_text":scroll_to_url(revision.url, reference_text), "ndcg_score":ndcg_score}
                                         
-            if not event.first_occurrence["in_references"]["authors"]["raw"] and len(events_in_references_by_authors_raw) == len(event.authors):
-                event.first_occurrence["in_references"]["authors"]["raw"] = occurrence(revision, result=events_in_references_by_authors_raw)
+            if not event.first_mentioned["in_references"]["authors"]["raw"] and len(events_in_references_by_authors_raw) == len(event.authors):
+                event.first_mentioned["in_references"]["authors"]["raw"] = occurrence(revision, result=events_in_references_by_authors_raw)
                     
-            if not event.first_occurrence["in_references"]["authors"]["jaccard"] and len(events_in_references_by_authors_jaccard) == len(event.authors):
-                event.first_occurrence["in_references"]["authors"]["jaccard"] = occurrence(revision, result=events_in_references_by_authors_jaccard)
+            if not event.first_mentioned["in_references"]["authors"]["jaccard"] and len(events_in_references_by_authors_jaccard) == len(event.authors):
+                event.first_mentioned["in_references"]["authors"]["jaccard"] = occurrence(revision, result=events_in_references_by_authors_jaccard)
 
-            if not event.first_occurrence["in_references"]["authors"]["ndcg"] and len(events_in_references_by_authors_ndcg) == len(event.authors):
-                event.first_occurrence["in_references"]["authors"]["ndcg"] = occurrence(revision, result=events_in_references_by_authors_ndcg)
+            if not event.first_mentioned["in_references"]["authors"]["ndcg"] and len(events_in_references_by_authors_ndcg) == len(event.authors):
+                event.first_mentioned["in_references"]["authors"]["ndcg"] = occurrence(revision, result=events_in_references_by_authors_ndcg)
 
     ##############################################################################################
 
     #FIND EVENT PMIDS
-    if event.pmids and not event.first_occurrence["in_references"]["pmids"]:
+    if event.pmids and not event.first_mentioned["in_references"]["pmids"]:
         event_pmids_in_references = {event_pmid:scroll_to_url(revision.url, event_pmid) for event_pmid in event.pmids if event_pmid in referenced_pmids}
         if len(event_pmids_in_references) == len(event.pmids):
-            event.first_occurrence["in_references"]["pmids"] = occurrence(revision, result=event_pmids_in_references)
+            event.first_mentioned["in_references"]["pmids"] = occurrence(revision, result=event_pmids_in_references)
 
     ##############################################################################################
 
     #FIND EVENT DOIS
-    if event.dois and not event.first_occurrence["in_text"]["dois"]:
+    if event.dois and not event.first_mentioned["in_text"]["dois"]:
         event_dois_in_text = {event_doi:scroll_to_url(revision.url, event_doi) for event_doi in event.dois if event_doi.lower() in revision_text_lowered}
         if len(event_dois_in_text) == len(event.dois):
-            event.first_occurrence["in_text"]["dois"] = occurrence(revision, result=event_dois_in_text)
+            event.first_mentioned["in_text"]["dois"] = occurrence(revision, result=event_dois_in_text)
 
     ##############################################################################################
 
     #FIND EVENT KEYWORDS AND KEYPHRASES
-    if event.keywords and not event.first_occurrence["keywords"]:
+    if event.keywords and not event.first_mentioned["in_text"]["keywords"]:
         event_keywords_in_text = {keyword:scroll_to_url(revision.url, keyword) for keyword in event.keywords if (" " not in keyword and keyword in revision_words) or (" " in keyword and keyword.lower() in revision_text_lowered)}
         if len(event_keywords_in_text) == len(event.keywords):
-            event.first_occurrence["keywords"] = occurrence(revision, result=event_keywords_in_text)
+            event.first_mentioned["in_text"]["keywords"] = occurrence(revision, result=event_keywords_in_text)
 
     return event
 

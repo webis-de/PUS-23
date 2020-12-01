@@ -7,10 +7,10 @@ class Event:
     def __init__(self, args):
 
         self.event_id = int(args["event_id"])
-        self.event_year = self.parse_int(args["event_year"])
-        self.event_month = self.parse_int(args["event_month"])
-        self.event_day = self.parse_int(args["event_day"])
-        self.event_date = self.get_event_date()
+        self.event_year = self.int(args["event_year"])
+        self.event_month = self.int(args["event_month"])
+        self.event_day = self.int(args["event_day"])
+        self.event_date = self.date(args["event_year"], args["event_month"], args["event_day"])
         self.account = args["accountlist"].get_account(args["account_id"])
         self.sampled = bool(args["sampled"].strip())
         self.event_text = args["event_text"]
@@ -26,25 +26,34 @@ class Event:
         self.pmids = [paper.fields.get("pmid") for paper in self.bib_keys if paper.fields.get("pmid")]
         self.keywords = [keyword.replace("\"", "").strip() for keyword in split("; *", args["keywords"]) if keyword.strip()]
         self.extracted_from = args["extracted_from"]
-        self.first_occurrence = {"in_text":{"titles":None, "authors":None, "dois":{}},
-                                 "in_references":{"titles":None, "authors":{"raw":None, "jaccard":None, "ndcg":None}, "pmids":{}},
-                                 "keywords":{}
-                                 }
+        self.first_mentioned = {"in_text":{
+                                    "titles":None,
+                                    "authors":None,
+                                    "dois":{},
+                                    "keywords":{}},
+                                "in_references":{
+                                    "titles":None,
+                                    "authors":{
+                                        "raw":None,
+                                        "jaccard":None,
+                                        "ndcg":None},
+                                    "pmids":{}}
+                                }
 
-    def parse_int(self, value):
+    def int(self, value):
         try:
             return int(value)
         except ValueError:
             return None
 
-    def get_event_date(self):
+    def date(self, year, month, day):
         event_date = ""
-        if self.event_year:
-            event_date += str(self.event_year)
-        if self.event_month:
-            event_date += "-" + str(self.event_month).rjust(2, "0")
-        if self.event_day:
-            event_date += "-" + str(self.event_day).rjust(2, "0")
+        if year:
+            event_date += str(year)
+        if month:
+            event_date += "-" + str(month).rjust(2, "0")
+        if day:
+            event_date += "-" + str(day).rjust(2, "0")
         return event_date
 
     def replace_braces(self, value):
