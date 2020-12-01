@@ -18,7 +18,7 @@ class EventList:
                     args = {header[i].strip():row[i].strip() for i in range(len(header))}
                     args["bibliography"] = bibliography
                     args["accountlist"] = accountlist
-                    self.events.append(Event(**args))
+                    self.events.append(Event(args))
                 except ValueError:
                     print("Could not parse row " + str(row_number) + " in events: " + str(row))
 

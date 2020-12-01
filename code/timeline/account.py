@@ -1,21 +1,23 @@
 class Account:
 
-    def __init__(self, account_id, url, account_title, type, genre, dynamic, account_year, account_month, account_day, about, bib_keys, publisher_author, comment):
+    def __init__(self, args):
 
-        self.account_id = account_id
-        self.url = url
-        self.account_title = account_title
-        self.type = type
-        self.genre = genre
-        self.dynamic = dynamic
-        self.account_year = account_year
-        self.account_month = account_month
-        self.account_day = account_day
+        self.account_id = args["account_id"]
+        self.reference = args["reference"]
+        self.scholar_cits = args["scholar_cits"]
+        self.url = args["url"]
+        self.account_title = args["account_title"]
+        self.type = args["type"]
+        self.genre = args["genre"]
+        self.dynamic = args["dynamic"]
+        self.account_year = args["account_year"]
+        self.account_month = args["account_month"]
+        self.account_day = args["account_day"]
         self.account_date = self.get_account_date()
-        self.about = about
-        self.bib_keys = bib_keys
-        self.publisher_author = publisher_author
-        self.comment = comment
+        self.about = args["about"]
+        self.bib_keys = args["bib_keys"]
+        self.publisher_author = args["publisher_author"]
+        self.comment = args["comment"]
 
     def get_account_date(self):
         account_date = ""

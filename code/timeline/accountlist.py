@@ -16,7 +16,7 @@ class AccountList:
                 row_number += 1
                 try:
                     args = {header[i].strip():row[i].strip() for i in range(len(header))}
-                    self.accounts.append(Account(**args))
+                    self.accounts.append(Account(args))
                 except ValueError:
                     print("Could not parse row " + str(row_number) + " in accounts: " + str(row))
 

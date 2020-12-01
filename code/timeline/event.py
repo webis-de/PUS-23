@@ -4,28 +4,28 @@ from itertools import combinations
 
 class Event:
 
-    def __init__(self, event_id, event_year, event_month, event_day, account_id, sampled, event_text, type, subtype, actors, places, bib_keys, keywords, extracted_from, comment, bibliography, accountlist):
+    def __init__(self, args):
 
-        self.event_id = int(event_id)
-        self.event_year = self.parse_int(event_year)
-        self.event_month = self.parse_int(event_month)
-        self.event_day = self.parse_int(event_day)
+        self.event_id = int(args["event_id"])
+        self.event_year = self.parse_int(args["event_year"])
+        self.event_month = self.parse_int(args["event_month"])
+        self.event_day = self.parse_int(args["event_day"])
         self.event_date = self.get_event_date()
-        self.account = accountlist.get_account(account_id)
-        self.sampled = bool(sampled.strip())
-        self.event_text = event_text
-        self.type = type
-        self.subtype = subtype
-        #self.actors = [actor.strip() for actor in split("[,;] *", actors.strip()) if actor.strip()]
-        #self.places = [place.strip() for place in split("[,;] *", places.strip()) if place.strip()]
-        self.bib_keys = [bibliography.bibentries.get(paper) for paper in split("; *", bib_keys.strip()) if bibliography.bibentries.get(paper)]
-        self.comment = comment
+        self.account = args["accountlist"].get_account(args["account_id"])
+        self.sampled = bool(args["sampled"].strip())
+        self.event_text = args["event_text"]
+        self.type = args["type"]
+        self.subtype = args["subtype"]
+        #self.actors = [actor.strip() for actor in split("[,;] *", args["actors"].strip()) if actor.strip()]
+        #self.places = [place.strip() for place in split("[,;] *", args["places"].strip()) if place.strip()]
+        self.bib_keys = [args["bibliography"].bibentries.get(paper) for paper in split("; *", args["bib_keys"].strip()) if args["bibliography"].bibentries.get(paper)]
+        self.comment = args["comment"]
         self.titles = {paper.key:self.replace_braces(paper.fields.get("title")) for paper in self.bib_keys if self.replace_braces(paper.fields.get("title"))}
         self.authors = {paper.key:[self.replace_braces(person.last_names[0]) for person in paper.persons.get("author")] for paper in self.bib_keys}
         self.dois = [paper.fields.get("doi") for paper in self.bib_keys if paper.fields.get("doi")]
         self.pmids = [paper.fields.get("pmid") for paper in self.bib_keys if paper.fields.get("pmid")]
-        self.keywords = [keyword.replace("\"", "").strip() for keyword in split("; *", keywords) if keyword.strip()]
-        self.extracted_from = extracted_from
+        self.keywords = [keyword.replace("\"", "").strip() for keyword in split("; *", args["keywords"]) if keyword.strip()]
+        self.extracted_from = args["extracted_from"]
         self.first_occurrence = {"in_text":{"titles":None, "authors":None, "dois":{}},
                                  "in_references":{"titles":None, "authors":{"raw":None, "jaccard":None, "ndcg":None}, "pmids":{}},
                                  "keywords":{}
