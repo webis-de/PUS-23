@@ -67,7 +67,7 @@ class Scraper:
         if self.updating: self.logger.log("Number of updates: " + str(self.update_count))
         self.logger.stop("Done. Number of revisions: " + str(self.revision_count))
 
-    def scrape(self, directory, deadline, number = float("inf")):
+    def scrape(self, directory, deadline, number = float("inf"), verbose = True):
         """
         Scrape revisions from Wikipedia page.
         Revisions are scraped in batches of a maximum of 50 at a time.
@@ -76,6 +76,7 @@ class Scraper:
             directory: The directory to which the scraped revisions are saved.
             deadline: The deadline before which collections are collected. Use 'YYYY-MM-DD'.
             number: Number of revisions to scrape.
+            verbose: Print revision count progress.
         """
         if self.page_id == "-1":
             return 1
@@ -85,7 +86,7 @@ class Scraper:
             if exists(str(directory) + sep + self.filename):
                 self.__get_rvstartid(directory + sep + self.filename)
                 self.updating = True
-            while self.__collect_revisions(directory, deadline, number):
+            while self.__collect_revisions(directory, deadline, number, verbose):
                 pass
             return 0
 
@@ -112,7 +113,7 @@ class Scraper:
         if self.rvcontinue:
             self.parameters["rvstartid"] = self.rvcontinue.split("|")[1]
 
-    def __collect_revisions(self, directory, deadline, number):
+    def __collect_revisions(self, directory, deadline, number, verbose):
         """
         Collect all revisions for the Wikipedia article.
         Revisions are scraped in batches of a maximum of 50 at a time.
@@ -121,6 +122,7 @@ class Scraper:
             directory: The directory to which the scraped revisions are saved.
             deadline: The deadline before which collections are collected. Use 'YYYY-MM-DD'.
             number: Number of revisions to scrape.
+            verbose: Print revision count progress.
         Returns:
             False if maximum number of revision to scrape has been reached, scraped revision
             date is on day of deadline or there are no more revisions, else True.
@@ -152,7 +154,7 @@ class Scraper:
             if self.revision_count % 100 == 0:
                 self.logger.end_check(self.revision_count)
             else:
-                print(self.revision_count)
+                if verbose: print(self.revision_count)
 
         self.rvcontinue = response_json.get("continue",{}).get("rvcontinue",None)
         if self.rvcontinue:

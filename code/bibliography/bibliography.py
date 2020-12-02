@@ -49,6 +49,15 @@ class Bibliography:
             return self.years
 
     def replace_braces(self, value):
+        """
+        Replace braces ('{' and '}') in bibvalues.
+
+        Args:
+            A string, list of strings or tuple of strings.
+
+        Returns:
+            The passed string or collection of strings, with braces cleaned.
+        """
         if type(value) == str:
             return value.replace("{","").replace("}","")
         if type(value) == list:
@@ -76,15 +85,3 @@ class Bibliography:
         plt.subplots_adjust(bottom=0.1, top=0.95, left=0.03, right=0.995)
         if not exists(directory): makedirs(directory)
         plt.savefig(directory + sep + "publication_distribution.png")
-
-if __name__ == "__main__":
-
-    bib = Bibliography("../../data/tracing-innovations-lit.bib")
-    for author in bib.authors:
-        print(author)
-    print("="*50)
-    for title in bib.titles:
-        print(title)
-    print("="*50)
-    for doi in bib.dois:
-        print(doi)

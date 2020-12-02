@@ -28,7 +28,6 @@ class Logger:
             if not exists(self.directory): makedirs(self.directory)
             self.file_name = timestamped_directory + ".txt"
             self.file_path = self.directory + sep + self.file_name
-            print(self.timestamp.strftime("%d %b %Y %H:%M:%S"))
 
         def __enter__(self):
             """Makes the API autoclosable."""
