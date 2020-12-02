@@ -3,6 +3,10 @@ from timeline.accountlist import AccountList
 from timeline.eventlist import EventList
 from pprint import pprint
 
+##################################################################
+# This file serves as an entry point view the event and accounts.#
+##################################################################
+
 el = EventList("../data/CRISPR_events - events.csv",
                Bibliography("../data/tracing-innovations-lit.bib"),
                AccountList("../data/CRISPR_events - accounts.csv"))

@@ -16,9 +16,9 @@ from json import load, dump
 from urllib.parse import quote, unquote
 from math import log
 
-#####################################################################
-# This file serves as an entry point to test the article extraction.#
-#####################################################################
+####################################################################
+# This file serves as an entry point to analyse Wikipedia articles.#
+####################################################################
 
 def occurrence(revision, result):
     return {"index":revision.index,"url":revision.url,"timestamp":revision.timestamp.string,"result":result}

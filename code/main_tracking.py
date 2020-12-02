@@ -5,7 +5,7 @@ from utility.logger import Logger
 from os.path import sep
 
 ##################################################################
-# This file serves as an entry point to test the entire pipeline.#
+# This file serves as an entry point to track fields and phrases.#
 ##################################################################
 
 if __name__ == "__main__":

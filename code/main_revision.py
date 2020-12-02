@@ -5,9 +5,9 @@ from lxml import html
 from re import sub
 from datetime import datetime
 
-#################################################################
-# This file serves as an entry point to test the Revision class.#
-#################################################################
+######################################################################
+# This file serves as an entry point to test the Revision extraction.#
+######################################################################
 
 def heading(text, file):
     file.write(text + "\n")

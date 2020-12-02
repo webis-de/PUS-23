@@ -6,10 +6,9 @@ from re import split
 from argparse import ArgumentParser
 from datetime import datetime
 
-################################################################
-# This file serves as an entry point to test the Scraper class.#
-################################################################
-
+#########################################################
+# This file serves as an entry point to scrape articles.#
+#########################################################
 
 if __name__ == "__main__":
 
