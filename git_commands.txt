@@ -1,0 +1,12 @@
+git status
+git add .
+git commit -m "MESSAGE"
+beispiel:
+git commit -m "add test.txt"
+
+git push
+git pull
+
+
+
+
