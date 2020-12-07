@@ -12,11 +12,14 @@ class Preprocessor:
         sentenizer: The sentenizer this preprocessor uses.
         stopwords: The list of stopwords this preprocessor uses.
     """
-    def __init__(self, language):
+    def __init__(self, language, filterwords = []):
 
-        self.tokenizer = Tokenizer("preprocessor/data/abbreviations_" + language + ".txt")
+        self.tokenizer = Tokenizer("preprocessor/data/abbreviations_" + language + ".txt", filterwords)
         self.sentenizer = Sentenizer("preprocessor/data/abbreviations_" + language + ".txt")
         self.stopwords = stopwords("preprocessor/data/stopwords_" + language + ".txt")
+        with open("preprocessor/data/contractions_" + language + ".txt") as file:
+            lines = list(file.readlines())
+            self.contractions = [line.strip().split("-") for line in lines] + [[word[0].upper() + word[1:] for word in line.strip().split("-")] for line in lines]
 
     def __enter__(self):
         return self
@@ -60,21 +63,21 @@ class Preprocessor:
     def clean(self, phrase):
         """
         Remove double periods and quotation marks.
+        Transform contracted forms.
 
         Args:
             phrase: The string to clean.
 
         Returns:
-            A string with all quotation marks and full stop sequences removed.
+            A string with all quotation marks and full stop sequences removed
+            and all contracted forms split into parts.
         """
-        #remove leading line number
-        phrase = sub("^\d*\t", "", phrase)
-        #remove value at end of line (deu_news_2012_1M-sentences.txt)
-        phrase = sub("\t\d*\.\d*", "", phrase)
-        #eliminate quotation marks
-        phrase = phrase.replace("”", " ").replace("“", " ")
-        phrase = phrase.replace("'"," ").replace("'"," ")
-        phrase = phrase.replace("\""," ")
+        for contraction in self.contractions:
+            phrase = phrase.replace(contraction[0], contraction[1])
+        #eliminate quotation marks and apostrophes
+##        phrase = phrase.replace("”", " ").replace("“", " ")
+##        phrase = phrase.replace("'"," ").replace("'"," ")
+##        phrase = phrase.replace("\""," ")
         #eliminate double and multiple full stops
         phrase = sub("(\.+ *){2,}", " ", phrase)
         return phrase
@@ -91,23 +94,3 @@ class Preprocessor:
             A string where hyphens like 'word-hyphenation' are removed: 'word hyphenation'.
         """
         return sub("([a-zA-Z]{2,2}|^)-", "\g<1> ", phrase)
-        
-if __name__ == "__main__":
-    text = "Das ist ein deutscher Text, der Kommas ... und Abkürzungen enthält. " + \
-           "Darunter finden sich z.B. einige gängige Abkürzungen, aber auch einige andere seltenere Sachen " + \
-           "wie i.A. für 'im Auftrag'."
-    with Preprocessor(stopwords_filepath="utility/data/stopwords_de.txt.txt", abbreviations_filepath="utility/data/abbreviations_de.txt") as pp:
-        for lower in [False, True]:
-            for stopping in [False, True]:
-                for sentenize in [False, True]:
-                    for tokenize in [False, True]:
-                        print(", ".join([item for item in ["lower" * lower, "stopping" * stopping, "sentenize" * sentenize, "tokenize" * tokenize] if item]))
-                        print(pp.preprocess(text, lower, stopping, sentenize, tokenize))
-                        print("="*30)
-
-        print(sum([len(sentence) for sentence in pp.preprocess(text, lower=True, stopping=False, tokenize=True, sentenize=False)]))
-        print(sum([len(sentence) for sentence in pp.preprocess(text, lower=True, stopping=False, tokenize=True, sentenize=True)]))
-        print("="*30)        
-        print(sum([len(sentence) for sentence in pp.preprocess(text, lower=True, stopping=True, sentenize=False, tokenize=True)]))
-        print(sum([len(sentence) for sentence in pp.preprocess(text, lower=True, stopping=True, sentenize=True, tokenize=True)]))
-        print("="*30)

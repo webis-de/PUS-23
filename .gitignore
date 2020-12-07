@@ -1,7 +1,12 @@
+/analysis*
+/articles*
+test
+extractions
+
 /**/__pycache__
 /**/logs
-/code/revision_extraction.txt
-extractions
-test
+
+/code/revision_extraction*.txt
+/code/article_extraction.txt
 /code/nohup.out
 .DS_Store

@@ -1,0 +1,11 @@
+image: python:latest
+
+stages:
+    - test
+
+test:
+    stage: test
+    script:
+        - cd code
+        - pip3 install -r requirements.txt
+        - for FILE in tests/test*.py; do python3 -m unittest -v $FILE; done

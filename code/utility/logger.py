@@ -23,9 +23,11 @@ class Logger:
             self.begin = self.timestamp
             self.stopwatch = self.timestamp
             self.checkpoint = self.timestamp
-            if not exists(directory): makedirs(directory)
-            self.file_name = directory + sep + str(self.timestamp)[:-7].replace(":","_").replace("-","_").replace(" ","_") + ".log"
-            print(self.timestamp.strftime("%d %b %Y %H:%M:%S"))
+            timestamped_directory = str(self.timestamp)[:-7].replace(":","_").replace("-","_").replace(" ","_")
+            self.directory = directory + sep + timestamped_directory
+            if not exists(self.directory): makedirs(self.directory)
+            self.file_name = timestamped_directory + ".txt"
+            self.file_path = self.directory + sep + self.file_name
 
         def __enter__(self):
             """Makes the API autoclosable."""
@@ -43,7 +45,7 @@ class Logger:
                 line_breaks: The number of line breaks to insert after the message.
             """
 
-            with open(self.file_name, "a") as file:
+            with open(self.file_path, "a") as file:
                 if message.strip() != "":
                     message = str(message)
                     print(message + ("\n" * line_breaks))

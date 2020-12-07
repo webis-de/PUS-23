@@ -1,10 +1,13 @@
-from requests import get
+from requests import get as GET
 from lxml import html
 from re import sub, S
 from json import dumps, loads
 from os.path import exists, sep
 from os import makedirs
-from multiprocessing import Pool
+from urllib.parse import quote, unquote
+from time import sleep
+from random import randint, random
+from datetime import datetime
 
 class Scraper:
     """
@@ -12,6 +15,7 @@ class Scraper:
 
     Attributes:
         logger: The logger this Scraper uses.
+        headers: Header for GET request.
         title: The title of the Wikipedia page.
         language: The language of the Wikipedia article.
         filename: The name of the file under which the revisions will be saved,
@@ -38,11 +42,14 @@ class Scraper:
             language: The language of the Wikipedia page to scrape.
         """
         self.logger = logger
-        self.title = title
+        self.headers = {'user-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0'}
+        self.title = title.replace(" ", "_")
         self.language= language
-        self.filename = self.title.replace("/","-") + "_" + self.language
+        self.filename = quote(self.title, safe="") + "_" + self.language
         self.api_url = "https://" + language + ".wikipedia.org/w/api.php"
-        self.page_id = list(get(self.api_url, {"format":"json","action":"query","titles":title}).json()["query"]["pages"].keys())[0]
+        self.page_id = list(GET(self.api_url, params={"format":"json","action":"query","titles":title}, headers=self.headers).json()["query"]["pages"].keys())[0]
+        if self.page_id == "-1":
+            self.logger.log("Article '" + title + "' does not exist.")
         self.article_url = "https://" + language + ".wikipedia.org/w/index.php?title=" + title
         self.rvprops = "comment|content|contentmodel|flagged|flags|ids|oresscores|parsedcomment|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid"
         self.parameters = {"format":"json","action":"query","titles":title,"prop":"revisions","rvlimit":"50","rvdir":"newer","rvslots":"*","rvprop":self.rvprops}
@@ -56,34 +63,34 @@ class Scraper:
         return self
 
     def __exit__(self, type, value, traceback):
-        pass
+        """Logs the number of scraped and updated revisions when the instance is closed."""
+        if self.updating: self.logger.log("Number of updates: " + str(self.update_count))
+        self.logger.stop("Done. Number of revisions: " + str(self.revision_count))
 
-    def scrape(self, directory, number = float("inf")):
+    def scrape(self, directory, deadline, number = float("inf"), verbose = True):
         """
         Scrape revisions from Wikipedia page.
         Revisions are scraped in batches of a maximum of 50 at a time.
 
         Args:
             directory: The directory to which the scraped revisions are saved.
+            deadline: The deadline before which collections are collected. Use 'YYYY-MM-DD'.
             number: Number of revisions to scrape.
-        Returns:
-            Last batch of revisions scraped.
+            verbose: Print revision count progress.
         """
-        self.logger.start_check("Scraping " + self.title + " (" + self.language + ").")
-        if exists(directory + sep + self.filename):
-            self.get_rvstartid(directory + sep + self.filename)
-            self.updating = True
+        if self.page_id == "-1":
+            return 1
         else:
-            revisions = self.collect_revisions(directory, number) 
-        while self.rvcontinue and self.revision_count < number:
-            revisions = self.collect_revisions(directory, number)
+            revisions = []
+            self.logger.start("Scraping revisions of " + self.title + " (" + self.language + ") before " + deadline + ".")
+            if exists(str(directory) + sep + self.filename):
+                self.__get_rvstartid(directory + sep + self.filename)
+                self.updating = True
+            while self.__collect_revisions(directory, deadline, number, verbose):
+                pass
+            return 0
 
-        if self.updating: self.logger.log("Number of updates: " + str(self.update_count))
-        self.logger.end_check("Done. Number of revisions: " + str(self.revision_count))
-
-        return revisions
-
-    def get_rvstartid(self, filepath):
+    def __get_rvstartid(self, filepath):
         """
         Helper function to set up revision update. Opens revision file, obtains last revision id,
         requests revision from API, sets rvcontinue to API value if available (None if not available)
@@ -101,62 +108,83 @@ class Scraper:
                 self.revision_count += 1
                 LINE = line
         latest_revid = loads(LINE)["revid"]
-        response = get(self.api_url, {"format":"json","action":"query","titles":self.title,"prop":"revisions","rvlimit":"1","rvdir":"newer","rvstartid":str(latest_revid)}).json()
+        response = GET(self.api_url, {"format":"json","action":"query","titles":self.title,"prop":"revisions","rvlimit":"1","rvdir":"newer","rvstartid":str(latest_revid)}).json()
         self.rvcontinue = response.get("continue",{}).get("rvcontinue",None)
         if self.rvcontinue:
             self.parameters["rvstartid"] = self.rvcontinue.split("|")[1]
 
-    def collect_revisions(self, directory, number):
+    def __collect_revisions(self, directory, deadline, number, verbose):
         """
         Collect all revisions for the Wikipedia article.
         Revisions are scraped in batches of a maximum of 50 at a time.
 
         Args:
             directory: The directory to which the scraped revisions are saved.
+            deadline: The deadline before which collections are collected. Use 'YYYY-MM-DD'.
             number: Number of revisions to scrape.
+            verbose: Print revision count progress.
         Returns:
-            List of revisions.
+            False if maximum number of revision to scrape has been reached, scraped revision
+            date is on day of deadline or there are no more revisions, else True.
         """
-        response = get(self.api_url, self.parameters).json()
-        revisions = []
-        for revision in response["query"]["pages"][self.page_id]["revisions"]:
-            if self.revision_count >= number: break
-            revisions.append({"revid":revision["revid"],
-                                   "parentid":revision["parentid"],
-                                   "url":self.article_url + "&oldid=" + str(revision["revid"]),
-                                   "user":revision["user"],
-                                   "userid":revision["userid"],
-                                   "timestamp":revision["timestamp"],
-                                   "size":revision["size"],
-                                   "html":"",
-                                   "comment":revision.get("comment",""),
-                                   "minor":revision.get("minor",""),
-                                   "index":self.revision_count})
+        response = GET(self.api_url, params=self.parameters, headers=self.headers)
+        #print(response.status_code)
+        response_json = response.json()
+        sleep(self.delay())
+        for revision in response_json["query"]["pages"][self.page_id]["revisions"]:
+            if self.revision_count >= number:
+                return False
+            if not self.before(revision["timestamp"], deadline):
+                return False
+            revision_url = self.article_url + "&oldid=" + str(revision["revid"])
+            self.save(directory,
+                      {"revid":revision["revid"],
+                       "parentid":revision["parentid"],
+                       "url":revision_url,
+                       "user":revision["user"],
+                       "userid":revision["userid"],
+                       "timestamp":revision["timestamp"],
+                       "size":revision["size"],
+                       "html":self.__download_html(revision_url),
+                       "comment":revision.get("comment",""),
+                       "minor":revision.get("minor",""),
+                       "index":self.revision_count})
             self.revision_count += 1
             if self.updating: self.update_count += 1
+            if self.revision_count % 100 == 0:
+                self.logger.end_check(self.revision_count)
+            else:
+                if verbose: print(self.revision_count)
 
-        with Pool(10) as pool:
-            revisions = pool.map(self.download_html, revisions)
-
-        self.save(revisions, directory)
-        
-        self.rvcontinue = response.get("continue",{}).get("rvcontinue",None)
+        self.rvcontinue = response_json.get("continue",{}).get("rvcontinue",None)
         if self.rvcontinue:
             self.parameters["rvstartid"] = self.rvcontinue.split("|")[1]
+            return True
+        else:
+            return False
 
-        return revisions
-
-    def download_html(self, revision):
+    def delay(self):
         """
-        Helper function to extract HTML for a given revision used during multiprocessing.
+        Request delay between 2 and 4 seconds.
+        
+        Returns:
+            Float between 2 and 4.
+        """
+        return 2 + randint(0,1) + random()
+
+    def __download_html(self, revision_url):
+        """
+        Download HTML for a given revision URL.
 
         Args:
-            revision: The revision to update with HTML.
+            revision: The URL of the revision for which to obtain HTML.
 
         Returns:
-            The same revision but with updated HTML.
+            The HTML of the revision.
         """
-        tree = html.fromstring(get(revision["url"]).text)
+        response = GET(revision_url, headers=self.headers)
+        #print(response.status_code)
+        tree = html.fromstring(response.text)
         #get text from MediaWiki
         try:
             mediawiki_parser_output = tree.xpath(".//div[@class='mw-parser-output']")[0]
@@ -173,20 +201,48 @@ class Scraper:
             mediawiki_normal_catlinks = ""
         HTML = mediawiki_parser_output + "\n" + mediawiki_normal_catlinks
         if not HTML:
-            self.logger.log("Issue encountered with revid: " + str(revision["revid"]))
-        revision["html"] = HTML
-        return revision
+            self.logger.log("Issue encountered with revid: " + str(revision["revid"]))        
+        sleep(self.delay())
+        return HTML
     
-    def save(self, revisions, directory):
+    def save(self, directory, revision):
         """
-        Save revisions to directory.
+        Save revision to directory.
 
         Args:
-            revisions: A list of revisions to save to file.
-            directory: The directory to which the scraped revisions are saved.
+            directory: The directory to which the scraped revision is saved.
+            revision: A revision to save to file.
         """
         if not exists(directory): makedirs(directory)
         with open(directory + sep + self.filename, "a") as output_file:
-            for revision in revisions:
-                output_file.write(dumps(revision) + "\n")
+            output_file.write(dumps(revision) + "\n")
+
+    def before(self, timestamp, deadline):
+        """
+        Determine whether timestamp is before a given deadline.
+        Use string with format 'YYYY-MM-DD'.
+
+        Return:
+            True if timestamp is before deadline, else False.
+        """
+        timestamp = datetime.strptime(timestamp,"%Y-%m-%dT%H:%M:%SZ")
+        deadline = datetime.strptime(deadline,"%Y-%m-%d")
+        if timestamp.year < deadline.year:
+            return True
+        else:
+            if timestamp.year == deadline.year:
+                if timestamp.month < deadline.month:
+                    return True
+                else:
+                    if timestamp.month == deadline.month:
+                        if timestamp.day < deadline.day:
+                            return True
+                        else:
+                            return False
+                    else:
+                        return False
+            else:
+                return False
+                        
+        
 
