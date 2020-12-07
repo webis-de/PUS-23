@@ -42,17 +42,15 @@ class Scraper:
             language: The language of the Wikipedia page to scrape.
         """
         self.logger = logger
-        self.headers = {'user-agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0'}
-        self.title = title.replace(" ", "_")
-        self.language= language
-        self.filename = quote(self.title, safe="") + "_" + self.language
+        self.headers = {'user-agent': 'Modzilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0'}
+        self.language = language
         self.api_url = "https://" + language + ".wikipedia.org/w/api.php"
-        self.page_id = list(GET(self.api_url, params={"format":"json","action":"query","titles":title}, headers=self.headers).json()["query"]["pages"].keys())[0]
-        if self.page_id == "-1":
-            self.logger.log("Article '" + title + "' does not exist.")
-        self.article_url = "https://" + language + ".wikipedia.org/w/index.php?title=" + title
+        self.page_id = None
+        self.title = self.sanity_check(title)
+        self.filename = quote(self.title, safe="") + "_" + self.language
+        self.article_url = "https://" + language + ".wikipedia.org/w/index.php?title=" + self.title.replace(" ", "_")
         self.rvprops = "comment|content|contentmodel|flagged|flags|ids|oresscores|parsedcomment|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid"
-        self.parameters = {"format":"json","action":"query","titles":title,"prop":"revisions","rvlimit":"50","rvdir":"newer","rvslots":"*","rvprop":self.rvprops}
+        self.parameters = {"format":"json","action":"query","titles":self.title,"prop":"revisions","rvlimit":"50","rvdir":"newer","rvslots":"*","rvprop":self.rvprops}
         self.rvcontinue = None
         self.revision_count = 0
         self.updating = False
@@ -66,6 +64,18 @@ class Scraper:
         """Logs the number of scraped and updated revisions when the instance is closed."""
         if self.updating: self.logger.log("Number of updates: " + str(self.update_count))
         self.logger.stop("Done. Number of revisions: " + str(self.revision_count))
+
+    def sanity_check(self, title):
+        response = GET(self.api_url, params={"format":"json","action":"query","titles":title,"redirects":""}, headers=self.headers).json()
+        self.page_id = list(response["query"]["pages"].keys())[0]
+        if self.page_id == "-1":
+            self.logger.log("Article '" + title + "' does not exist.")
+        redirect = response["query"].get("redirects", [{"to":None}])[0]["to"]
+        if redirect:
+            self.logger.log("Article '" + title + "' redirects to " + redirect + ". Setting title to " + redirect + ".")
+            return redirect
+        else:
+            return title
 
     def scrape(self, directory, deadline, number = float("inf"), verbose = True):
         """

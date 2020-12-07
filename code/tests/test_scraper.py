@@ -16,7 +16,7 @@ class TestSraper(unittest.TestCase):
         cls.log_directory = cls.directory + sep + "log"
         cls.data_directory = cls.directory + sep + "data"
         cls.logger = Logger(cls.log_directory)
-
+        
     @classmethod
     def tearDownClass(cls):
         rmtree(cls.directory)
@@ -43,7 +43,7 @@ class TestSraper(unittest.TestCase):
 
     def mock_log(self, message, line_breaks = 0):
         pass
-
+            
     def test_single_scrape(self):
         TITLE = "CRISPR"
         LANGUAGE = "de"
@@ -52,12 +52,15 @@ class TestSraper(unittest.TestCase):
         self.logger.log = self.mock_log
 
         #scrape first five revisions
-        with Scraper(logger = self.logger, title = "CRISPR", language = LANGUAGE) as scraper:
+        with Scraper(logger = self.logger, title = TITLE, language = LANGUAGE) as scraper:
             scraper.save = self.mock_save
             scraper.delay = self.mock_delay
             revisions = []
             scraper.scrape(revisions, DEADLINE, verbose=False)
             revisions = [Revision(**revision) for revision in revisions]
+
+            #assert number of revisions
+            self.assertEqual(len(revisions), 5)
 
             #assert attributes of first revision
             self.assertEqual(revisions[0].revid, 69137443)
@@ -75,6 +78,38 @@ class TestSraper(unittest.TestCase):
             self.assertEqual(revisions[-1].timestamp.string, '2010-03-01 09:04:35')
             self.assertEqual(revisions[-1].index, 4)
 
+    def test_redirect_scrape(self):
+        TITLE = "Crispr"
+        LANGUAGE = "en"
+        DEADLINE = "2005-12-15"
+
+        self.logger.log = self.mock_log
+
+        #scrape first five revisions
+        with Scraper(logger = self.logger, title = TITLE, language = LANGUAGE) as scraper:
+            scraper.save = self.mock_save
+            scraper.delay = self.mock_delay
+            revisions = []
+            scraper.scrape(revisions, DEADLINE, verbose=False)
+            revisions = [Revision(**revision) for revision in revisions]
+
+            #assert number of revisions
+            self.assertEqual(len(revisions), 6)
+
+            #assert attributes of first revision
+            self.assertEqual(revisions[0].revid, 17918488)
+            self.assertEqual(revisions[0].parentid, 0)
+            self.assertEqual(revisions[0].user, "192.207.234.194")
+            self.assertEqual(revisions[0].timestamp.string, '2005-06-30 21:26:19')
+            self.assertEqual(revisions[0].index, 0)
+
+            #assert attributes of fifth revision
+            self.assertEqual(revisions[-1].revid, 31074128)
+            self.assertEqual(revisions[-1].parentid, 31073051)
+            self.assertEqual(revisions[-1].user, "192.207.234.194")
+            self.assertEqual(revisions[-1].timestamp.string, '2005-12-12 18:09:52')
+            self.assertEqual(revisions[-1].index, 5)
+
     def test_multi_scrape(self):
         LANGUAGE = "en"
         DEADLINE = "2020-10-25"
@@ -82,11 +117,11 @@ class TestSraper(unittest.TestCase):
         self.logger.log = self.mock_log
         
         #ARTICLE CHECKSUMS
-        ARTICLES = {"CRISPR":"3b3b515988600fbddcd3a3d7b6a797da5dbe9381dd438d471ab2d86ad3bb0633",
-                    "CRISPR gene editing":"8e349f28a0e158c28d395ceb8c1beaf94b133e3686a25c366e6009e47f552661",
-                    "Cas9":"fec5eeab10e0f58be1d4460dd972783e7167652683175d5e3f50e4816a22fc83",
-                    "Trans-activating crRNA":"119a20105a7d64d95dc6606095ab58b7bb3584f2d16e2b17e5889f65194a0013",
-                    "CRISPR/Cpf1":"3f94f9c7ebcf0200f3d84e3032da5af19271b957b3f1e4192a4b66b3651a9c72"}
+        ARTICLES = {"CRISPR":{"revid":31073051,"parentid":31072600,"timestamp":"2005-12-12 18:00"},
+                    "CRISPR gene editing":{"revid":883728113,"parentid":883727959,"timestamp":"2019-02-17 06:39"},
+                    "Cas9":{"revid":598617730,"parentid":597687410,"timestamp":"2014-03-07 23:25"},
+                    "Trans-activating crRNA":{"revid":679103282,"parentid":626842992,"timestamp":"2015-09-02 13:20"},
+                    "CRISPR/Cpf1":{"revid":693169731,"parentid":693169348,"timestamp":"2015-11-30 21:40"}}
         
         #scrape first five revisions of each article and assert checksum code state 24 September 2020
         for article in ARTICLES:
@@ -96,8 +131,9 @@ class TestSraper(unittest.TestCase):
                 revisions = []
                 scraper.scrape(revisions, DEADLINE, number=5, verbose=False)
                 revisions = [Revision(**revision) for revision in revisions]
-                checksum = self.revisions_checksum(revisions)
-                self.assertEqual(checksum, ARTICLES[article])
+                self.assertEqual(revisions[4].revid, ARTICLES[article]["revid"])
+                self.assertEqual(revisions[4].parentid, ARTICLES[article]["parentid"])
+                self.assertEqual(revisions[4].timestamp.string[:-3], ARTICLES[article]["timestamp"])
 
     def test_full_and_updated_scrape(self):
         TITLE = "CRISPR"
