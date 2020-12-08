@@ -245,6 +245,9 @@ if __name__ == "__main__":
             
             print(revision.index)
 
+            #FIX REVISION URL BY REPLACEING SPACES WITH UNDERSCORES
+            revision.url = revision.url.replace(" ", "_")
+
             ### The full text, the lowered full text and all words of the revision. All characters are converted to ASCII.
             revision_text_ascii = to_ascii(revision.get_text())
             revision_text_ascii_lowered = revision_text_ascii.lower()
