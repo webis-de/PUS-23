@@ -285,7 +285,6 @@ if __name__ == "__main__":
             file.write(("\n"+"-"*50+"\n").join([str(event) for event in eventlist.events]))
         with open(output_directory + sep + filename + "_" + language + "." + "json", "w") as file:
             file.write("[\n")
-            first_line = True
             file.write(",\n".join([dumps(event.json()) for event in eventlist.events]))
             file.write("\n]")
 
