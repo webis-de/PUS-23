@@ -24,20 +24,18 @@ class Event:
         self.authors = {paper.key:[self.replace_braces(person.last_names[0]) for person in paper.persons.get("author")] for paper in self.bib_keys}
         self.dois = [paper.fields.get("doi") for paper in self.bib_keys if paper.fields.get("doi")]
         self.pmids = [paper.fields.get("pmid") for paper in self.bib_keys if paper.fields.get("pmid")]
-        self.keywords = [keyword.replace("\"", "").strip() for keyword in split("; *", args["keywords"]) if keyword.strip()]
+        #self.keywords = [keyword.replace("\"", "").strip() for keyword in split("; *", args["keywords"]) if keyword.strip()]
         self.extracted_from = args["extracted_from"]
-        self.first_mentioned = {"in_text":{
-                                    "titles":None,
-                                    "authors":None,
-                                    "dois":{},
-                                    "keywords":{}},
-                                "in_references":{
-                                    "titles":None,
-                                    "authors":{
-                                        "raw":None,
-                                        "jaccard":None,
-                                        "ndcg":None},
-                                    "pmids":{}}
+        self.first_mentioned = {
+                                "titles":{
+                                    "exact_match":None,
+                                    "ned":None},
+                                "authors":{
+                                    "exact_match":None,
+                                    "jaccard":None,
+                                    "ndcg":None},
+                                "dois":None,
+                                "pmids":None
                                 }
 
     def int(self, value):

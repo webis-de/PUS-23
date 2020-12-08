@@ -1,4 +1,7 @@
 from article.revision.revision import Revision
+from preprocessor.preprocessor import Preprocessor
+from spacy.lang.en import English
+from spacy.lang.de import German
 from random import randint
 from json import loads
 from lxml import html
@@ -16,28 +19,23 @@ def heading(text, file):
 
 if __name__ == "__main__":
 
-    PROCESSING = ["", "_raw", "_preprocessor", "_spacy"][0]
+    PROCESSING = ["", "_raw", "_preprocessor", "_spacy"][2]
     SELECTION = ["index", "revid", "random"][0]
     LANGUAGE = ["en", "de"][0]
     FILEPATH = "../articles/CRISPR_" + LANGUAGE
 
-    if PROCESSING == "_preprocessor":
-        from preprocessor.preprocessor import Preprocessor
-        preprocessor = Preprocessor(LANGUAGE, ["prokaryotic antiviral system"])
-    if PROCESSING == "_spacy":
-        if LANGUAGE == "en":
-            from spacy.lang.en import English
-            spacy = English()
-        if LANGUAGE == "de":
-            from spacy.lang.de import German
-            spacy = German()
+    preprocessor = Preprocessor(LANGUAGE, ["prokaryotic antiviral system", "10.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"])
+    if LANGUAGE == "en":
+        spacy = English()
+    if LANGUAGE == "de":
+        spacy = German()
 
     with open("revision_extraction" + PROCESSING + ".txt", "w", encoding="utf-8") as file:        
 
         #Open scraped article and get random revision.
         if SELECTION == "index":
             #reasonable index for en 1935, for de 100
-            index = 280
+            index = 1935
             line = 0
             with open(FILEPATH) as article:
                 while line < index:
@@ -65,9 +63,9 @@ if __name__ == "__main__":
                     line += 1
                 revision = Revision(**loads(article.readline()))
         
-        start = datetime.now()
+        preprocessing_start = datetime.now()
         if PROCESSING == "_raw" or PROCESSING == "":
-            #RAW TEXT
+            #RAW TEXT WITHOUT TOKENIZATION
             TEXT = revision.get_text().strip() + "\n"
         if PROCESSING == "_preprocessor":
             #TOKENIZED USING PREPROCESSOR
@@ -75,9 +73,10 @@ if __name__ == "__main__":
         if PROCESSING == "_spacy":
             #TOKENIZED USING SPACY
             TEXT = "|".join([str(token) for token in spacy(revision.get_text().strip() + "\n")])
-        end = datetime.now()
+        preprocessing_end = datetime.now()
+        print("Preprocessing: ", preprocessing_end - preprocessing_start)
 
-        foobar = datetime.now()
+        extraction_start = datetime.now()
 
         file.write("You are looking at revision number " + str(index) + " from " + revision.timestamp.string + "." + "\n")
         #URL of revsions
@@ -86,7 +85,7 @@ if __name__ == "__main__":
 
         #Print text from html
         heading("\nTEXT", file)
-        if PROCESSING: file.write("Processing text took : " + str(end - start) + "\n\n")
+        if PROCESSING: file.write("Processing text took : " + str(preprocessing_end - preprocessing_start) + "\n\n")
 
         file.write(TEXT)
 
@@ -132,6 +131,7 @@ if __name__ == "__main__":
                     file.write("SOURCE: " + html.tostring(reference.source).decode("utf-8") + "\n")
                     file.write("NUMBER: " + str(reference.number) + "\n")
                     file.write("REFERENCE TEXT: " + reference.get_text().strip() + "\n")
+                    file.write("REFERENCE TEXT TOKENISED: " + "|".join(preprocessor.preprocess(reference.get_text().strip(), lower=False, stopping=False, sentenize=False, tokenize=True)[0]) + "\n")
                     file.write("\n")
                     file.write("AUTHORS: " + str(reference.get_authors(LANGUAGE)) + "\n")
                     file.write("TITLE: " + str(reference.get_title(LANGUAGE)) + "\n")
@@ -144,4 +144,5 @@ if __name__ == "__main__":
                     else:
                         file.write("-" + "\n")
                     file.write("-"*50 + "\n")
-    print(datetime.now() - foobar)
+    extraction_end = datetime.now()
+    print("Extraction: ", extraction_end - extraction_start)
