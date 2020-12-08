@@ -6,9 +6,9 @@ class Tokenizer:
 
     def __init__(self, abbreviations_filepath, filterwords = []):
         self.abbreviations_filepath = abbreviations_filepath
-        self.abbreviation_dictionary = {abbreviation:md5(abbreviation.encode()).hexdigest() for abbreviation in abbreviations(abbreviations_filepath).union(set(filterwords))}
+        self.abbreviations_and_filterwords = set([word.replace(".","\.") for word in abbreviations(abbreviations_filepath)]).union(set(filterwords))
 
-    def tokenize(self, sentence):
+    def tokenize(self, string):
         """
         Tokenises a string by splitting it at the spaces (one or more).
         ".", "!", "?", ", ", ": ", ";", "(", ")","[", "]", "{", "}", "/", "\\" and " - " are first isolated
@@ -20,19 +20,19 @@ class Tokenizer:
         Returns:
             A list of strings representing the sentence, including punctuation.
         """
-        encountered_abbreviations = {}
-        for abbreviation in self.abbreviation_dictionary:
-            if abbreviation in sentence:
-                hashed_abbreviation = self.abbreviation_dictionary[abbreviation]
-                sentence = sentence.replace(abbreviation, hashed_abbreviation)
-                encountered_abbreviations[hashed_abbreviation] = abbreviation
+        strings_to_escape = {}
+        for pattern in self.abbreviations_and_filterwords:
+            for string_to_escape in re.findall(pattern, string):
+                hashed_string_to_escape = md5(string_to_escape.encode()).hexdigest()
+                string = string.replace(string_to_escape, hashed_string_to_escape)
+                strings_to_escape[hashed_string_to_escape] = string_to_escape
         for mark in [".","!","?",", ",": ",";", "(", ")","[","]","{","}","/","\\","'","\""]:
-            sentence = sentence.replace(mark, " " + mark + " ")
+            string = string.replace(mark, " " + mark + " ")
 
-        split_sentence = re.split(" +", sentence.strip())
+        split_string = re.split(" +", string.strip())
 
-        for i in range(len(split_sentence)):
-            for encountered_abbreviation in encountered_abbreviations:
-                split_sentence[i] = split_sentence[i].replace(encountered_abbreviation, encountered_abbreviations[encountered_abbreviation])
+        for i in range(len(split_string)):
+            for string_to_escape in strings_to_escape:
+                split_string[i] = split_string[i].replace(string_to_escape, strings_to_escape[string_to_escape])
 
-        return split_sentence
+        return split_string
