@@ -270,6 +270,10 @@ class Scraper:
         Determine whether timestamp is before a given deadline.
         Use string with format 'YYYY-MM-DD'.
 
+        Args:
+            timestamp: The timestamp to check.
+            deadline: The deadline to check against.
+
         Return:
             True if timestamp is before deadline, else False.
         """

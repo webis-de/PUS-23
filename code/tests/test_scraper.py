@@ -42,6 +42,9 @@ class TestSraper(unittest.TestCase):
     def mock_delay(self):
         return 0
 
+    def mock_latest_revid(self, filepath):
+        return filepath
+
     def mock_log(self, message, line_breaks = 0):
         pass
 
@@ -67,6 +70,26 @@ class TestSraper(unittest.TestCase):
         with Scraper(logger = self.logger, title = self.no_title, language = "en") as scraper:
             sanity_checked_title = scraper._sanity_check("Crispr")
             self.assertEqual(sanity_checked_title, "CRISPR")
+
+    def test_rvstartid(self):
+        
+        self.logger.log = self.mock_log
+        
+        with Scraper(logger = self.logger, title = "CRISPR/Cas Tools", language = "en") as scraper:
+            scraper._save = self.mock_save
+            scraper._delay = self.mock_delay
+            scraper._latest_revid = self.mock_latest_revid
+            scraper._rvstartid("646367059")
+        self.assertEqual(scraper.parameters["rvstartid"], "653185393")
+
+    def test_before(self):
+
+        self.logger.log = self.mock_log
+
+        with Scraper(logger = self.logger, title = self.no_title, language = "en") as scraper:
+            self.assertTrue(scraper._before("2000-10-20T15:00:00Z", "2000-10-21"))
+            self.assertTrue(scraper._before("2000-09-22T15:00:00Z", "2000-10-21"))
+            self.assertTrue(scraper._before("1999-11-22T15:00:00Z", "2000-10-21"))
 
     def test_single_scrape(self):
 
