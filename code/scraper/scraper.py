@@ -123,13 +123,13 @@ class Scraper:
             revisions = []
             self.logger.start("Scraping revisions of " + self.title + " (" + self.language + ") before " + deadline + ".")
             if exists(str(directory) + sep + self.filename):
-                self.__get_rvstartid(directory + sep + self.filename)
+                self._rvstartid(directory + sep + self.filename)
                 self.updating = True
-            while self.__collect_revisions(directory, deadline, number, verbose):
+            while self._collect_revisions(directory, deadline, number, verbose):
                 pass
             return 0
 
-    def __get_rvstartid(self, filepath):
+    def _rvstartid(self, filepath):
         """
         Helper function to set up revision update. Opens revision file, obtains last revision id,
         requests revision from API, sets rvcontinue to API value if available (None if not available)
@@ -142,17 +142,28 @@ class Scraper:
         Args:
             filepath: Path to the revisions file.
         """
-        with open(filepath) as article:
-            for line in article:
-                self.revision_count += 1
-                LINE = line
-        latest_revid = loads(LINE)["revid"]
+        latest_revid = self._latest_revid(filepath)
         response = GET(self.api_url, {"format":"json","action":"query","titles":self.title,"prop":"revisions","rvlimit":"1","rvdir":"newer","rvstartid":str(latest_revid)}).json()
         self.rvcontinue = response.get("continue",{}).get("rvcontinue",None)
         if self.rvcontinue:
             self.parameters["rvstartid"] = self.rvcontinue.split("|")[1]
 
-    def __collect_revisions(self, directory, deadline, number, verbose):
+    def _latest_revid(self, filepath):
+        """
+        Get the latest revision id from a revision dump, i.e. the id of the last entry line.
+
+        Args:
+            filepath: Path to the revisions file.
+        Returns:
+            The the latest revision id in the revision dump.
+        """
+        with open(filepath) as article:
+            for line in article:
+                self.revision_count += 1
+                LINE = line
+        return loads(LINE)["revid"]
+
+    def _collect_revisions(self, directory, deadline, number, verbose):
         """
         Collect all revisions for the Wikipedia article.
         Revisions are scraped in batches of a maximum of 50 at a time.
@@ -167,7 +178,6 @@ class Scraper:
             date is on day of deadline or there are no more revisions, else True.
         """
         response = GET(self.api_url, params=self.parameters, headers=self.headers)
-        #print(response.status_code)
         response_json = response.json()
         sleep(self._delay())
         for revision in response_json["query"]["pages"][self.page_id]["revisions"]:
@@ -184,7 +194,7 @@ class Scraper:
                        "userid":revision["userid"],
                        "timestamp":revision["timestamp"],
                        "size":revision["size"],
-                       "html":self.__download_html(revision_url),
+                       "html":self._download_html(revision_url),
                        "comment":revision.get("comment",""),
                        "minor":revision.get("minor",""),
                        "index":self.revision_count})
@@ -211,7 +221,7 @@ class Scraper:
         """
         return 2 + randint(0,1) + random()
 
-    def __download_html(self, revision_url):
+    def _download_html(self, revision_url):
         """
         Download HTML for a given revision URL.
 
@@ -222,7 +232,6 @@ class Scraper:
             The HTML of the revision.
         """
         response = GET(revision_url, headers=self.headers)
-        #print(response.status_code)
         tree = html.fromstring(response.text)
         #get text from MediaWiki
         try:
