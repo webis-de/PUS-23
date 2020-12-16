@@ -20,7 +20,7 @@ class Scraper:
         language: The language of the Wikipedia article.
         filename: The name of the file under which the revisions will be saved,
                   which is a concatenation of <title>_<language>
-                  To avoid path issues, '/' is replaced with '-'.
+                  The title is automatically formated to avoid path issues.
         api_url: The URL of Wikimedia API as per language.
         page_id: ID of the Wikipedia page.
         article_url: The URL of the Wikipedia article.
@@ -45,8 +45,8 @@ class Scraper:
         self.language = language
         self.api_url = "https://" + language + ".wikipedia.org/w/api.php"
         self.page_id = None
-        self.title = self.sanity_check(title)
-        self.filename = self.quote_filename(self.title)
+        self.title = self._sanity_check(title)
+        self.filename = self._quote_filename(self.title)
         self.article_url = "https://" + language + ".wikipedia.org/w/index.php?title=" + self.title
         self.parameters = {"format":"json","action":"query","titles":self.title,"prop":"revisions","rvlimit":"50","rvdir":"newer","rvslots":"*",
                            "rvprop":"comment|content|contentmodel|flagged|flags|ids|oresscores|parsedcomment|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid"}
@@ -64,7 +64,7 @@ class Scraper:
         if self.updating: self.logger.log("Number of updates: " + str(self.update_count))
         self.logger.stop("Done. Number of revisions: " + str(self.revision_count))
 
-    def quote_filename(self, title):
+    def _quote_filename(self, title):
         """
         Replace blanks with underscore and quote reserved path separators like '/'.
 
@@ -75,7 +75,7 @@ class Scraper:
         """
         return quote(title.replace(" ", "_"), safe="") + "_" + self.language
 
-    def unquote_filename(self, filename):
+    def _unquote_filename(self, filename):
         """
         Unquotes the filename to return the title of the article.
 
@@ -86,11 +86,9 @@ class Scraper:
         """
         return " ".join(unquote(filename).split("_")[:-1])
 
-    def sanity_check(self, title):
+    def _sanity_check(self, title):
         """
         Check article for redirect and reset title if applicable.
-
-        https://en.wikipedia.org/w/api.php?format=json&action=query&titles=CRISPR/Cpf1&prop=revisions&rvlimit=50&rvdir=newer&rvslots=*&rvprop=comment|content|contentmodel|flagged|flags|ids|oresscores|parsedcomment|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid
 
         Args:
             title: The title of the page to check.
@@ -171,14 +169,14 @@ class Scraper:
         response = GET(self.api_url, params=self.parameters, headers=self.headers)
         #print(response.status_code)
         response_json = response.json()
-        sleep(self.delay())
+        sleep(self._delay())
         for revision in response_json["query"]["pages"][self.page_id]["revisions"]:
             if self.revision_count >= number:
                 return False
-            if not self.before(revision["timestamp"], deadline):
+            if not self._before(revision["timestamp"], deadline):
                 return False
             revision_url = self.article_url + "&oldid=" + str(revision["revid"])
-            self.save(directory,
+            self._save(directory,
                       {"revid":revision["revid"],
                        "parentid":revision["parentid"],
                        "url":revision_url,
@@ -204,7 +202,7 @@ class Scraper:
         else:
             return False
 
-    def delay(self):
+    def _delay(self):
         """
         Request delay between 2 and 4 seconds.
         
@@ -243,10 +241,10 @@ class Scraper:
         HTML = mediawiki_parser_output + "\n" + mediawiki_normal_catlinks
         if not HTML:
             self.logger.log("Issue encountered with revid: " + str(revision["revid"]))        
-        sleep(self.delay())
+        sleep(self._delay())
         return HTML
     
-    def save(self, directory, revision):
+    def _save(self, directory, revision):
         """
         Save revision to directory.
 
@@ -258,7 +256,7 @@ class Scraper:
         with open(directory + sep + self.filename, "a") as output_file:
             output_file.write(dumps(revision) + "\n")
 
-    def before(self, timestamp, deadline):
+    def _before(self, timestamp, deadline):
         """
         Determine whether timestamp is before a given deadline.
         Use string with format 'YYYY-MM-DD'.
@@ -284,6 +282,13 @@ class Scraper:
                         return False
             else:
                 return False
-                        
-        
 
+if __name__ == "__main__":
+
+    wikipedia_api_url = ("https://en.wikipedia.org/w/api.php?format=json&action=query&titles=CRISPR/Cpf1"
+                         "&prop=revisions&rvlimit=50&rvdir=newer&rvslots=*"
+                         "&rvprop=comment|content|contentmodel|flagged|flags|ids|oresscores|parsedcomment|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid")
+
+    from os import popen
+
+    popen("firefox '" + wikipedia_api_url + "'")

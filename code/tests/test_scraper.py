@@ -53,11 +53,11 @@ class TestSraper(unittest.TestCase):
         self.logger.log = self.mock_log
 
         with Scraper(logger = self.logger, title = self.no_title, language = "en") as scraper:
-            quoted_filename = scraper.quote_filename(TITLE)
+            quoted_filename = scraper._quote_filename(TITLE)
             self.assertEqual(quoted_filename, QUOTED)
 
         with Scraper(logger = self.logger, title = self.no_title, language = "en") as scraper:
-            unquoted_filename = scraper.unquote_filename(QUOTED)
+            unquoted_filename = scraper._unquote_filename(QUOTED)
             self.assertEqual(unquoted_filename, TITLE)
 
     def test_sanity_check(self):
@@ -65,7 +65,7 @@ class TestSraper(unittest.TestCase):
         self.logger.log = self.mock_log
 
         with Scraper(logger = self.logger, title = self.no_title, language = "en") as scraper:
-            sanity_checked_title = scraper.sanity_check("Crispr")
+            sanity_checked_title = scraper._sanity_check("Crispr")
             self.assertEqual(sanity_checked_title, "CRISPR")
 
     def test_single_scrape(self):
@@ -74,8 +74,8 @@ class TestSraper(unittest.TestCase):
 
         #scrape first five revisions
         with Scraper(logger = self.logger, title = "CRISPR/Cas Tools", language = "en") as scraper:
-            scraper.save = self.mock_save
-            scraper.delay = self.mock_delay
+            scraper._save = self.mock_save
+            scraper._delay = self.mock_delay
             revisions = []
             scraper.scrape(revisions, deadline="2015-02-15", number=5, verbose=False)
             revisions = [Revision(**revision) for revision in revisions]
@@ -108,8 +108,8 @@ class TestSraper(unittest.TestCase):
 
         #scrape first five revisions
         with Scraper(logger = self.logger, title = TITLE, language = LANGUAGE) as scraper:
-            scraper.save = self.mock_save
-            scraper.delay = self.mock_delay
+            scraper._save = self.mock_save
+            scraper._delay = self.mock_delay
             revisions = []
             scraper.scrape(revisions, DEADLINE, verbose=False)
             revisions = [Revision(**revision) for revision in revisions]
@@ -147,8 +147,8 @@ class TestSraper(unittest.TestCase):
         #scrape first five revisions of each article and assert checksum code state 24 September 2020
         for article in ARTICLES:
             with Scraper(logger = self.logger, title = article, language = LANGUAGE) as scraper:
-                scraper.save = self.mock_save
-                scraper.delay = self.mock_delay
+                scraper._save = self.mock_save
+                scraper._delay = self.mock_delay
                 revisions = []
                 scraper.scrape(revisions, DEADLINE, number=5, verbose=False)
                 revisions = [Revision(**revision) for revision in revisions]
@@ -167,7 +167,7 @@ class TestSraper(unittest.TestCase):
 
         #scrape article in full
         with Scraper(logger = self.logger, title = TITLE, language = LANGUAGE) as scraper:
-            scraper.delay = self.mock_delay
+            scraper._delay = self.mock_delay
             scraper.scrape(self.data_directory, DEADLINE, number=15, verbose=False)
             number_of_full_scraped_revisions = scraper.revision_count
             FILEPATH = self.data_directory + sep + scraper.filename
@@ -183,11 +183,11 @@ class TestSraper(unittest.TestCase):
         
         #scrape first five revisions
         with Scraper(logger = self.logger, title = TITLE, language = LANGUAGE) as scraper:
-            scraper.delay = self.mock_delay
+            scraper._delay = self.mock_delay
             scraper.scrape(self.data_directory, DEADLINE, number=10, verbose=False)
         #scrape remaining revisions
         with Scraper(logger = self.logger, title = TITLE, language = LANGUAGE) as scraper:
-            scraper.delay = self.mock_delay
+            scraper._delay = self.mock_delay
             scraper.scrape(self.data_directory, DEADLINE, number=15, verbose=False)
             number_of_updated_scraped_revisions = scraper.revision_count
         update_scrape_file_checksum = self.file_checksum(FILEPATH)
