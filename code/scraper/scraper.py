@@ -24,7 +24,6 @@ class Scraper:
         api_url: The URL of Wikimedia API as per language.
         page_id: ID of the Wikipedia page.
         article_url: The URL of the Wikipedia article.
-        rvprops: The revision properties that will be requested from the REST API.
         parameters: Parameters for the get request to the Wikipedia REST API.
         rvcontinue: Concatenation of timestamp, pipe (|) and revid of the next revision,
                     if available; else None.
@@ -47,10 +46,10 @@ class Scraper:
         self.api_url = "https://" + language + ".wikipedia.org/w/api.php"
         self.page_id = None
         self.title = self.sanity_check(title)
-        self.filename = quote(self.title, safe="") + "_" + self.language
-        self.article_url = "https://" + language + ".wikipedia.org/w/index.php?title=" + self.title.replace(" ", "_")
-        self.rvprops = "comment|content|contentmodel|flagged|flags|ids|oresscores|parsedcomment|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid"
-        self.parameters = {"format":"json","action":"query","titles":self.title,"prop":"revisions","rvlimit":"50","rvdir":"newer","rvslots":"*","rvprop":self.rvprops}
+        self.filename = self.quote_filename(self.title)
+        self.article_url = "https://" + language + ".wikipedia.org/w/index.php?title=" + self.title
+        self.parameters = {"format":"json","action":"query","titles":self.title,"prop":"revisions","rvlimit":"50","rvdir":"newer","rvslots":"*",
+                           "rvprop":"comment|content|contentmodel|flagged|flags|ids|oresscores|parsedcomment|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid"}
         self.rvcontinue = None
         self.revision_count = 0
         self.updating = False
@@ -65,7 +64,39 @@ class Scraper:
         if self.updating: self.logger.log("Number of updates: " + str(self.update_count))
         self.logger.stop("Done. Number of revisions: " + str(self.revision_count))
 
+    def quote_filename(self, title):
+        """
+        Replace blanks with underscore and quote reserved path separators like '/'.
+
+        Args:
+            title: The title of the article.
+        Returns:
+            The title as a quoted filename.
+        """
+        return quote(title.replace(" ", "_"), safe="") + "_" + self.language
+
+    def unquote_filename(self, filename):
+        """
+        Unquotes the filename to return the title of the article.
+
+        Args:
+            title: The title of the article.
+        Returns:
+            The title as a quoted filename.
+        """
+        return " ".join(unquote(filename).split("_")[:-1])
+
     def sanity_check(self, title):
+        """
+        Check article for redirect and reset title if applicable.
+
+        https://en.wikipedia.org/w/api.php?format=json&action=query&titles=CRISPR/Cpf1&prop=revisions&rvlimit=50&rvdir=newer&rvslots=*&rvprop=comment|content|contentmodel|flagged|flags|ids|oresscores|parsedcomment|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid
+
+        Args:
+            title: The title of the page to check.
+        Returns:
+            The corrected titles as defined by the redirect.
+        """
         response = GET(self.api_url, params={"format":"json","action":"query","titles":title,"redirects":""}, headers=self.headers).json()
         self.page_id = list(response["query"]["pages"].keys())[0]
         if self.page_id == "-1":
