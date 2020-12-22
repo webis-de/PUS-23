@@ -3,14 +3,16 @@
 This repository contains information and code concerning the project Tracing Innovations on Wikipedia.
 
 ## DOCUMENTS
-##### tracing-innovations-on-wikipedia (Benno)
+##### Hub (Benno)
 - https://docs.google.com/document/d/1QBe9mvq0BlYRzYDi0ul97GLRB8nibWsjxA7uUFYTino
-##### Timeline_Crispr_cas (Marion)
+##### Timeline (Marion)
 - https://docs.google.com/spreadsheets/d/1so4jyyjT62wzqMe_l7rpa94QhAWurNtSYed2oGSphoM
-##### CRISPR_events with Events and Account (Arno)
+##### CRISPR Events and Account (Arno)
 - https://docs.google.com/spreadsheets/d/1wRwgRmMYluVJPrr_p-BKn6fycDGmZ_JdlI-5dWUKnMw
-##### Manuscript_STHV (Arno)
+##### Manuscript (Arno)
 - https://docs.google.com/document/d/1KOKK47m_EJqCqUsBGf9ZDlUKeSqTjJbd6yIgCjuS1K8
+##### Formalisation (Wolfgang)
+- https://www.overleaf.com/6167482995mjqkmtckbfpr
 
 ## FILES
 - https://files.webis.de/wikipedia-tracing-innovations
