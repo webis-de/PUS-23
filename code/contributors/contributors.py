@@ -2,38 +2,41 @@ from difflib import Differ
 
 class Contributors:
 
-    def __init__(self, revision_text):
+    def __init__(self, text):
 
-        self.revision_text = revision_text
-        #TUPLES OF (CHARACTER, EDITOR)
-        self.revision_map = []
+        self.text = text
+        self.character_editor_map = []
         self.differ = Differ()
 
-    def align(self, editor, previous=None):
-        if not previous:
-            self.revision_map = [(character,editor) for character in self.revision_text]
+    def align(self, editor, previous_contributors=None):
+        if not previous_contributors:
+            self.character_editor_map = [(character,editor) for character in self.text]
         else:
             #TUPLES OF (CHANGE, CHARACTER)
-            diffs = [(item[0], item[2]) for item in self.differ.compare(previous.revision_text, self.revision_text)]
-            i = 0
+            diffs = list(self.differ.compare(previous_contributors.text, self.text))
+            previous_character_editor_map = self._previous_character_editor_map(previous_contributors)
             for diff in diffs:
-                if diff[0] == " ":
-                    previous_item = previous.revision_map[i]
-                    self.revision_map.append(previous_item)
-                    i += 1
+                if diff[0] == " ": 
+                    self.character_editor_map.append(next(previous_character_editor_map))
                 elif diff[0] == "-":
-                    i += 1
+                    continue
+                elif diff[0] == "+":
+                    self.character_editor_map.append((diff[2],editor))
                 else:
-                    self.revision_map.append((diff[1],editor))
+                    raise Exception
+
+    def _previous_character_editor_map(self, previous_contributors):
+        for item in previous_contributors.character_editor_map:
+            yield item
 
     def __str__(self):
-        return " ".join(map(str, self.revision_map))
+        return " ".join(map(str, self.character_editor_map))
 
     def parts(self):
         parts = []
         block = ""
-        editor = self.revision_map[0][1]
-        for item in self.revision_map:
+        editor = self.character_editor_map[0][1]
+        for item in self.character_editor_map:
             if item[1] == editor:
                 block += item[0]
             else:
@@ -49,13 +52,13 @@ class Contributors:
         parts = self.parts()
         contributions = {}
         for part in parts:
-            text = part[0]
+            string = part[0]
             editor = part[1]
             if editor not in contributions:
                 contributions[editor] = 0
-            contributions[editor] += len(text)
+            contributions[editor] += len(string)
         for editor in contributions:
-            contributions[editor] = (contributions[editor], round(contributions[editor]/len(self.revision_text) * 100, 5))
+            contributions[editor] = (contributions[editor], round(contributions[editor]/len(self.text) * 100, 5))
         return contributions
             
 if __name__ == "__main__":              

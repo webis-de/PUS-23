@@ -2,15 +2,19 @@ from article.article import Article
 from contributors.contributors import Contributors
 from pprint import pprint
 
+from datetime import datetime
+
 def table_contribututions(contributions, file):
     contributions = sorted([(k,v) for k,v in contributions.items()], key=lambda item:item[1][0], reverse=True)
-    header = "user".rjust(20, " ") + "absolute".rjust(20, " ") + "relative".rjust(20, " ")
+    header = "user".rjust(50, " ") + "absolute".rjust(20, " ") + "relative".rjust(20, " ")
     file.write("\n" + header + "\n")
     file.write("-" * len(header) + "\n")
     for contribution in contributions:
-        file.write(str(contribution[0]).rjust(20, " ") + str(str(contribution[1][0])).rjust(20, " ") + str(str(contribution[1][1])).rjust(20, " ") + "\n")
+        file.write(str(contribution[0]).rjust(50, " ") + str(str(contribution[1][0])).rjust(20, " ") + str(str(contribution[1][1])).rjust(20, " ") + "\n")
 
 if __name__ == "__main__":
+
+    start = datetime.now()
 
     with open("revision_contributions.txt", "w") as file:
 
@@ -41,3 +45,7 @@ if __name__ == "__main__":
                 ##    pprint({part[1]:part[0]})
                 table_contribututions(next_contributors.contributions(), file)
                 contributors = next_contributors
+
+    end = datetime.now()
+
+    print(end - start)
