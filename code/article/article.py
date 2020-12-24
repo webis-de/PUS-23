@@ -160,12 +160,21 @@ class Article:
         Args:
             directory: The directory to which the plot will be saved.
         """
-        if not self.revisions: self.get_revisions()
+        revisions = self.yield_revisions()
+        revision = next(revisions, None)
+        first_year = revision.timestamp.year
+        while True:
+            next_revision = next(revisions, None)
+            if next_revision:
+                revision = next_revision
+            else:
+                break
+        final_year = revision.timestamp.year
         distribution = {}
-        for year in range(self.revisions[0].timestamp.year, self.revisions[-1].timestamp.year + 1):
+        for year in range(first_year, final_year + 1):
             for month in range(1, 13):
                 distribution[str(year) + "/" + str(month).rjust(2, "0")] = 0
-        for revision in self.revisions:
+        for revision in self.yield_revisions():
             distribution[str(revision.timestamp.year) + "/" + str(revision.timestamp.month).rjust(2, "0")] += 1
 
         plt.figure(figsize=(int(len(distribution) * 0.15), 10), dpi=150)
@@ -176,5 +185,36 @@ class Article:
         plt.xticks(list(range(len(distribution))), list(distribution.keys()), rotation='vertical')
         plt.subplots_adjust(bottom=0.1, top=0.95, left=0.1, right=0.995)
         filename = self.name.lower() + "_wikipedia_revision_distribution" + ".png"
+        if not exists(directory): makedirs(directory)
+        plt.savefig(directory + sep + filename)
+
+    def calculate_revision_size_difference(self):
+        revisions = self.yield_revisions()
+        size_differences = []
+        
+        revision = next(revisions)
+        for next_revision in revisions:
+            size_differences.append(next_revision.size - revision.size)
+            revision = next_revision
+
+        return size_differences
+
+    def plot_revision_size_difference_to_file(self, directory):
+        """
+        Plot the change in size of each revision in comparison to the previous one to file.
+
+        Args:
+            directory: The directory to which the plot will be saved.
+        """
+
+        size_differences = [diff if abs(diff) < 5000 else 500 for diff in self.calculate_revision_size_difference()]
+
+        plt.figure(figsize=(int(len(size_differences) * 0.15), 100), dpi=100)
+        plt.title(self.name + " Revision Size Differences")
+        plt.xlabel('index')
+        plt.ylabel('bytes changed')
+        plt.bar(list(range(len(size_differences))), size_differences)
+        plt.xticks(list(range(len(size_differences))), list(range(len(size_differences))))
+        filename = self.name.lower() + "_wikipedia_revision_size_differences" + ".png"
         if not exists(directory): makedirs(directory)
         plt.savefig(directory + sep + filename)
