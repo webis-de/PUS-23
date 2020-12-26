@@ -60,6 +60,21 @@ class Contributors:
         for editor in contributions:
             contributions[editor] = (contributions[editor], round(contributions[editor]/len(self.text) * 100, 5))
         return contributions
+
+    def contributions_table(self, contributions):
+        table = ""
+        contributions = sorted([(k,v) for k,v in contributions.items()], key=lambda item:item[1][0], reverse=True)
+        header = "user".rjust(60, " ") + "absolute".rjust(20, " ") + "relative".rjust(20, " ")
+        table += "\n" + header + "\n"
+        table += "-" * len(header) + "\n"
+        for contribution in contributions:
+            table += (str(contribution[0]).rjust(60, " ") +
+                      str(str(contribution[1][0])).rjust(20, " ") +
+                      str(str(contribution[1][1])).rjust(20, " ") + "\n")
+        return table
+
+    def contributions_json(self, contributions):
+        return {key:contributions[key] for key in sorted(contributions.keys())}
             
 if __name__ == "__main__":              
     t1 = "This here is a sentence."

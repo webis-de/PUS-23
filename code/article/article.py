@@ -209,12 +209,13 @@ class Article:
 
         size_differences = [diff if abs(diff) < 5000 else 500 for diff in self.calculate_revision_size_difference()]
 
-        plt.figure(figsize=(int(len(size_differences) * 0.15), 100), dpi=100)
+        plt.figure(figsize=(10, 2), dpi=1000)
         plt.title(self.name + " Revision Size Differences")
         plt.xlabel('index')
-        plt.ylabel('bytes changed')
+        plt.ylabel('bytes changed\n(changes > 4000 bytes cut)')
         plt.bar(list(range(len(size_differences))), size_differences)
         plt.xticks(list(range(len(size_differences))), list(range(len(size_differences))))
+        plt.xticks([])
         filename = self.name.lower() + "_wikipedia_revision_size_differences" + ".png"
         if not exists(directory): makedirs(directory)
         plt.savefig(directory + sep + filename)
