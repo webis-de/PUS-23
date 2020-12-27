@@ -15,13 +15,17 @@ if __name__ == "__main__":
 
     DIRECTORY = ".." + sep + "contributors"
 
+    TITLE = "CRISPR_en"
+
+    BASENAME = DIRECTORY + sep + TITLE + "_revision_contributors"
+
+    article = Article("../articles/2020-10-24/" + TITLE)
+
     if not exists(DIRECTORY): makedirs(DIRECTORY)
 
-    if True:
-        with open(DIRECTORY + sep + "revision_contributors.txt", "w") as txt_file, \
-             open(DIRECTORY + sep + "revision_contributors.json", "w") as jsn_file:
-
-            article = Article("../articles/2020-12-12/CRISPR_en")
+    if not exists(BASENAME + ".json"):
+        with open(BASENAME + ".txt", "w") as txt_file, \
+             open(BASENAME + ".json", "w") as jsn_file:
 
             revisions = article.yield_revisions()
 
@@ -37,7 +41,7 @@ if __name__ == "__main__":
 
             versions.append(contributors.contributions_json(contributions))
 
-            while revision.index < 200:
+            while revision.index < 100:
 
                 print(revision.index)
                 
@@ -60,44 +64,37 @@ if __name__ == "__main__":
 
             print("Calculation time:", end - start)
     else:
-        with open(DIRECTORY + sep + "revision_contributors.json") as jsn_file:
+        with open(BASENAME + ".json") as jsn_file:
             for line in jsn_file:
                 versions.append(loads(line))
 
-    editors = set()
-    for revision in versions:
-        for editor in revision:
-            editors.add(editor)
+    #versions = versions[:100]
+
+    editors = set([editor for version in versions for editor in version])
+    print("Number of editors:", len(editors))
+
+    data = [[version.get(editor, [0])[0] for version in versions] for editor in editors]
 
     start = datetime.now()
 
-    data = []
-
-    for editor in editors:
-        editor_data = []
-        for revision in versions:
-            editor_data.append(revision.get(editor, [0])[0])
-        data.append(editor_data)
-    editor_data = data[0]
-    
-
-    plt.figure(figsize=(5, 5), dpi=2000)
+    plt.figure(figsize=(5, 5), dpi=1000)
     plt.subplots_adjust(bottom=0, top=1, left=0, right=1)
     plt.margins(x=0, y=0)
     COLORS = plt.cm.get_cmap("hsv", len(editors))
 
-    count = 0
-    plt.bar(range(len(editor_data)), editor_data, width=1, color=COLORS(count))
+    editor_data = data[0]
+    editor_count = 0
+    plt.bar(range(len(editor_data)), editor_data, width=1, color=COLORS(editor_count))
     bottom = [0 for _ in editor_data]
     
     for new_editor_data in data[1:]:
-        count += 1
-        print(count)
+        editor_count += 1
         bottom = np.add(editor_data, bottom)
-        plt.bar(range(len(new_editor_data)), new_editor_data, bottom=bottom, width=1, color=COLORS(count))
+        plt.bar(range(len(new_editor_data)), new_editor_data, bottom=bottom, width=1, color=COLORS(editor_count))
         editor_data = new_editor_data
+        print(editor_count)
     
-    plt.savefig(DIRECTORY + sep + "revision_contributors.png")
+    plt.savefig(BASENAME + ".png")
 
     end = datetime.now()
     

@@ -34,18 +34,21 @@ class Contributors:
 
     def parts(self):
         parts = []
-        block = ""
-        editor = self.character_editor_map[0][1]
-        for item in self.character_editor_map:
-            if item[1] == editor:
-                block += item[0]
-            else:
-                if block:
-                    parts.append((block, editor))
-                    block = item[0]
-                    editor = item[1]
-        if block:
-            parts.append((block, editor))
+        if not self.character_editor_map:
+            print("No text found - revision probably deleted.")
+        else:
+            block = ""
+            editor = self.character_editor_map[0][1]
+            for item in self.character_editor_map:
+                if item[1] == editor:
+                    block += item[0]
+                else:
+                    if block:
+                        parts.append((block, editor))
+                        block = item[0]
+                        editor = item[1]
+            if block:
+                parts.append((block, editor))
         return parts
 
     def contributions(self):
