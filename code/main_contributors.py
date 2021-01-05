@@ -135,5 +135,5 @@ if __name__ == "__main__":
                                       article_title,
                                       article_directory,
                                       basename)
-    plot_contributions(contributions, basename, 0.05)
+    plot_contributions(contributions[:996] + contributions[997:], basename, 0.05)
     
