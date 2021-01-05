@@ -31,7 +31,7 @@ def calculate_contributions(article_directory, article_title, text_file, json_fi
     json_file.write(dumps(JSN) + "\n")
     text_file.write(TBL)
 
-    while revision.index < 100:
+    while revision.index < 2000:
 
         print(revision.index)
         
@@ -76,11 +76,20 @@ def get_contributions(output_directory, article_title, article_directory, basena
 
     return contributions[:998] + contributions[999:2000]
 
-def plot_contributions(contributions, basename):
+def plot_contributions(contributions, basename, threshold = 0.0):
     editors = sorted(set([editor for contribution in contributions for editor in contribution]))
+    significant_editors = sorted(set([editor for contribution in contributions for editor in contribution
+                                      if contribution[editor]["relative"] >= threshold]))
     print("Number of editors:", len(editors))
+    print("Number of significant editors with contribution greater", threshold, "in any revision: ", len(significant_editors))
 
-    data = [[contribution.get(editor, {"absolute":0})["absolute"] for contribution in contributions] for editor in editors]
+    editors = significant_editors
+
+    data = [[contribution.get(editor, {}).get("absolute", 0)
+             if contribution.get(editor, {}).get("relative", 0) >= threshold
+             else 0
+             for contribution in contributions]
+            for editor in editors]
 
     start = datetime.now()
 
@@ -113,5 +122,5 @@ if __name__ == "__main__":
                                       article_title,
                                       article_directory,
                                       basename)
-    plot_contributions(contributions, basename)
+    plot_contributions(contributions, basename, 0.05)
     
