@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from article.article import Article
-from contributors.contributors import Contributors
+from contribution.contribution import Contribution
 from pprint import pprint
 from json import dumps, loads
 from datetime import datetime
@@ -9,93 +9,109 @@ import numpy as np
 from os.path import exists, sep
 from os import makedirs
 
-if __name__ == "__main__":
+def calculate_contributions(article_directory, article_title, text_file, json_file):
 
-    versions = []
+    contributions = []
+    
+    article = Article(article_directory + sep + article_title)
 
-    DIRECTORY = ".." + sep + "contributors"
-
-    TITLE = "CRISPR_en"
-
-    BASENAME = DIRECTORY + sep + TITLE + "_revision_contributors"
-
-    article = Article("../articles/2020-10-24/" + TITLE)
-
-    if not exists(DIRECTORY): makedirs(DIRECTORY)
-
-    if not exists(BASENAME + ".json"):
-        with open(BASENAME + ".txt", "w") as txt_file, \
-             open(BASENAME + ".json", "w") as jsn_file:
-
-            revisions = article.yield_revisions()
-
-            start = datetime.now()
-
-            revision = next(revisions, None)
-            txt_file.write(str(revision.index) + " " + revision.url + " " + "\n")
-            contributors = Contributors(revision.get_text())
-            contributors.align(revision.user)
-            contributions = contributors.contributions()
-            jsn_file.write(dumps(contributors.contributions_json(contributions)) + "\n")
-            txt_file.write(contributors.contributions_table(contributions))
-
-            versions.append(contributors.contributions_json(contributions))
-
-            while revision.index < 100:
-
-                print(revision.index)
-                
-                txt_file.write("="*100 + "\n")
-                revision = next(revisions, None)
-
-                if revision:
-                    txt_file.write(str(revision.index) + " " + revision.url + " " + "\n")
-                    next_contributors = Contributors(revision.get_text())
-                    next_contributors.align(revision.user, contributors)
-                    next_contributions = contributors.contributions()
-                    jsn_file.write(dumps(next_contributors.contributions_json(next_contributions)) + "\n")
-                    txt_file.write(next_contributors.contributions_table(next_contributions))
-
-                    versions.append(next_contributors.contributions_json(next_contributions))
-                    
-                    contributors = next_contributors
-
-            end = datetime.now()
-
-            print("Calculation time:", end - start)
-    else:
-        with open(BASENAME + ".json") as jsn_file:
-            for line in jsn_file:
-                versions.append(loads(line))
-
-    #versions = versions[:100]
-
-    editors = set([editor for version in versions for editor in version])
-    print("Number of editors:", len(editors))
-
-    data = [[version.get(editor, [0])[0] for version in versions] for editor in editors]
+    revisions = article.yield_revisions()
 
     start = datetime.now()
 
-    plt.figure(figsize=(5, 5), dpi=1000)
+    revision = next(revisions, None)
+    contribution = Contribution(revision.index, revision.url, revision.size, revision.get_text(), revision.user, revision.userid)
+    contribution.diff()
+    editors = contribution.editors()
+
+    JSN = contribution.json(editors)
+    TBL = contribution.table(editors)
+
+    contributions.append(JSN)
+    json_file.write(dumps(JSN) + "\n")
+    text_file.write(TBL)
+
+    while revision.index < 100:
+
+        print(revision.index)
+        
+        revision = next(revisions, None)
+
+        if revision:
+            
+            next_contribution = Contribution(revision.index, revision.url, revision.size, revision.get_text(), revision.user, revision.userid)
+            next_contribution.diff(contribution)
+            next_editors = contribution.editors()
+
+            JSN = next_contribution.json(next_editors)
+            TBL = next_contribution.table(next_editors)
+
+            contributions.append(JSN)
+            json_file.write(dumps(JSN) + "\n")
+            text_file.write(TBL)
+
+            contribution = next_contribution
+
+    end = datetime.now()
+
+    print("Calculation time:", end - start)
+
+    return contributions
+
+def get_contributions(output_directory, article_title, article_directory, basename):
+    contributions = []
+
+    BASENAME = output_directory + sep + article_title + "_revision_contributors"
+
+    if not exists(output_directory): makedirs(output_directory)
+
+    if not exists(basename + ".json"):
+        with open(basename + ".txt", "w") as text_file, \
+             open(basename + ".json", "w") as json_file:
+            contributions = calculate_contributions(article_directory, article_title, text_file, json_file)
+    else:
+        with open(basename + ".json") as jsn_file:
+            for line in jsn_file:
+                contributions.append(loads(line))
+
+    return contributions[:998] + contributions[999:2000]
+
+def plot_contributions(contributions, basename):
+    editors = sorted(set([editor for contribution in contributions for editor in contribution]))
+    print("Number of editors:", len(editors))
+
+    data = [[contribution.get(editor, {"absolute":0})["absolute"] for contribution in contributions] for editor in editors]
+
+    start = datetime.now()
+
+    plt.figure(figsize=(5, 5), dpi=2000)
     plt.subplots_adjust(bottom=0, top=1, left=0, right=1)
     plt.margins(x=0, y=0)
     COLORS = plt.cm.get_cmap("hsv", len(editors))
 
-    editor_data = data[0]
-    editor_count = 0
-    plt.bar(range(len(editor_data)), editor_data, width=1, color=COLORS(editor_count))
-    bottom = [0 for _ in editor_data]
+    bottom = [0 for _ in range(len(contributions))]
     
-    for new_editor_data in data[1:]:
-        editor_count += 1
+    for count, editor_data in enumerate(data):
+        plt.bar(range(len(editor_data)), editor_data, bottom=bottom, width=1, color=COLORS(count))
         bottom = np.add(editor_data, bottom)
-        plt.bar(range(len(new_editor_data)), new_editor_data, bottom=bottom, width=1, color=COLORS(editor_count))
-        editor_data = new_editor_data
-        print(editor_count)
+        print(count + 1)
     
-    plt.savefig(BASENAME + ".png")
+    plt.savefig(basename + ".png")
 
     end = datetime.now()
-    
+
     print("Plotting time:", end - start)
+
+if __name__ == "__main__":
+    
+    output_directory = ".." + sep + "contributors_test"
+    article_directory = "../articles/2020-10-24"
+    article_title = "CRISPR_en"
+    basename = output_directory + sep + article_title + "_revision_contributors"
+
+    contributions = get_contributions(output_directory,
+                                      article_title,
+                                      article_directory,
+                                      basename)
+    plot_contributions(contributions, basename)
+    
