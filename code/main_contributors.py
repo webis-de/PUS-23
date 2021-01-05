@@ -87,7 +87,7 @@ def get_contributions(output_directory, article_title, article_directory, basena
             for line in jsn_file:
                 contributions.append(loads(line))
 
-    return contributions[:998] + contributions[999:2000]
+    return contributions
 
 def plot_contributions(contributions, basename, threshold = 0.0):
     editors = sorted(set([editor for contribution in contributions for editor in contribution]))
