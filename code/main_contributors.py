@@ -9,6 +9,9 @@ import numpy as np
 from os.path import exists, sep
 from os import makedirs
 
+def length_diff(text, previous_text):
+    return len(text)/len(previous_text)
+
 def calculate_contributions(article_directory, article_title, text_file, json_file):
 
     contributions = []
@@ -20,37 +23,47 @@ def calculate_contributions(article_directory, article_title, text_file, json_fi
     start = datetime.now()
 
     revision = next(revisions, None)
-    contribution = Contribution(revision.index, revision.url, revision.size, revision.get_text(), revision.user, revision.userid)
-    contribution.diff()
-    editors = contribution.editors()
+    previous_text = revision.get_text()
+    previous_contribution = Contribution(revision.index, revision.url, revision.size, previous_text, revision.user, revision.userid)
+    previous_contribution.diff()
+    editors = previous_contribution.editors()
 
-    JSN = contribution.json(editors)
-    TBL = contribution.table(editors)
+    JSN = previous_contribution.json(editors)
+    TBL = previous_contribution.table(editors)
 
     contributions.append(JSN)
     json_file.write(dumps(JSN) + "\n")
     text_file.write(TBL)
 
     while revision.index < 2000:
-
-        print(revision.index)
         
         revision = next(revisions, None)
 
         if revision:
+
+            text = revision.get_text()
             
-            next_contribution = Contribution(revision.index, revision.url, revision.size, revision.get_text(), revision.user, revision.userid)
-            next_contribution.diff(contribution)
-            next_editors = contribution.editors()
+            contribution = Contribution(revision.index, revision.url, revision.size, text, revision.user, revision.userid)
+            contribution.diff(previous_contribution)
+            editors = contribution.editors()
 
-            JSN = next_contribution.json(next_editors)
-            TBL = next_contribution.table(next_editors)
+            JSN = contribution.json(editors)
+            TBL = contribution.table(editors)
 
-            contributions.append(JSN)
-            json_file.write(dumps(JSN) + "\n")
-            text_file.write(TBL)
+            if length_diff(text, previous_text) < 0.1:
+                print(revision.index, "Revision severly shorter, probably due to vandalism: skipping.")
+                text_file.write("Revision severly shorter, probably due to vandalism: skipping." + "\n")
+                text_file.write(TBL)
+                continue
+            else:
+                print(revision.index)
 
-            contribution = next_contribution
+                contributions.append(JSN)
+                json_file.write(dumps(JSN) + "\n")
+                text_file.write(TBL)
+
+                previous_contribution = contribution
+                previous_text = text
 
     end = datetime.now()
 
