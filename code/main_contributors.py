@@ -51,8 +51,8 @@ def calculate_contributions(article_directory, article_title, text_file, json_fi
             TBL = contribution.table(editors)
 
             if length_diff(text, previous_text) < 0.1:
-                print(revision.index, "Revision severly shorter, probably due to vandalism: skipping.")
-                text_file.write("Revision severly shorter, probably due to vandalism: skipping." + "\n")
+                print(revision.index, "Revision severely shorter, probably due to vandalism: skipping.")
+                text_file.write("Revision severely shorter, probably due to vandalism: skipping." + "\n")
                 text_file.write(TBL)
                 continue
             else:
