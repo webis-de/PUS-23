@@ -66,7 +66,10 @@ class Event:
 
     def __str__(self):
         copy = self.json()
-        copy["account"] = {"account_date":self.account.account_date,"account_url":self.account.url}
+        if copy["account"]:
+            copy["account"] = {"account_date":self.account.account_date,"account_url":self.account.url}
+        else:
+            copy["account"] = None
         del copy["event_year"]
         del copy["event_month"]
         del copy["event_day"]
@@ -86,7 +89,10 @@ class Event:
 
     def json(self):
         copy = deepcopy(self.__dict__)
-        copy["account"] = self.account.__dict__
+        try:
+            copy["account"] = self.account.__dict__
+        except AttributeError:
+            copy["account"] = None
         copy["bib_keys"] = {paper.key:{"fields":paper.fields._dict,"persons":paper.persons._dict} for paper in copy["bib_keys"]}
         for bib_key in copy["bib_keys"]:
             copy["bib_keys"][bib_key]["fields"]["title"] = self.replace_braces(copy["bib_keys"][bib_key]["fields"]["title"])
