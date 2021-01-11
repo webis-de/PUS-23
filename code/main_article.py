@@ -160,12 +160,12 @@ if __name__ == "__main__":
                                       "or quoted string of comma-separated articles, " + \
                                       "e.g. 'Cas9,The CRISPR JOURNAL'.")
     argument_parser.add_argument("-c", "--conditions",
+                                 nargs="+",
                                  default="event.type=='publication'",
                                  help="Events to analyse based on conditions provided, defaults to event.type=='publication'.")
     argument_parser.add_argument("-l", "--language",
                                  default="en",
                                  help="en or de, defaults to en.")
-
     argument_parser.add_argument("-ned", "--normalised_edit_distance_threshold",
                                  type=int,
                                  default=0.2,
@@ -191,7 +191,7 @@ if __name__ == "__main__":
 
     input_directory = args["input_dir"]
     output_directory = args["output_dir"]
-    conditions = split(" *, *", args["conditions"])
+    conditions = args["conditions"]
     thresholds = {"NORMALISED_EDIT_DISTANCE_THRESHOLD":args["normalised_edit_distance_threshold"],
                   "AUTHOR_RATIO_THRESHOLD":args["author_ratio_threshold"],
                   "EXACT_MATCH_RATIO_THRESHOLD":args["exact_match_ratio_threshold"],
