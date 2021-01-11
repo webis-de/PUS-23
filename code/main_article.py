@@ -7,7 +7,7 @@ from utility.logger import Logger
 from preprocessor.preprocessor import Preprocessor
 from multiprocessing import Pool
 import unicodedata
-from re import search
+from re import search, split
 from argparse import ArgumentParser
 from os.path import sep, exists
 from os import makedirs
@@ -193,7 +193,7 @@ if __name__ == "__main__":
 
     input_directory = args["input_dir"]
     output_directory = args["output_dir"]
-    conditions = args["conditions"]
+    conditions = split(" *, *", args["conditions"])
     thresholds = {"NORMALISED_EDIT_DISTANCE_THRESHOLD":args["normalised_edit_distance_threshold"],
                   "AUTHOR_RATIO_THRESHOLD":args["author_ratio_threshold"],
                   "EXACT_MATCH_RATIO_THRESHOLD":args["exact_match_ratio_threshold"],
