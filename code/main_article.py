@@ -160,8 +160,7 @@ if __name__ == "__main__":
                                       "or quoted string of comma-separated articles, " + \
                                       "e.g. 'Cas9,The CRISPR JOURNAL'.")
     argument_parser.add_argument("-c", "--conditions",
-                                 nargs='+',
-                                 default=["event.type=='publication'"],
+                                 default="event.type=='publication'",
                                  help="Events to analyse based on conditions provided, defaults to event.type=='publication'.")
     argument_parser.add_argument("-l", "--language",
                                  default="en",
