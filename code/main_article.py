@@ -160,10 +160,10 @@ if __name__ == "__main__":
                                  help="Either the relative of abolute path to a JSON file of articles " + \
                                       "or quoted string of comma-separated articles, " + \
                                       "e.g. 'Cas9,The CRISPR JOURNAL'.")
-    argument_parser.add_argument("-t", "--types",
+    argument_parser.add_argument("-c", "--conditions",
                                  nargs='+',
-                                 default=["publication"],
-                                 help="Types of events to analyse.")
+                                 default=["event.type=='publication'"],
+                                 help="Events to analyse based on conditions provided, defaults to event.type=='publication'.")
     argument_parser.add_argument("-l", "--language",
                                  default="en",
                                  help="en or de, defaults to en.")
@@ -193,7 +193,7 @@ if __name__ == "__main__":
 
     input_directory = args["input_dir"]
     output_directory = args["output_dir"]
-    event_types = args["types"]
+    conditions = args["conditions"]
     thresholds = {"NORMALISED_EDIT_DISTANCE_THRESHOLD":args["normalised_edit_distance_threshold"],
                   "AUTHOR_RATIO_THRESHOLD":args["author_ratio_threshold"],
                   "EXACT_MATCH_RATIO_THRESHOLD":args["exact_match_ratio_threshold"],
@@ -240,6 +240,8 @@ if __name__ == "__main__":
         revision = next(revisions, None)
 
         eventlist = EventList("../data/CRISPR_events - events.csv", bibliography, accountlist)
+
+        eventlist.events = [event for event in eventlist.events if [eval(condition) for condition in conditions].count(False) == 0]
         
         while revision:
             
@@ -278,7 +280,7 @@ if __name__ == "__main__":
                                                   preprocessor,
                                                   language,
                                                   thresholds)
-                                                 for event in eventlist.events if event.type in event_types])
+                                                 for event in eventlist.events])
                          
             revision = next(revisions, None)
 
