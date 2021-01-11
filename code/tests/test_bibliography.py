@@ -7,6 +7,14 @@ class TestBibliography(unittest.TestCase):
     def test_bibliography_loading(self):
         
         bibliography = Bibliography(".." + sep + "data" + sep + "tracing-innovations-lit.bib")
+        print()
+        for bibentry in bibliography.bibentries.values():
+            for author in bibentry.persons.get("author"):
+                try:
+                    AUTHOR = ("\t" + author.last_names[0] + " " + author.first_names[0])
+                except IndexError:
+                    print(bibentry.to_string("bibtex"))
+                AUTHOR = ("\t" + author.last_names[0] + " " + author.first_names[0])
 
     def test_replace_braces(self):
 
