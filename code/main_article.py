@@ -216,7 +216,10 @@ if __name__ == "__main__":
     bibliography = Bibliography("../data/tracing-innovations-lit.bib")
     accountlist = AccountList("../data/CRISPR_events - accounts.csv")
 
-    logger.start("Analysing articles [" + ", ".join(wikipedia_articles) + "] and event types [" + ", ".join(event_types) + "].")
+    logger.start("Analysing articles [" + ", ".join(wikipedia_articles) + "].")
+    logger.log("Using events with conditions:")
+    for condition in conditions:
+        logger.log(condition)
     logger.log("Using the below thresholds:")
     for threshold in thresholds:
         logger.log(threshold + ": " + str(thresholds[threshold]))
