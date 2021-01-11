@@ -11,7 +11,6 @@ from re import search, split
 from argparse import ArgumentParser
 from os.path import sep, exists
 from os import makedirs
-from re import split
 from json import load, dumps
 from urllib.parse import quote, unquote
 from math import log
@@ -211,6 +210,7 @@ if __name__ == "__main__":
             wikipedia_articles = flatten_list_of_lists(load(file).values())
     except FileNotFoundError:
         wikipedia_articles = [article.strip() for article in split(" *, *", ARTICLES)]
+    conditions
     language = args["language"]
 
     bibliography = Bibliography("../data/tracing-innovations-lit.bib")
