@@ -41,7 +41,7 @@ def ndcg(gains, iDCG, results):
     return DCG/iDCG
 
 def analyse(event, revision, revision_text_ascii_lowered, revision_words_ascii, source_texts, source_texts_ascii, referenced_author_sets_ascii, referenced_titles, referenced_pmids, preprocessor, language, thresholds):
-    
+
     #FIND EVENT TITLES
     if event.titles:
         #EXACT MATCH SEARCH
@@ -68,7 +68,7 @@ def analyse(event, revision, revision_text_ascii_lowered, revision_words_ascii, 
                     if new_normalised_edit_distance <= normalised_edit_distance:
                         normalised_edit_distance = new_normalised_edit_distance
                         event_titles_processed[event_bibkey] = {"source_text":scroll_to_url(revision.url, source_text),"normalised_edit_distance":normalised_edit_distance}
-            
+
             if len(event_titles_processed) == len(event.titles):
                 event.first_mentioned["titles"]["ned"] = occurrence(revision, result=event_titles_processed)
 
@@ -88,7 +88,7 @@ def analyse(event, revision, revision_text_ascii_lowered, revision_words_ascii, 
                 exact_match_ratio = thresholds["EXACT_MATCH_RATIO_THRESHOLD"]
                 jaccard_score = thresholds["JACCARD_SCORE_THRESHOLD"]
                 ndcg_score = thresholds["NDCG_SCORE_THRESHOLD"]
-                
+
                 for referenced_author_set_ascii, source_text, source_text_ascii in zip(referenced_author_sets_ascii, source_texts, source_texts_ascii):
 
                     new_exact_match_ratio = exact_match(event_authors, source_text_ascii)
@@ -100,15 +100,15 @@ def analyse(event, revision, revision_text_ascii_lowered, revision_words_ascii, 
                     if new_jaccard_score >= jaccard_score:
                         jaccard_score = new_jaccard_score
                         events_in_references_by_authors_jaccard[event_bibkey] = {"source_text":scroll_to_url(revision.url, source_text), "jaccard_score":jaccard_score}
-                    
+
                     new_ndcg_score = ndcg(gains, iDCG, referenced_author_set_ascii)
                     if new_ndcg_score >= ndcg_score:
                         ndcg_score = new_ndcg_score
                         events_in_references_by_authors_ndcg[event_bibkey] = {"source_text":scroll_to_url(revision.url, source_text), "ndcg_score":ndcg_score}
-                                        
+
             if not event.first_mentioned["authors"]["exact_match"] and len(events_in_references_by_authors_exact_match) == len(event.authors):
                 event.first_mentioned["authors"]["exact_match"] = occurrence(revision, result=events_in_references_by_authors_exact_match)
-                    
+
             if not event.first_mentioned["authors"]["jaccard"] and len(events_in_references_by_authors_jaccard) == len(event.authors):
                 event.first_mentioned["authors"]["jaccard"] = occurrence(revision, result=events_in_references_by_authors_jaccard)
 
@@ -200,16 +200,14 @@ if __name__ == "__main__":
     logger = Logger(output_directory)
 
     output_directory = logger.directory
-    
+
     if not exists(output_directory):
         makedirs(output_directory)
-    ARTICLES = args["articles"]
     try:
-        with open(ARTICLES) as file:
+        with open(args["articles"]) as file:
             wikipedia_articles = flatten_list_of_lists(load(file).values())
     except FileNotFoundError:
-        wikipedia_articles = [article.strip() for article in split(" *, *", ARTICLES)]
-    conditions
+        wikipedia_articles = [article.strip() for article in split(" *, *", args["articles"])]
     language = args["language"]
 
     bibliography = Bibliography("../data/tracing-innovations-lit.bib")
@@ -229,12 +227,12 @@ if __name__ == "__main__":
     for wikipedia_article in wikipedia_articles:
 
         logger.start_check(wikipedia_article)
-        
+
         filename = quote(wikipedia_article.replace(" ","_"), safe="")
         filepath = input_directory + sep + filename + "_" + language
         if not exists(filepath):
             logger.end_check(filepath + " does not exist.")
-            continue            
+            continue
         article = Article(filepath)
 
         revisions = article.yield_revisions()
@@ -243,10 +241,17 @@ if __name__ == "__main__":
 
         eventlist = EventList("../data/CRISPR_events - events.csv", bibliography, accountlist)
 
-        eventlist.events = [event for event in eventlist.events if [eval(condition) for condition in conditions].count(False) == 0]
-        
+        selected_events = []
+        for event in eventlist.events:
+            for condition in conditions:
+                if not eval(condition):
+                    break
+            else:
+                selected_events.append(event)
+        eventlist.events = selected_events
+
         while revision:
-            
+
             print(revision.index)
 
             #FIX REVISION URL BY REPLACEING SPACES WITH UNDERSCORES
@@ -283,7 +288,7 @@ if __name__ == "__main__":
                                                   language,
                                                   thresholds)
                                                  for event in eventlist.events])
-                         
+
             revision = next(revisions, None)
 
         logger.end_check("Done.")
