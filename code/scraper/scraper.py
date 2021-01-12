@@ -194,6 +194,7 @@ class Scraper:
                        "userid":revision["userid"],
                        "timestamp":revision["timestamp"],
                        "size":revision["size"],
+                       "wikitext":revision["slots"]["main"]["*"],
                        "html":self._download_html(revision_url),
                        "comment":revision.get("comment",""),
                        "minor":revision.get("minor",""),

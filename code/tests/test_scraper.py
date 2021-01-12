@@ -91,6 +91,28 @@ class TestSraper(unittest.TestCase):
             self.assertTrue(scraper._before("2000-09-22T15:00:00Z", "2000-10-21"))
             self.assertTrue(scraper._before("1999-11-22T15:00:00Z", "2000-10-21"))
 
+    def test_wikitext(self):
+
+        self.logger.log = self.mock_log
+
+        wikitext = ("CRISPR are direct repeats found in the [[DNA]] of many [[bacteria]] and [[archaea]]. " +
+                    "The name is an acronym for clustered regularly interspaced short palindromic repeats. " +
+                    "These repeats range in size from 21 to 37 base pairs. They are separated by spacers of " +
+                    "similar length. Spacers are usually unique in a genome. " +
+                    "Different strains of the same species of bacterium can often be differentiated " +
+                    "according to differences in the spacers in their CRISPR arrays, a technique called [[spoligotyping]].")
+
+        #scrape first revision
+        with Scraper(logger = self.logger, title = "CRISPR", language = "en") as scraper:
+            scraper._save = self.mock_save
+            scraper._delay = self.mock_delay
+            revisions = []
+            scraper.scrape(revisions, deadline="2005-07-01", number=1, verbose=False)
+            revisions = [Revision(**revision) for revision in revisions]
+
+            #assert Wikitext matches
+            self.assertEqual(revisions[0].get_wikitext(), wikitext)
+
     def test_single_scrape(self):
 
         self.logger.log = self.mock_log
