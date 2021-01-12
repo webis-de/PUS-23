@@ -18,15 +18,24 @@ if __name__ == "__main__":
     accountlist = AccountList("../data/CRISPR_events - accounts.csv")
     eventlist = EventList("../data/CRISPR_events - events.csv", bibliography, accountlist)
 
-    event_types = [event.type for event in eventlist.events]
-    event_types = {event_type:event_types.count(event_type) for event_type in set(event_types)}
+    conditions = [
+        "event.type=='publication'",
+        "event.extracted_from!='narrative_structure'",
+        "not(event.extracted_from=='timeline_structure' and event.account_id in ['2','3','4'])"]
+
+    event_types = {}
+
+    for event in eventlist.events:
+        event_type = event.type if event.type else "-"
+        event_extracted_from = event.extracted_from if event.extracted_from else "-"
+        if event_type not in event_types:
+            event_types[event_type] = {}
+        if event_extracted_from not in event_types[event_type]:
+            event_types[event_type][event_extracted_from] = 0
+        event_types[event_type][event_extracted_from] += 1
 
     heading("\nEVENT TYPES")
-    pprint(event_types)
-
-    conditions = ["event.type=='publication'",
-              "event.extracted_from!='narrative_structure'",
-              "not(event.extracted_from=='timeline_structure' and event.account_id in ['2','3','4'])"]
+    pprint(event_types, width=10)
 
     event_count = 0
 
