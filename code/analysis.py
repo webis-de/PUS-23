@@ -1,7 +1,7 @@
 from json import load
 
 with open("CRISPR_en.json") as file:
-    data = load(file)
+    data = [event for event in load(file) if event["account"]]
 
 account_ids = sorted(set([event["account"]["account_id"] for event in data]), key = lambda x: int(x))
 
