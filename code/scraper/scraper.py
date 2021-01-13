@@ -302,7 +302,7 @@ class Scraper:
 
 if __name__ == "__main__":
 
-    wikipedia_api_url = ("https://en.wikipedia.org/w/api.php?format=json&action=query&titles=CRISPR/Cpf1"
+    wikipedia_api_url = ("https://en.wikipedia.org/w/api.php?format=json&action=query&titles=CRISPR"
                          "&prop=revisions&rvlimit=50&rvdir=newer&rvslots=*"
                          "&rvprop=comment|content|contentmodel|flagged|flags|ids|oresscores|parsedcomment|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid")
 
