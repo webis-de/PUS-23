@@ -36,46 +36,31 @@ if __name__ == "__main__":
                                  default=float("inf"),
                                  type=float,
                                  help="The maximum number of revisions to scrape, defaults to infinity.")
+    argument_parser.add_argument("-html",
+                                 default="True",
+                                 help="Get the HTML of the revisions.")
     args = vars(argument_parser.parse_args())
 
-    """
-    Load articles and flatten to one list if from file or split if connected with ','.
-    """
+    #Load articles and flatten to one list if from file or split if connected with ','.
     ARTICLES = args["articles"]
     try:
         with open(ARTICLES) as file:
             wikipedia_articles = flatten_list_of_lists(load(file).values())
     except FileNotFoundError:
         wikipedia_articles = [article.strip() for article in split(" *, *", ARTICLES)]
-    """
-    Select an output directory.
-    """
+
     DIRECTORY = args["directory"]
-
-    """
-    Select the language, either 'en' or 'de'.
-    """
     LANGUAGE = args["language"]
-
-    """
-    Select a deadline with format YYYY-MM-DD. Only revision before that date will be scraped.
-    """
     DEADLINE = args["deadline"]
-
-    """
-    Select the first n revisions you want to scrape (float("inf") will scrape all)
-    FOR TESTING PURPOSES
-    """
     NUMBER = args["number"]
+    GETHTML = eval(args["html"])
 
-    """
-    Select articles you want to scrape. For test purposes, use the second list,
-    which contains small articles of a few kilobyte each (including HTML).
-    """
     ARTICLES = wikipedia_articles
     with Logger(DIRECTORY) as logger:
         for article in ARTICLES:
             with Scraper(logger, article, LANGUAGE) as scraper:
                 scraper.scrape(directory = DIRECTORY,
                                deadline = DEADLINE,
-                               number = NUMBER)
+                               number = NUMBER,
+                               verbose = True,
+                               gethtml = GETHTML)
