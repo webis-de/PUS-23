@@ -24,7 +24,7 @@ class Revision:
         self.index: The 0-indexed position in the revision history.
         
     """
-    def __init__(self, revid, parentid, url, user, userid, timestamp, size, html, comment, minor, index):
+    def __init__(self, revid, parentid, url, user, userid, timestamp, size, wikitext, html, comment, minor, index):
         """
         Intialises the revision from the revision dictionary entry provided.
 
@@ -36,6 +36,7 @@ class Revision:
             userid: The user ID of the user who penned this revision.
             timestamp: The Timestamp object pertaining to the revision.
             size: The size of this revision in Bytes.
+            wikitext: The wikitext as provided by the Wikimedia API.
             html: The HTML of this revision.
             comment: The comment the user left.
             minor: Flag for minor revision.
@@ -48,6 +49,7 @@ class Revision:
         self.userid = userid
         self.timestamp = Timestamp(timestamp)
         self.size = size
+        self.wikitext = wikitext
         self.html = html
         self.comment = comment
         self.minor = minor
@@ -58,6 +60,9 @@ class Revision:
             return html.fromstring(self.html)
         except etree.ParserError:
             return html.fromstring("<html></html>")
+
+    def get_wikitext(self):
+        return self.wikitext
         
     def get_text(self):
         try:

@@ -4,10 +4,9 @@ import unittest
 
 class TestBibliography(unittest.TestCase):
 
-    def test_bibliography_loading(self):
+    def test_bibliography(self):
         
         bibliography = Bibliography(".." + sep + "data" + sep + "tracing-innovations-lit.bib")
-        print()
         for bibentry in bibliography.bibentries.values():
             for author in bibentry.persons.get("author"):
                 try:

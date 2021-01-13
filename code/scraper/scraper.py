@@ -106,7 +106,7 @@ class Scraper:
         else:
             return title
 
-    def scrape(self, directory, deadline, number = float("inf"), verbose = True):
+    def scrape(self, directory, deadline, number = float("inf"), verbose = True, gethtml = True):
         """
         Scrape revisions from Wikipedia page.
         Revisions are scraped in batches of a maximum of 50 at a time.
@@ -116,16 +116,18 @@ class Scraper:
             deadline: The deadline before which collections are collected. Use 'YYYY-MM-DD'.
             number: Number of revisions to scrape.
             verbose: Print revision count progress.
+            gethtml: Download HTML of revision.
         """
         if self.page_id == "-1":
             return 1
         else:
             revisions = []
             self.logger.start("Scraping revisions of " + self.title + " (" + self.language + ") before " + deadline + ".")
+            if not gethtml: self.logger.log("Not getting HTLM.")
             if exists(str(directory) + sep + self.filename):
                 self._rvstartid(directory + sep + self.filename)
                 self.updating = True
-            while self._collect_revisions(directory, deadline, number, verbose):
+            while self._collect_revisions(directory, deadline, number, verbose, gethtml):
                 pass
             return 0
 
@@ -163,7 +165,7 @@ class Scraper:
                 LINE = line
         return loads(LINE)["revid"]
 
-    def _collect_revisions(self, directory, deadline, number, verbose):
+    def _collect_revisions(self, directory, deadline, number, verbose, gethtml):
         """
         Collect all revisions for the Wikipedia article.
         Revisions are scraped in batches of a maximum of 50 at a time.
@@ -173,6 +175,7 @@ class Scraper:
             deadline: The deadline before which collections are collected. Use 'YYYY-MM-DD'.
             number: Number of revisions to scrape.
             verbose: Print revision count progress.
+            gethtml: Download HTML of revision.
         Returns:
             False if maximum number of revision to scrape has been reached, scraped revision
             date is on day of deadline or there are no more revisions, else True.
@@ -194,7 +197,8 @@ class Scraper:
                        "userid":revision["userid"],
                        "timestamp":revision["timestamp"],
                        "size":revision["size"],
-                       "html":self._download_html(revision_url),
+                       "wikitext":revision["slots"]["main"].get("*", ""),
+                       "html":self._download_html(revision_url) if gethtml else None,
                        "comment":revision.get("comment",""),
                        "minor":revision.get("minor",""),
                        "index":self.revision_count})
