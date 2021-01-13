@@ -35,7 +35,7 @@ def calculate_contributions(article_directory, article_title, text_file, json_fi
     json_file.write(dumps(JSN) + "\n")
     text_file.write(TBL)
 
-    while revision.index < 2000:
+    while revision and revision.index < 2000:
         
         revision = next(revisions, None)
 
@@ -103,10 +103,10 @@ def plot_contributions(contributions, basename, threshold = 0.0):
 
     editors = significant_editors
 
-    data = [(editor, [contribution.get(editor, {}).get("absolute", 0)
-                      if contribution.get(editor, {}).get("relative", 0) >= threshold
-                      else 0
-                      for contribution in contributions])
+    data = [[contribution.get(editor, {}).get("absolute", 0)
+            if contribution.get(editor, {}).get("relative", 0) >= threshold
+            else 0
+            for contribution in contributions]
             for editor in editors]
 
     start = datetime.now()
@@ -114,14 +114,13 @@ def plot_contributions(contributions, basename, threshold = 0.0):
     plt.figure(figsize=(5, 5), dpi=2000)
     plt.subplots_adjust(bottom=0, top=1, left=0, right=1)
     plt.margins(x=0, y=0)
-    COLORS = {editor:color for editor,color in zip(editors,plt.cm.get_cmap("hsv", len(editors)))}
+    colors = plt.cm.get_cmap("hsv", len(editors))
+    #colormap = {editors[i]:colors(i) for i in range(len(editors))}
 
     bottom = [0 for _ in range(len(contributions))]
     
     for count, editor_data in enumerate(data):
-        editor = editor_data[0]
-        contribution = editor_data[1]
-        plt.bar(range(len(contribution)), contribution, bottom=bottom, width=1, color=COLORS[editor])
+        plt.bar(range(len(editor_data)), editor_data, bottom=bottom, width=1, color=colors(count))
         bottom = np.add(editor_data, bottom)
         print(count + 1)
     
@@ -142,5 +141,5 @@ if __name__ == "__main__":
                                       article_title,
                                       article_directory,
                                       basename)
-    plot_contributions(contributions, basename, 0.05)
+    plot_contributions(contributions[:1589] + contributions[1590:], basename, 0.05)
     
