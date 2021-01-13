@@ -23,7 +23,7 @@ def calculate_contributions(article_directory, article_title, text_file, json_fi
     start = datetime.now()
 
     revision = next(revisions, None)
-    previous_text = revision.get_text()
+    previous_text = revision.get_wikitext()
     previous_contribution = Contribution(revision.index, revision.url, revision.size, previous_text, revision.user, revision.userid)
     previous_contribution.diff()
     editors = previous_contribution.editors()
@@ -41,7 +41,7 @@ def calculate_contributions(article_directory, article_title, text_file, json_fi
 
         if revision:
 
-            text = revision.get_text()
+            text = revision.get_wikitext()
             
             contribution = Contribution(revision.index, revision.url, revision.size, text, revision.user, revision.userid)
             contribution.diff(previous_contribution)
@@ -51,8 +51,13 @@ def calculate_contributions(article_directory, article_title, text_file, json_fi
             TBL = contribution.table(editors)
 
             if length_diff(text, previous_text) < 0.1:
-                print(revision.index, "Revision severely shorter, probably due to vandalism: skipping.")
-                text_file.write("Revision severely shorter, probably due to vandalism: skipping." + "\n")
+                print(revision.index, "Revision considerably shorter: skipping.")
+                text_file.write("Revision considerably shorter: skipping." + "\n")
+                text_file.write(TBL)
+                continue
+            elif length_diff(text, previous_text) > 10:
+                print(revision.index, "Revision considerably longer: skipping.")
+                text_file.write("Revision considerably longer: skipping." + "\n")
                 text_file.write(TBL)
                 continue
             else:
@@ -98,10 +103,10 @@ def plot_contributions(contributions, basename, threshold = 0.0):
 
     editors = significant_editors
 
-    data = [[contribution.get(editor, {}).get("absolute", 0)
-             if contribution.get(editor, {}).get("relative", 0) >= threshold
-             else 0
-             for contribution in contributions]
+    data = [(editor, [contribution.get(editor, {}).get("absolute", 0)
+                      if contribution.get(editor, {}).get("relative", 0) >= threshold
+                      else 0
+                      for contribution in contributions])
             for editor in editors]
 
     start = datetime.now()
@@ -109,12 +114,14 @@ def plot_contributions(contributions, basename, threshold = 0.0):
     plt.figure(figsize=(5, 5), dpi=2000)
     plt.subplots_adjust(bottom=0, top=1, left=0, right=1)
     plt.margins(x=0, y=0)
-    COLORS = plt.cm.get_cmap("hsv", len(editors))
+    COLORS = {editor:color for editor,color in zip(editors,plt.cm.get_cmap("hsv", len(editors)))}
 
     bottom = [0 for _ in range(len(contributions))]
     
     for count, editor_data in enumerate(data):
-        plt.bar(range(len(editor_data)), editor_data, bottom=bottom, width=1, color=COLORS(count))
+        editor = editor_data[0]
+        contribution = editor_data[1]
+        plt.bar(range(len(contribution)), contribution, bottom=bottom, width=1, color=COLORS[editor])
         bottom = np.add(editor_data, bottom)
         print(count + 1)
     
@@ -126,8 +133,8 @@ def plot_contributions(contributions, basename, threshold = 0.0):
 
 if __name__ == "__main__":
     
-    output_directory = ".." + sep + "contributors_test"
-    article_directory = "../articles/2020-10-24"
+    output_directory = ".." + sep + "contributors_test_wikitext"
+    article_directory = "../articles/no_html"
     article_title = "CRISPR_en"
     basename = output_directory + sep + article_title + "_revision_contributors"
 
@@ -135,5 +142,5 @@ if __name__ == "__main__":
                                       article_title,
                                       article_directory,
                                       basename)
-    plot_contributions(contributions[:996] + contributions[997:], basename, 0.05)
+    plot_contributions(contributions, basename, 0.05)
     
