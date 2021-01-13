@@ -24,7 +24,7 @@ class Revision:
         self.index: The 0-indexed position in the revision history.
         
     """
-    def __init__(self, revid, parentid, url, user, userid, timestamp, size, wikitext, html, comment, minor, index):
+    def __init__(self, revid, parentid, url, user, userid, timestamp, size, html, comment, minor, index, wikitext = ""):
         """
         Intialises the revision from the revision dictionary entry provided.
 
