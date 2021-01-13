@@ -36,9 +36,9 @@ if __name__ == "__main__":
                                  default=float("inf"),
                                  type=float,
                                  help="The maximum number of revisions to scrape, defaults to infinity.")
-    argument_parser.add_argument("-html",
-                                 default="True",
-                                 help="Get the HTML of the revisions.")
+    argument_parser.add_argument("--nohtml",
+                                 action='store_false',
+                                 help="Omit the HTML of the revisions.")
     args = vars(argument_parser.parse_args())
 
     #Load articles and flatten to one list if from file or split if connected with ','.
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     LANGUAGE = args["language"]
     DEADLINE = args["deadline"]
     NUMBER = args["number"]
-    GETHTML = eval(args["html"])
+    GETHTML = args["nohtml"]
 
     ARTICLES = wikipedia_articles
     with Logger(DIRECTORY) as logger:
