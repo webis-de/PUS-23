@@ -33,7 +33,7 @@ class Source:
 
     def get_backlinks(self):
         """
-        Return all backlings in the reference.
+        Return all backlinks in the reference.
 
         Returns:
             A list of backlinks as strings.

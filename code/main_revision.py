@@ -19,10 +19,10 @@ def heading(text, file):
 
 if __name__ == "__main__":
 
-    PROCESSING = ["", "_raw", "_preprocessor", "_spacy"][2]
+    PROCESSING = ["", "_raw", "_preprocessor", "_spacy"][0]
     SELECTION = ["index", "revid", "random"][0]
     LANGUAGE = ["en", "de"][0]
-    FILEPATH = "../articles/CRISPR_" + LANGUAGE
+    FILEPATH = "../articles/2020-12-12/CRISPR_" + LANGUAGE
 
     preprocessor = Preprocessor(LANGUAGE, ["prokaryotic antiviral system", "10.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"])
     if LANGUAGE == "en":
