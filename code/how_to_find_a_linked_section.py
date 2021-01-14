@@ -12,4 +12,4 @@ reference = revision.get_references()[0]
 print(reference.get_text())
 print()
 
-print(list(reference.linked_sections(revision.get_paragraphs()))[0].get_text())
+print(list(reference.linked_sections(revision.get_sections()))[0].get_text())

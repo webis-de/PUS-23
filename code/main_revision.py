@@ -91,6 +91,9 @@ if __name__ == "__main__":
 
         if not PROCESSING:
 
+            #All sections from html
+            sections = revision.get_sections()
+
             #Print paragraphs from html
             heading("\nPARAGRAPHS", file)
             paragraphs = revision.get_paragraphs()
@@ -124,7 +127,6 @@ if __name__ == "__main__":
             #Print references and further reading from html.
             CITATION_STYLE = LANGUAGE #citation style different for German (de) and English (en)
             sources = {"REFERENCES": revision.get_references(), "FURTHER READING":revision.get_further_reading()}
-            sections = paragraphs + headings + lists + captions + tables
             for source in sources.items():
                 heading("\n" + source[0] + " " + "(" + str(len(source[1])) + ")", file)
                 for reference in source[1]:

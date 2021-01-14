@@ -70,6 +70,10 @@ class Revision:
         except IndexError:
             return "".join(self.etree_from_html().xpath(".//text()")).strip()
 
+    def get_sections(self):
+        #get all sections, i.e. paragraphs, lists, headings, captions, tables
+        return self.get_paragraphs() + self.get_lists() + self.get_headings() + self.get_captions() + self.get_tables()
+
     def get_paragraphs(self):
         #get all unclassified paragraphs
         xpath_expression = "./p[not(@class)]"
