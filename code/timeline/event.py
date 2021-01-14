@@ -67,7 +67,7 @@ class Event:
     def __str__(self):
         copy = self.json()
         if copy["account"]:
-            copy["account"] = {"account_date":self.account.account_date,"account_url":self.account.url}
+            copy["account"] = {"account_date":self.account.account_date,"account_url":self.account.url, "account_id":self.account.id}
         else:
             copy["account"] = None
         del copy["event_year"]
