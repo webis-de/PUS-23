@@ -37,6 +37,15 @@ class Source:
         """
         return self.source.get("id", "")
 
+    def get_number(self):
+        """
+        Get the 1-indexed number of the source.
+        """
+        try:
+            return self.get_id().split("-")[-1]
+        except IndexError:
+            return ""
+
     def linked_sections(self, sections):
         linked_sections = set()
         source_id = "#" + self.get_id()
