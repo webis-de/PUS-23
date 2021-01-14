@@ -39,6 +39,16 @@ class Article:
         self.timestamps = [revision.timestamp.string for revision in self.revisions]
         return self.revisions
 
+    def get_revision(self, index = None, revid = None):
+        revisions = self.yield_revisions()
+        revision = next(revisions)
+        while revision:
+            if revision.index == index:
+                return revision
+            if revision.revid == revid:
+                return revision
+            revision = next(revisions)
+
     def yield_revisions(self):
         with open(self.filepath) as file:
             for line in file:
