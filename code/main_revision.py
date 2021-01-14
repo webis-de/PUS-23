@@ -130,8 +130,7 @@ if __name__ == "__main__":
             for source in sources.items():
                 heading("\n" + source[0] + " " + "(" + str(len(source[1])) + ")", file)
                 for reference in source[1]:
-                    file.write("SOURCE: " + html.tostring(reference.source).decode("utf-8") + "\n")
-                    file.write("NUMBER: " + str(reference.number) + "\n")
+                    #file.write("SOURCE: " + html.tostring(reference.source).decode("utf-8") + "\n")
                     file.write("REFERENCE TEXT: " + reference.get_text().strip() + "\n")
                     file.write("REFERENCE TEXT TOKENISED: " + "|".join(preprocessor.preprocess(reference.get_text().strip(), lower=False, stopping=False, sentenize=False, tokenize=True)[0]) + "\n")
                     file.write("\n")
@@ -139,10 +138,10 @@ if __name__ == "__main__":
                     file.write("TITLE: " + str(reference.get_title(LANGUAGE)) + "\n")
                     file.write("DOIs: " + str(reference.get_dois()) + "\n")
                     file.write("PMIDs: " + str(reference.get_pmids()) + "\n")
-                    file.write("\nLINKED PARAGRAPHS:" + "\n")
-                    backlinks = reference.get_backlinks()
-                    if backlinks:
-                        file.write("\n".join(["=>" + str(backlink) + "\n" + linked_section.get_text().strip() for backlink, linked_section in zip(backlinks, reference.linked_sections(sections))]) + "\n")
+                    file.write("\nLINKED SECTIONS:" + "\n")
+                    linked_sections = reference.linked_sections(sections)
+                    if linked_sections:
+                        file.write("\n---\n".join([linked_section.get_text().strip() for linked_section in linked_sections]) + "\n")
                     else:
                         file.write("-" + "\n")
                     file.write("-"*50 + "\n")

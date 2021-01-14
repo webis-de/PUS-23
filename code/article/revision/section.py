@@ -15,14 +15,11 @@ class Section:
         """
         return sub(r" +", " ", " ".join(self.source.xpath(".//text()")))
 
-    def get_backlink(self, backlink):
+    def get_hrefs(self):
         """
-        Return all backlings in the section.
+        Return all hrefs in the section.
 
         Returns:
-            A list of backlinks as strings.
+            A list of hrefs as strings.
         """
-        try:
-            return self.source.xpath(".//span[@class='mw-cite-backlink']//a")[0].get("href")[1:]
-        except IndexError:
-            return None
+        return [element.get("href") for element in self.source.xpath(".//a")]

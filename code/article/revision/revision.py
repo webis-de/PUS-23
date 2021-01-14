@@ -118,10 +118,10 @@ class Revision:
         return [(element.text, element.get("href")) for element in self.etree_from_html().xpath(".//div[@id='mw-normal-catlinks']//a")[1:]]
 
     def get_references(self):
-        return [Source(source[1], source[0] + 1) for source in enumerate(self.etree_from_html().xpath(".//ol[@class='references']/li | .//ol/li/cite"))]
+        return [Source(source[1]) for source in enumerate(self.etree_from_html().xpath(".//ol[@class='references']/li | .//ol/li/cite"))]
 
     def get_further_reading(self):
-        return [Source(source[1], None) for source in enumerate(self.etree_from_html().xpath(".//ul/li/cite"))]
+        return [Source(source[1]) for source in enumerate(self.etree_from_html().xpath(".//ul/li/cite"))]
 
     def get_referenced_authors(self, language, sources):
         return [source.get_authors(language) for source in sources]

@@ -6,18 +6,15 @@ class Source:
 
     Attributes:
         source: The source of the reference as HTML/XML.
-        number: The running index of the reference.
     """
 
-    def __init__(self, source, number):
+    def __init__(self, source):
         """
         Initialise the reference using its source code and running index.
         
         source: The source of the reference as HTML/XML.
-        number: The running index of the reference.
         """
         self.source = source
-        self.number = number
 
     def get_text(self):
         """
@@ -31,21 +28,21 @@ class Source:
         except IndexError:
             return  "".join(self.source.itertext())
 
-    def get_backlinks(self):
+    def get_id(self):
         """
-        Return all backlinks in the reference.
+        Get HTML id of source.
 
         Returns:
-            A list of backlinks as strings.
+            A string id.
         """
-        return [backlink.get("href")[1:] for backlink in self.source.xpath(".//span[@class='mw-cite-backlink']//a")]
+        return self.source.get("id", "")
 
     def linked_sections(self, sections):
         linked_sections = set()
-        for paragraph in sections:
-            backlinks = self.get_backlinks()
-            if backlinks and paragraph.source.xpath("|".join([".//sup[@id='" + backlink + "']" for backlink in backlinks])):
-                linked_sections.add(paragraph)
+        source_id = "#" + self.get_id()
+        for section in sections:
+            if source_id in section.get_hrefs():
+                linked_sections.add(section)
         return linked_sections
 
     def get_authors(self, language):
