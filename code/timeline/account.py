@@ -29,10 +29,16 @@ class Account:
         account_date = ""
         if year:
             account_date += str(year)
+        else:
+            account_date += "YYYY"
         if month:
             account_date += "-" + str(month).rjust(2, "0")
+        else:
+            account_date += "-" + "MM"
         if day:
             account_date += "-" + str(day).rjust(2, "0")
+        else:
+            account_date += "-" + "DD"
         return account_date
 
     def __str__(self):
