@@ -40,13 +40,13 @@ class Source:
         """
         return [backlink.get("href")[1:] for backlink in self.source.xpath(".//span[@class='mw-cite-backlink']//a")]
 
-    def linked_sections(self, paragraphs):
-        linked_paragraphs = set()
-        for paragraph in paragraphs:
+    def linked_sections(self, sections):
+        linked_sections = set()
+        for paragraph in sections:
             backlinks = self.get_backlinks()
             if backlinks and paragraph.source.xpath("|".join([".//sup[@id='" + backlink + "']" for backlink in backlinks])):
-                linked_paragraphs.add(paragraph)
-        return linked_paragraphs
+                linked_sections.add(paragraph)
+        return linked_sections
 
     def get_authors(self, language):
         """
