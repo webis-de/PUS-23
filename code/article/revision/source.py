@@ -175,3 +175,43 @@ class Source:
             if pmid:
                 PMIDs.add(pmid.group(0))
         return [pmid for pmid in PMIDs if pmid]
+
+    def get_pmcs(self):
+        """
+        Get all unique PUBMED IDs.
+
+        Returns:
+            A list of PMCs as strings.
+        """
+        PMCs = set()
+        #pmids from hrefs
+        for element in self.source.xpath(".//a[contains(@href, 'pmc/')]"):
+            pmc = search("\d+", element.get("href").split("/")[-1])
+            if pmc:
+                PMCs.add(pmc.group(0))
+        #pmifs in text
+        for pmc in findall("pmc.*?\d+", self.get_text().lower()):
+            pmc = search("\d+", pmc)
+            if pmc:
+                PMCs.add(pmc.group(0))
+        return [pmc for pmc in PMCs if pmc]
+
+    def get_identifiers(self):
+        """
+        Get all idendentifiers (DOI, PMC, PMID)
+
+        Returns:
+            A dictionary of found identifiers (values as strings) 
+            Emty if nothing found.
+        Comment:
+            Arno-style search and parsing without regex and in one dict comprehension (may be faster)
+        """
+        nofollows = self.source.xpath(".//a[@rel='nofollow']")
+        return {'DOI' if 'doi.org' in tag.get('href') 
+            else 'PMC' if 'pmc' in tag.get('href') 
+            else 'PMID':
+                         tag.get('href').split('/')[-1] if 'doi.org' in tag.get('href')
+                    else tag.get('href').split('/')[-1].split('PMC')[-1] if 'pmc' in tag.get('href')
+                    else tag.get('href').split('/')[-1].split('?')[0] # = 'pubmed'
+            for tag in nofollows 
+            if any(i in tag.get('href') for i in ['doi.org','pmc','pubmed'])} 
