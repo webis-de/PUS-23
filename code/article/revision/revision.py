@@ -135,6 +135,46 @@ class Revision:
     def get_referenced_pmids(self, source):
         return [source.get_pmids() for source in sources]
 
+    def get_lr_contexts(self, keyphrase, width=50, wikitext=False, lower=False, return_keyphrase=False):
+        '''
+        Generic function to get contexts left and right of keyphrase
+        Returns 2-tuple with left and right contexts, 3-tuple including keyphrase if specified by 'return_keyphrase'
+        Author: Arno Simons
+        '''
+        def find_start_indices(text, keyphrase): # https://stackoverflow.com/questions/4664850/how-to-find-all-occurrences-of-a-substring
+            ''' 
+            Returns start indices for all matches of keyphrase 
+            '''
+            start = 0
+            while True:
+              start = text.find(keyphrase, start)
+              if start == -1: 
+                return
+              yield start
+              start += len(keyphrase) # use start += 1 to find overlapping matches
+
+        contexts = []
+        text = self.get_text() if not wikitext else self.get_wikitext()
+        if lower:
+            text = text.lower()
+        for indx in find_start_indices(text, keyphrase): # use wikitext instead?
+            # context left
+            left = ''
+            for char in text[indx - width : indx][::-1]:
+                if char == '\n': # make '\n' the boundary for context
+                    break
+                left += char
+            left = left[::-1].strip()
+            # context right
+            right = ''
+            for char in text[indx + len(keyphrase): indx + len(keyphrase) + width]:
+              if char == '\n': # make '\n' the boundary for context
+                break
+              right += char
+            right = right.strip()
+            contexts.append((left, right) if not return_keyphrase else (left, keyphrase, right))
+        return contexts
+
     def __str__(self):
         return pformat(self.__dict__)
     
