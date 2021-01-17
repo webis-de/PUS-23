@@ -17,7 +17,7 @@ reference = references[0]
 
 print("REFENCE\n", reference.get_text())
 print("REFENCE ID\n", reference.get_id())
-print("REFENCE NUMBER\n", reference.get_number())
+print("REFERENCE NUMBER\n", reference.get_number())
 
 ###find sections reference links to
 for section in list(reference.linked_sections(sections)):
