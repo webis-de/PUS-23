@@ -37,7 +37,18 @@ class Source:
         """
         return self.source.get("id", "")
 
-    def get_number(self):
+    def get_superscript(self, revision): # unreliable!
+        """
+        Get the superscript that points to the footnore holding the reference.
+        Returns:
+            A superscript in square brackets as string, e.g. '[16]'
+        """
+        try:
+            return [i.xpath(".//text()")[0].strip() for i in revision.etree_from_html().xpath(".//sup[@class='reference']/a[@href='#{}']".format(self.get_id()))][0]
+        except IndexError:
+            return ""
+
+    def get_number_via_id(self): # unreliable!
         """
         Get the 1-indexed number of the source.
         """
