@@ -130,7 +130,7 @@ if __name__ == "__main__":
             for source in sources.items():
                 heading("\n" + source[0] + " " + "(" + str(len(source[1])) + ")", file)
                 for reference in source[1]:
-                    file.write("SOURCE: " + html.tostring(reference.source).decode("utf-8") + "\n")
+                    #file.write("HTML: " + html.tostring(reference.source).decode("utf-8") + "\n")
                     file.write("REFERENCE TEXT: " + reference.get_text().strip() + "\n")
                     #file.write("REFERENCE TEXT TOKENISED: " + "|".join(preprocessor.preprocess(reference.get_text().strip(), lower=False, stopping=False, sentenize=False, tokenize=True)[0]) + "\n")
                     file.write("\n")
