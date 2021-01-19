@@ -2,11 +2,12 @@ class Account:
 
     def __init__(self, args):
 
-        self.account_id = args["account_id"]
+        self.account_id = int(args["account_id"])
         self.reference = args["reference"]
         self.scholar_citation_count = self.int(args["scholar_citation_count"])
         self.url = args["url"]
         self.account_title = args["account_title"]
+        self.wos_ut = args["wos_ut"]
         self.type = args["type"]
         self.genre = args["genre"]
         self.dynamic = args["dynamic"]
@@ -18,6 +19,10 @@ class Account:
         self.bib_keys = args["bib_keys"]
         self.publisher_author = args["publisher_author"]
         self.comment = args["comment"]
+        self.doi = args["doi"]
+        self.pmid = args["pmid"]
+        self.pmc = args["pmc"]
+        self.shortname = args["shortname"]
 
     def int(self, value):
         try:
@@ -47,4 +52,5 @@ class Account:
         del copy["account_month"]
         del copy["account_day"]
         del copy["publisher_author"]
-        return "    " + "\n    ".join([str(item[0]) + ": " + str(item[1]) for item in copy.items()])
+        del copy["about"]
+        return "\t" + "\n\t".join([str(item[0]) + ": " + str(item[1]) for item in copy.items()])

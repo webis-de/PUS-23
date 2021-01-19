@@ -3,7 +3,7 @@ from csv import reader
     
 class EventList:
 
-    def __init__(self, filepath, bibliography, accountlist):
+    def __init__(self, filepath, bibliography, accountlist, equalling = []):
 
         self.events = []
 
@@ -16,9 +16,7 @@ class EventList:
                 row_number += 1
                 try:
                     args = {header[i].strip():row[i].strip() for i in range(len(header))}
-                    args["bibliography"] = bibliography
-                    args["accountlist"] = accountlist
-                    self.events.append(Event(args))
+                    self.events.append(Event(args, bibliography, accountlist, equalling))
                 except ValueError:
                     print("Could not parse row " + str(row_number) + " in events: " + str(row))
 

@@ -1,31 +1,31 @@
 from re import split, sub
 from copy import deepcopy
-from itertools import combinations
 
 class Event:
 
-    def __init__(self, args):
+    def __init__(self, args, bibliography, accountlist, equalling = []):
 
         self.event_id = int(args["event_id"])
         self.event_year = self.int(args["event_year"])
         self.event_month = self.int(args["event_month"])
         self.event_day = self.int(args["event_day"])
         self.event_date = self.date(args["event_year"], args["event_month"], args["event_day"])
-        self.account = args["accountlist"].get_account(args["account_id"])
-        self.sampled = bool(args["sampled"].strip())
+        self.account = accountlist.accounts.get("account_id")
+        self.sampled = bool(args["sampled"])
         self.event_text = args["event_text"]
         self.type = args["type"]
         self.subtype = args["subtype"]
         #self.actors = [actor.strip() for actor in split("[,;] *", args["actors"].strip()) if actor.strip()]
         #self.places = [place.strip() for place in split("[,;] *", args["places"].strip()) if place.strip()]
-        self.bib_keys = [args["bibliography"].bibentries.get(paper) for paper in split("; *", args["bib_keys"].strip()) if args["bibliography"].bibentries.get(paper)]
-        self.comment = args["comment"]
-        self.titles = {paper.key:self.replace_braces(paper.fields.get("title")) for paper in self.bib_keys if self.replace_braces(paper.fields.get("title"))}
-        self.authors = {paper.key:[self.replace_braces(person.last_names[0]) for person in paper.persons.get("author")] for paper in self.bib_keys}
-        self.dois = [paper.fields.get("doi") for paper in self.bib_keys if paper.fields.get("doi")]
-        self.pmids = [paper.fields.get("pmid") for paper in self.bib_keys if paper.fields.get("pmid")]
         #self.keywords = [keyword.replace("\"", "").strip() for keyword in split("; *", args["keywords"]) if keyword.strip()]
+        self.bibentries = bibliography.get_bibentries(split("; *", args["bib_keys"]))
+        self.wos_keys = args["wos_keys"]
         self.extracted_from = args["extracted_from"]
+        self.comment = args["comment"]
+        self.titles = {bibentry.bibkey:bibentry.title for bibentry in self.bibentries}
+        self.authors = {bibentry.bibkey:bibentry.authors for bibentry in self.bibentries}
+        self.dois = [bibentry.doi for bibentry in self.bibentries]
+        self.pmids = [bibentry.pmid for bibentry in self.bibentries]
         self.first_mentioned = {
                                 "titles":{
                                     "exact_match":None,
@@ -37,6 +37,7 @@ class Event:
                                 "dois":None,
                                 "pmids":None
                                 }
+        self.equalling = equalling
 
     def int(self, value):
         try:
@@ -45,29 +46,25 @@ class Event:
             return None
 
     def date(self, year, month, day):
-        event_date = ""
+        account_date = ""
         if year:
-            event_date += str(year)
-        if month:
-            event_date += "-" + str(month).rjust(2, "0")
-        if day:
-            event_date += "-" + str(day).rjust(2, "0")
-        return event_date
-
-    def replace_braces(self, value):
-        if type(value) == str:
-            return value.replace("{","").replace("}","")
-        elif type(value) == list:
-            return [string.replace("{","").replace("}","") for string in value]
-        elif type(value) == tuple:
-            return tuple(string.replace("{","").replace("}","") for string in value)
+            account_date += str(year)
         else:
-            ""
+            account_date += "YYYY"
+        if month:
+            account_date += "-" + str(month).rjust(2, "0")
+        else:
+            account_date += "-" + "MM"
+        if day:
+            account_date += "-" + str(day).rjust(2, "0")
+        else:
+            account_date += "-" + "DD"
+        return account_date
 
     def __str__(self):
         copy = self.json()
         if copy["account"]:
-            copy["account"] = {"account_date":self.account.account_date,"account_url":self.account.url, "account_id":self.account.id}
+            copy["account"] = {"account_date":self.account.account_date,"account_url":self.account.url, "account_id":self.account.account_id}
         else:
             copy["account"] = None
         del copy["event_year"]
@@ -76,15 +73,7 @@ class Event:
         del copy["comment"]
         del copy["sampled"]
         del copy["extracted_from"]
-        for bib_key in copy["bib_keys"]:
-            copy["bib_keys"][bib_key]["fields"]["title"] = self.replace_braces(copy["bib_keys"][bib_key]["fields"]["title"])
-            for role in copy["bib_keys"][bib_key]["persons"]:
-                copy["bib_keys"][bib_key]["persons"][role] = [self.format_person(person) for person in copy["bib_keys"][bib_key]["persons"][role]]
-##        del copy["authors"]
-##        del copy["dois"]
-##        del copy["pmids"]
-##        del copy["titles"]
-##        del copy["keywords"]
+        del copy["equalling"]
         return self.prettyprint(copy)
 
     def json(self):
@@ -93,15 +82,8 @@ class Event:
             copy["account"] = self.account.__dict__
         except AttributeError:
             copy["account"] = None
-        copy["bib_keys"] = {paper.key:{"fields":paper.fields._dict,"persons":paper.persons._dict} for paper in copy["bib_keys"]}
-        for bib_key in copy["bib_keys"]:
-            copy["bib_keys"][bib_key]["fields"]["title"] = self.replace_braces(copy["bib_keys"][bib_key]["fields"]["title"])
-            for role in copy["bib_keys"][bib_key]["persons"]:
-                copy["bib_keys"][bib_key]["persons"][role] = [person.__dict__ for person in copy["bib_keys"][bib_key]["persons"][role]]
+        copy["bibentries"] = {bibentry.bibkey:bibentry.__dict__ for bibentry in copy["bibentries"]}
         return copy
-
-    def format_person(self, person):
-        return self.replace_braces(person["last_names"][0]) + ", " + self.replace_braces(person["first_names"][0])
 
     def prettyprint(self, structure, indent = ""):
         if structure and type(structure) == dict:
@@ -127,3 +109,20 @@ class Event:
                 return sub(" +", " ", str(structure).replace("\n", ""))
         else:
             return structure
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        if self.equalling:
+            for value in self.equalling:
+                if not eval("self." + value) == eval("other." + value):
+                    break
+            else:
+                return True
+        else:
+            if self.event_id == other.event_id:
+                return True
+        return False
+
+    def __ne__(self, other):
+        return not self == other

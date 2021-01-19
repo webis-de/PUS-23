@@ -151,6 +151,8 @@ if __name__ == "__main__":
     argument_parser.add_argument("-i", "--input_dir",
                                  default="../articles",
                                  help="The relative or absolute path to the directory where the articles reside.")
+    argument_parser.add_argument("-e", "--events",
+                                 help="The relative or absolute path to the events CSV.")
     argument_parser.add_argument("-o", "--output_dir",
                                  default="../analysis",
                                  help="The relative or absolute path to the directory the analysis will be saved.")
@@ -161,7 +163,7 @@ if __name__ == "__main__":
                                       "e.g. 'Cas9,The CRISPR JOURNAL'.")
     argument_parser.add_argument("-c", "--conditions",
                                  nargs="+",
-                                 default="event.type=='publication'",
+                                 default=["event.type=='publication'"],
                                  help="Events to analyse based on conditions provided, defaults to event.type=='publication'.")
     argument_parser.add_argument("-l", "--language",
                                  default="en",
@@ -190,6 +192,7 @@ if __name__ == "__main__":
     args = vars(argument_parser.parse_args())
 
     input_directory = args["input_dir"]
+    event_file = args["events"]
     output_directory = args["output_dir"]
     conditions = args["conditions"]
     thresholds = {"NORMALISED_EDIT_DISTANCE_THRESHOLD":args["normalised_edit_distance_threshold"],
@@ -239,7 +242,7 @@ if __name__ == "__main__":
 
         revision = next(revisions, None)
 
-        eventlist = EventList("../data/CRISPR_events - events.csv", bibliography, accountlist)
+        eventlist = EventList(event_file, bibliography, accountlist)
 
         selected_events = []
         for event in eventlist.events:
@@ -247,7 +250,8 @@ if __name__ == "__main__":
                 if not eval(condition):
                     break
             else:
-                selected_events.append(event)
+                if event not in selected_events:
+                    selected_events.append(event)
         eventlist.events = selected_events
 
         while revision:

@@ -8,12 +8,12 @@ class TestBibliography(unittest.TestCase):
         
         bibliography = Bibliography(".." + sep + "data" + sep + "tracing-innovations-lit.bib")
         for bibentry in bibliography.bibentries.values():
-            for author in bibentry.persons.get("author"):
+            for author in bibentry.authors:
                 try:
-                    AUTHOR = ("\t" + author.last_names[0] + " " + author.first_names[0])
+                    AUTHOR = ("\t" + author)
                 except IndexError:
-                    print(bibentry.to_string("bibtex"))
-                AUTHOR = ("\t" + author.last_names[0] + " " + author.first_names[0])
+                    print(bibentry)
+                AUTHOR = ("\t" + author)
 
     def test_replace_braces(self):
 
@@ -22,9 +22,9 @@ class TestBibliography(unittest.TestCase):
         title = '{Identification of Genes that Are Associated with DNA Repeats in Prokaryotes}'
         persons = ['Jansen, Ruud', '{van Embden}, {Jan D. A.}', 'Gaastra, Wim', 'Schouls, {Leo M.}']
 
-        self.assertEqual(bibliography.replace_braces(title), "Identification of Genes that Are Associated with DNA Repeats in Prokaryotes")
-        self.assertEqual(bibliography.replace_braces(persons), ['Jansen, Ruud', 'van Embden, Jan D. A.', 'Gaastra, Wim', 'Schouls, Leo M.'])
-        self.assertEqual(bibliography.replace_braces(tuple(persons[1].split(", "))),('van Embden', 'Jan D. A.'))
+        self.assertEqual(list(bibliography.bibentries.values())[0].replace_braces(title), "Identification of Genes that Are Associated with DNA Repeats in Prokaryotes")
+        self.assertEqual(list(bibliography.bibentries.values())[0].replace_braces(persons), ['Jansen, Ruud', 'van Embden, Jan D. A.', 'Gaastra, Wim', 'Schouls, Leo M.'])
+        self.assertEqual(list(bibliography.bibentries.values())[0].replace_braces(tuple(persons[1].split(", "))),('van Embden', 'Jan D. A.'))
 
 if __name__ == "__main__":
     unittest.main()

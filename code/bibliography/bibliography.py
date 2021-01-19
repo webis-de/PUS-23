@@ -1,3 +1,4 @@
+from .bibentry import Bibentry
 from os.path import exists, sep
 from os import makedirs
 from pybtex.database import parse_file
@@ -23,11 +24,11 @@ class Bibliography:
             filepath: The path to the bibliohgraphy file.
         """
         self.filepath = filepath
-        self.bibentries = parse_file(filepath).entries
-        self.titles = [self.replace_braces(value) for value in [bibentry.fields.get("title") for bibentry in self.bibentries.values()]]
-        self.authors = sorted(list(set([self.replace_braces(value)[0] for value in [tuple(bibentry.persons.get("author")[0].last_names + bibentry.persons.get("author")[0].first_names) for bibentry in self.bibentries.values()]])))
-        self.dois = [bibentry.fields.get("doi") for bibentry in self.bibentries.values() if bibentry.fields.get("doi")]
-        self.years = [int(bibentry.fields.get("year")) for bibentry in self.bibentries.values()]        
+        self.bibentries = {bibkey:Bibentry(bibentry) for bibkey,bibentry in parse_file(filepath).entries.items()}
+        self.titles = [bibentry.title for bibentry in self.bibentries.values()]
+        self.authors = sorted(set([bibentry.authors[0] for bibentry in self.bibentries.values()]))
+        self.dois = [bibentry.doi for bibentry in self.bibentries.values()]
+        self.years = [int(bibentry.year) for bibentry in self.bibentries.values()]        
 
     def field_values(self, field):
         """
@@ -48,22 +49,21 @@ class Bibliography:
         if field == "years":
             return self.years
 
-    def replace_braces(self, value):
+    def get_bibentries(self, bib_keys):
         """
-        Replace braces ('{' and '}') in bibvalues.
+        Get all Bibentries pertaining to the bib_keys provided.
 
         Args:
-            A string, list of strings or tuple of strings.
-
+            bib_keys: A list of String representing bib_keys.
         Returns:
-            The passed string or collection of strings, with braces cleaned.
+            A list of Bibentries.
         """
-        if type(value) == str:
-            return value.replace("{","").replace("}","")
-        if type(value) == list:
-            return [string.replace("{","").replace("}","") for string in value]
-        if type(value) == tuple:
-            return tuple(string.replace("{","").replace("}","") for string in value)
+        bibentries = []
+        for bib_key in bib_keys:
+            publication = self.bibentries.get(bib_key)
+            if publication:
+                bibentries.append(publication)
+        return bibentries
 
     def plot_publication_distribution_to_file(self, directory):
         """
@@ -85,3 +85,8 @@ class Bibliography:
         plt.subplots_adjust(bottom=0.1, top=0.95, left=0.03, right=0.995)
         if not exists(directory): makedirs(directory)
         plt.savefig(directory + sep + "publication_distribution.png")
+
+if __name__ == "__main__":
+
+    b = Bibliography("../../data/tracing-innovations-lit.bib")
+    

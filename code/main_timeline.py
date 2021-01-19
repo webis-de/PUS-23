@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     bibliography = Bibliography("../data/tracing-innovations-lit.bib")
     accountlist = AccountList("../data/CRISPR_events - accounts.csv")
-    eventlist = EventList("../data/CRISPR_events - events.csv", bibliography, accountlist)
+    eventlist = EventList("../data/CRISPR_events - narrative-events.csv", bibliography, accountlist)
 
     conditions = [
         "event.type=='publication'",
@@ -52,10 +52,12 @@ if __name__ == "__main__":
 
     print("".join(["\n - " + condition for condition in conditions]))
 
-    if False:
+    for event in eventlist.events:
     
-        heading("\nEVENT 124 (STRING)")
-        print(eventlist.events[124])
+        heading(f"\nEVENT {event.event_id} (STRING)")
+        print(event)
         
-        heading("\nEVENT 124 (JSON)")
-        pprint(eventlist.events[124].json())
+        heading(f"\nEVENT {event.event_id} (JSON)")
+        pprint(event.json(), sort_dicts=False)
+
+        input()
