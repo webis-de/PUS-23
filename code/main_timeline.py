@@ -15,8 +15,8 @@ def heading(text):
 if __name__ == "__main__":
 
     bibliography = Bibliography("../data/tracing-innovations-lit.bib")
-    accountlist = AccountList("../data/CRISPR_events - accounts.csv")
-    eventlist = EventList("../data/CRISPR_events - narrative-events.csv", bibliography, accountlist)
+    accountlist = AccountList("../data/CRISPR_accounts.csv")
+    eventlist = EventList("../data/CRISPR_narrative-events.csv", bibliography, accountlist)
 
     conditions = [
         "event.type=='publication'",
@@ -54,8 +54,8 @@ if __name__ == "__main__":
 
     for event in eventlist.events:
     
-        heading(f"\nEVENT {event.event_id} (STRING)")
-        print(event)
+##        heading(f"\nEVENT {event.event_id} (STRING)")
+##        print(event)
         
         heading(f"\nEVENT {event.event_id} (JSON)")
         pprint(event.json(), sort_dicts=False)

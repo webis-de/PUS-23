@@ -214,7 +214,7 @@ if __name__ == "__main__":
     language = args["language"]
 
     bibliography = Bibliography("../data/tracing-innovations-lit.bib")
-    accountlist = AccountList("../data/CRISPR_events - accounts.csv")
+    accountlist = AccountList("../data/CRISPR_accounts.csv")
 
     logger.start("Analysing articles [" + ", ".join(wikipedia_articles) + "].")
     logger.log("Using events with conditions:")
