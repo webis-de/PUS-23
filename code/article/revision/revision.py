@@ -145,17 +145,17 @@ class Revision:
         keyphrase = keyphrase.strip()
         if keyphrase:
             text = self.get_text() if not lower else self.get_text().lower()
-            for indx in [item.span()[0] for item in finditer(keyphrase, text)]:
+            for start, end in [item.span() for item in finditer(keyphrase, text)]:
                 # context left
                 left = ''
-                for char in text[indx - width if not width > indx else 0: indx][::-1]:
+                for char in text[start - width if not width > start else 0: start][::-1]:
                     if char == '\n': # make '\n' the boundary for context
                         break
                     left += char
                 left = left[::-1].strip()
                 # context right
                 right = ''
-                for char in text[indx + len(keyphrase): indx + len(keyphrase) + width]:
+                for char in text[end: end + width]:
                   if char == '\n': # make '\n' the boundary for context
                     break
                   right += char
