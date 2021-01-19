@@ -222,7 +222,7 @@ class Source:
         d.update({'DOI' if 'doi.org' in tag.get('href') 
             else 'PMC' if 'pmc' in tag.get('href') 
             else 'PMID':
-                         tag.get('href').split('/')[-1] if 'doi.org' in tag.get('href')
+                         tag.get('href').split('/')[-1].replace("%2F","/") if 'doi.org' in tag.get('href')
                     else tag.get('href').split('/')[-1].split('PMC')[-1] if 'pmc' in tag.get('href')
                     else tag.get('href').split('/')[-1].split('?')[0] # = 'pubmed'
             for tag in tags 
