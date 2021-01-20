@@ -141,7 +141,6 @@ if __name__ == "__main__":
     argument_parser = ArgumentParser()
 
     argument_parser.add_argument("-ad", "--articledir",
-                                 default="../articles",
                                  help="The relative or absolute path to the directory where the articles reside.")
     argument_parser.add_argument("-ef", "--eventfile",
                                  help="The relative or absolute path to the event CSV.")
@@ -157,11 +156,11 @@ if __name__ == "__main__":
     argument_parser.add_argument("-cond", "--conditions",
                                  nargs="+",
                                  default=[],
-                                 help="Conditions according to which events will be filtered, defaults to event.type=='publication'.")
+                                 help="Conditions according to which events will be filtered.")
     argument_parser.add_argument("-eq", "--equalling",
                                  nargs="+",
                                  default=[],
-                                 help="Bibentry attributes as strings to which Events will be reduced.")
+                                 help="Attributes as strings to which Events will be reduced.")
     argument_parser.add_argument("-lang", "--language",
                                  default="en",
                                  help="en or de, defaults to en.")
