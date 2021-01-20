@@ -9,7 +9,7 @@ from multiprocessing import Pool
 import unicodedata
 from re import search, split
 from argparse import ArgumentParser
-from os.path import sep, exists
+from os.path import basename, exists, sep
 from os import makedirs
 from json import load, dumps
 from urllib.parse import quote, unquote
@@ -40,7 +40,7 @@ def ndcg(gains, iDCG, results):
     DCG = sum([(gains[results[i]])/(i+1) if results[i] in gains else 0 for i in range(len(results))])
     return DCG/iDCG
 
-def analyse(event, revision, revision_text_ascii_lowered, revision_words_ascii, source_texts, source_texts_ascii, referenced_author_sets_ascii, referenced_titles, referenced_pmids, preprocessor, language, thresholds):
+def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_texts_ascii, referenced_author_sets_ascii, referenced_titles, referenced_pmids, preprocessor, language, thresholds):
 
     #FIND EVENT TITLES
     if event.titles:
@@ -75,7 +75,7 @@ def analyse(event, revision, revision_text_ascii_lowered, revision_words_ascii, 
     ##############################################################################################
 
     #FIND AUTHORS IN REFERENCES
-    if event.authors:
+    if False:#event.authors:
         if not event.first_mentioned["authors"]["exact_match"] or not event.first_mentioned["authors"]["jaccard"] or not event.first_mentioned["authors"]["ndcg"]:
             events_in_references_by_authors_exact_match = {}
             events_in_references_by_authors_jaccard = {}
@@ -131,41 +131,38 @@ def analyse(event, revision, revision_text_ascii_lowered, revision_words_ascii, 
         if len(event_pmids_in_references) == len(event.pmids):
             event.first_mentioned["pmids"] = occurrence(revision, result=event_pmids_in_references)
 
-    ##############################################################################################
-
-    if False:
-        #FIND EVENT KEYWORDS AND KEYPHRASES
-        if event.keywords and not event.first_mentioned["keywords"]:
-            event_keywords_in_text = {keyword:scroll_to_url(revision.url, keyword) for keyword in event.keywords if
-                                      (" " not in keyword and keyword in revision_words_ascii) or
-                                      (" " in keyword and keyword.lower() in revision_text_ascii_lowered)}
-            if len(event_keywords_in_text) == len(event.keywords):
-                event.first_mentioned["keywords"] = occurrence(revision, result=event_keywords_in_text)
-
     return event
 
 if __name__ == "__main__":
 
+    #Regex for matching DOIS (https://www.crossref.org/blog/dois-and-matching-regular-expressions)
+    DOI_REGEX = "10.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"
+
     argument_parser = ArgumentParser()
 
-    argument_parser.add_argument("-i", "--input_dir",
+    argument_parser.add_argument("-ad", "--articledir",
                                  default="../articles",
                                  help="The relative or absolute path to the directory where the articles reside.")
-    argument_parser.add_argument("-e", "--events",
-                                 help="The relative or absolute path to the events CSV.")
-    argument_parser.add_argument("-o", "--output_dir",
+    argument_parser.add_argument("-ef", "--eventfile",
+                                 help="The relative or absolute path to the event CSV.")
+    argument_parser.add_argument("-od", "--outputdir",
                                  default="../analysis",
                                  help="The relative or absolute path to the directory the analysis will be saved.")
-    argument_parser.add_argument("-a", "--articles",
-                                 default="../data/articles_arno.json",
-                                 help="Either the relative of abolute path to a JSON file of articles " + \
-                                      "or quoted string of comma-separated articles, " + \
-                                      "e.g. 'Cas9,The CRISPR JOURNAL'.")
-    argument_parser.add_argument("-c", "--conditions",
+    argument_parser.add_argument("-al", "--articlelist",
                                  nargs="+",
-                                 default=["event.type=='publication'"],
-                                 help="Events to analyse based on conditions provided, defaults to event.type=='publication'.")
-    argument_parser.add_argument("-l", "--language",
+                                 help="The article titles to analyse.")
+    argument_parser.add_argument("-af", "--articlefile",
+                                 default="../data/articles_arno.json",
+                                 help="The file of article titles to analyse.")    
+    argument_parser.add_argument("-cond", "--conditions",
+                                 nargs="+",
+                                 default=[],
+                                 help="Conditions according to which events will be filtered, defaults to event.type=='publication'.")
+    argument_parser.add_argument("-eq", "--equalling",
+                                 nargs="+",
+                                 default=[],
+                                 help="Bibentry attributes as strings to which Events will be reduced.")
+    argument_parser.add_argument("-lang", "--language",
                                  default="en",
                                  help="en or de, defaults to en.")
     argument_parser.add_argument("-ned", "--normalised_edit_distance_threshold",
@@ -191,68 +188,55 @@ if __name__ == "__main__":
 
     args = vars(argument_parser.parse_args())
 
-    input_directory = args["input_dir"]
-    event_file = args["events"]
-    output_directory = args["output_dir"]
+    article_directory = args["articledir"]
+    event_file = args["eventfile"]
+    output_directory = args["outputdir"]
+    articles = args["articlelist"]
     conditions = args["conditions"]
+    equalling = args["equalling"]
+    language = args["language"]
     thresholds = {"NORMALISED_EDIT_DISTANCE_THRESHOLD":args["normalised_edit_distance_threshold"],
                   "AUTHOR_RATIO_THRESHOLD":args["author_ratio_threshold"],
                   "EXACT_MATCH_RATIO_THRESHOLD":args["exact_match_ratio_threshold"],
                   "JACCARD_SCORE_THRESHOLD":args["jaccard_score_threshold"],
                   "NDCG_SCORE_THRESHOLD":args["ndcg_score_threshold"]}
-    logger = Logger(output_directory)
 
+    logger = Logger(output_directory)
     output_directory = logger.directory
 
-    if not exists(output_directory):
-        makedirs(output_directory)
-    try:
-        with open(args["articles"]) as file:
-            wikipedia_articles = flatten_list_of_lists(load(file).values())
-    except FileNotFoundError:
-        wikipedia_articles = [article.strip() for article in split(" *, *", args["articles"])]
-    language = args["language"]
+    if not exists(output_directory): makedirs(output_directory)
+    
+    if not articles: articles = flatten_list_of_lists(load(open(args["articlefile"])).values())
 
     bibliography = Bibliography("../data/tracing-innovations-lit.bib")
     accountlist = AccountList("../data/CRISPR_accounts.csv")
 
-    logger.start("Analysing articles [" + ", ".join(wikipedia_articles) + "].")
-    logger.log("Using events with conditions:")
-    for condition in conditions:
-        logger.log(condition)
+    logger.start("Analysing articles [" + ", ".join(articles) + "]")
+    logger.log("Using event file: " + basename(event_file))
+
+    logger.log("Using events with conditions: " + ", ".join(conditions if conditions else ["-"]))
+    logger.log("Equalling events to attributes: " + ", ".join(equalling if equalling else ["-"]))
     logger.log("Using the below thresholds:")
     for threshold in thresholds:
         logger.log(threshold + ": " + str(thresholds[threshold]))
 
-    DOI_REGEX = "10.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"
     preprocessor = Preprocessor(language)
 
-    for wikipedia_article in wikipedia_articles:
+    for article in articles:
 
-        logger.start_check(wikipedia_article)
+        logger.start_check(article)
 
-        filename = quote(wikipedia_article.replace(" ","_"), safe="")
-        filepath = input_directory + sep + filename + "_" + language
+        filename = quote(article.replace(" ","_"), safe="")
+        filepath = article_directory + sep + filename + "_" + language
         if not exists(filepath):
             logger.end_check(filepath + " does not exist.")
             continue
+        
         article = Article(filepath)
-
         revisions = article.yield_revisions()
-
         revision = next(revisions, None)
 
-        eventlist = EventList(event_file, bibliography, accountlist)
-
-        selected_events = []
-        for event in eventlist.events:
-            for condition in conditions:
-                if not eval(condition):
-                    break
-            else:
-                if event not in selected_events:
-                    selected_events.append(event)
-        eventlist.events = selected_events
+        eventlist = EventList(event_file, bibliography, accountlist, conditions, equalling)
 
         while revision:
 
@@ -264,7 +248,6 @@ if __name__ == "__main__":
             ### The full text, the lowered full text and all words of the revision. All characters are converted to ASCII.
             revision_text_ascii = to_ascii(revision.get_text())
             revision_text_ascii_lowered = revision_text_ascii.lower()
-            revision_words_ascii = None#set(preprocessor.preprocess(revision_text_ascii, lower=False, stopping=True, sentenize=False, tokenize=True)[0])
             ### The sources of the revision, i.e. 'References' and 'Further Reading' elements.
             sources = revision.get_references() + revision.get_further_reading()
             ### The texts of all sources, both full and tokenized.
@@ -282,7 +265,6 @@ if __name__ == "__main__":
                                                 [(event,
                                                   revision,
                                                   revision_text_ascii_lowered,
-                                                  revision_words_ascii,
                                                   source_texts,
                                                   source_texts_ascii,
                                                   referenced_author_sets_ascii,
@@ -297,11 +279,7 @@ if __name__ == "__main__":
 
         logger.end_check("Done.")
 
-        with open(output_directory + sep + filename + "_" + language + "." + "txt", "w") as file:
-            file.write(("\n"+"-"*50+"\n").join([str(event) for event in eventlist.events]))
-        with open(output_directory + sep + filename + "_" + language + "." + "json", "w") as file:
-            file.write("[\n")
-            file.write(",\n".join([dumps(event.json()) for event in eventlist.events]))
-            file.write("\n]")
+        eventlist.write_text(output_directory + sep + filename + "_" + language + "." + "txt")
+        eventlist.write_json(output_directory + sep + filename + "_" + language + "." + "json")
 
     logger.close()

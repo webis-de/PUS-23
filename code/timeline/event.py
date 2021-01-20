@@ -23,17 +23,17 @@ class Event:
         self.extracted_from = args["extracted_from"]
         self.comment = args["comment"]
         self.titles = {bibentry.bibkey:bibentry.title for bibentry in self.bibentries}
-        self.authors = {bibentry.bibkey:bibentry.authors for bibentry in self.bibentries}
+##        self.authors = {bibentry.bibkey:bibentry.authors for bibentry in self.bibentries}
         self.dois = [bibentry.doi for bibentry in self.bibentries]
         self.pmids = [bibentry.pmid for bibentry in self.bibentries]
         self.first_mentioned = {
                                 "titles":{
                                     "exact_match":None,
                                     "ned":None},
-                                "authors":{
-                                    "exact_match":None,
-                                    "jaccard":None,
-                                    "ndcg":None},
+##                                "authors":{
+##                                    "exact_match":None,
+##                                    "jaccard":None,
+##                                    "ndcg":None},
                                 "dois":None,
                                 "pmids":None
                                 }
