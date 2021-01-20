@@ -75,7 +75,7 @@ def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_t
     ##############################################################################################
 
     #FIND AUTHORS IN REFERENCES
-    if False:#event.authors:
+    if event.authors:
         if not event.first_mentioned["authors"]["exact_match"] or not event.first_mentioned["authors"]["jaccard"] or not event.first_mentioned["authors"]["ndcg"]:
             events_in_references_by_authors_exact_match = {}
             events_in_references_by_authors_jaccard = {}
@@ -259,7 +259,7 @@ if __name__ == "__main__":
             ### All authors occuring in 'References' and 'Further Reading'.
             referenced_author_sets_ascii = [[to_ascii(author[0]) for author in source.get_authors(language)] for source in sources]
 
-            with Pool(10) as pool:
+            with Pool(20) as pool:
                 eventlist.events = pool.starmap(analyse,
                                                 [(event,
                                                   revision,
