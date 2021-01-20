@@ -168,10 +168,6 @@ if __name__ == "__main__":
                                  type=int,
                                  default=0.2,
                                  help="Threshold for normalised edit distance for titles in references.")
-    argument_parser.add_argument("-art", "--author_ratio_threshold",
-                                 type=int,
-                                 default=1.0,
-                                 help="Threshold for authors_in_text/authors_in_reference ratio.")
     argument_parser.add_argument("-emt", "--exact_match_ratio_threshold",
                                  type=int,
                                  default=1.0,
@@ -195,7 +191,6 @@ if __name__ == "__main__":
     equalling = args["equalling"]
     language = args["language"]
     thresholds = {"NORMALISED_EDIT_DISTANCE_THRESHOLD":args["normalised_edit_distance_threshold"],
-                  "AUTHOR_RATIO_THRESHOLD":args["author_ratio_threshold"],
                   "EXACT_MATCH_RATIO_THRESHOLD":args["exact_match_ratio_threshold"],
                   "JACCARD_SCORE_THRESHOLD":args["jaccard_score_threshold"],
                   "NDCG_SCORE_THRESHOLD":args["ndcg_score_threshold"]}

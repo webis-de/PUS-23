@@ -14,9 +14,9 @@ def stringify_delay(delay):
     else:
         return str(delay - 1).rjust(20, " ")
 
-data = sorted([event for event in load(open("../analysis/DE_TEST/2021_01_20_21_23_46/CRISPR_de.json")) if event["type"] == "publication"], key=lambda event: int(event["event_year"]))
+data = sorted([event for event in load(open("../analysis/DE_TEST/2021_01_20_21_27_55/CRISPR_de.json")) if event["type"] == "publication" and event["bibentries"]], key=lambda event: int(event["event_year"]))
 
-event_ids = [list(event["bibentries"].keys())[0] for event in data]
+bibkey = [list(event["bibentries"].keys())[0] for event in data]
 event_years = [int(event["event_year"]) if event["event_year"] else None for event in data]
 title_exact_matches = [int(event["first_mentioned"]["titles"]["exact_match"]["timestamp"][:4]) if event["first_mentioned"]["titles"]["exact_match"] else None for event in data]
 title_ned_matches = [int(event["first_mentioned"]["titles"]["ned"]["timestamp"][:4]) if event["first_mentioned"]["titles"]["ned"] else None for event in data]
@@ -29,7 +29,7 @@ pmid_matches = [int(event["first_mentioned"]["pmids"]["timestamp"][:4]) if event
 if True:
     lists = [title_ned_matches, authors_exact_matches, authors_ndcg_matches, authors_jaccard_matches, doi_matches, pmid_matches]
 
-    event_ids_reduced = [event_ids[i] for i in range(len(event_years)) if len([l[i] for l in lists if l[i]]) != 0]
+    bibkey_reduced = [bibkey[i] for i in range(len(event_years)) if len([l[i] for l in lists if l[i]]) != 0]
     event_years_reduced = [event_years[i] for i in range(len(event_years)) if len([l[i] for l in lists if l[i]]) != 0]
     title_exact_matches_reduced = [title_exact_matches[i] for i in range(len(event_years)) if len([l[i] for l in lists if l[i]]) != 0]
     title_ned_matches_reduced = [title_ned_matches[i] for i in range(len(event_years)) if len([l[i] for l in lists if l[i]]) != 0]
@@ -39,7 +39,7 @@ if True:
     doi_matches_reduced = [doi_matches[i] for i in range(len(event_years)) if len([l[i] for l in lists if l[i]]) != 0]
     pmid_matches_reduced = [pmid_matches[i] for i in range(len(event_years)) if len([l[i] for l in lists if l[i]]) != 0]
 
-    event_ids = event_ids_reduced
+    bibkey = bibkey_reduced
     event_years = event_years_reduced
     title_exact_matches = title_exact_matches_reduced
     title_ned_matches = title_ned_matches_reduced
@@ -49,7 +49,7 @@ if True:
     doi_matches = doi_matches_reduced
     pmid_matches = pmid_matches_reduced
 
-print("event_id".rjust(8),
+print("bibkey".rjust(20, " "),
       "event_year".rjust(10, " "),
       "title_exact".rjust(20, " "),
       "title_ned".rjust(20, " "),
@@ -58,9 +58,9 @@ print("event_id".rjust(8),
       "authors_jaccard".rjust(20, " "),
       "doi".rjust(20, " "),
       "pmid".rjust(20, " "))
-for event_id, event_year, title_exact_match, title_ned_match, authors_exact_match, authors_ndcg_match, authors_jaccard_match, doi_match, pmid_match in \
-    zip(event_ids, event_years, title_exact_matches, title_ned_matches, authors_exact_matches, authors_ndcg_matches, authors_jaccard_matches, doi_matches, pmid_matches):
-    print(str(event_id).rjust(8, " "),
+for bibkey, event_year, title_exact_match, title_ned_match, authors_exact_match, authors_ndcg_match, authors_jaccard_match, doi_match, pmid_match in \
+    zip(bibkey, event_years, title_exact_matches, title_ned_matches, authors_exact_matches, authors_ndcg_matches, authors_jaccard_matches, doi_matches, pmid_matches):
+    print(str(bibkey).rjust(20, " "),
           str(event_year).rjust(10, " "),
           stringify_delay(calculate_delay(title_exact_match, event_year)),
           stringify_delay(calculate_delay(title_ned_match, event_year)),
