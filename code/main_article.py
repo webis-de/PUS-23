@@ -58,7 +58,7 @@ def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_t
             for event_bibkey, event_title in event.titles.items():
                 normalised_edit_distance = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLD"]
                 #lower and tokenize event title
-                preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
+                preprocessed_event_title = preprocessor.preprocess(to_ascii(event_title), lower=True, stopping=False, sentenize=False, tokenize=True)[0]
                 for preprocessed_source_title_ascii, source_text in zip(preprocessed_source_titles_ascii, source_texts):
                     #calculate token-based normalised edit distance
                     new_normalised_edit_distance = levenshtein(preprocessed_event_title, preprocessed_source_title_ascii)/len(preprocessed_event_title)
@@ -78,8 +78,8 @@ def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_t
             events_in_references_by_authors_exact_match = {}
             events_in_references_by_authors_jaccard = {}
             events_in_references_by_authors_ndcg = {}
-            for event_bibkey in event.authors:
-                event_authors = [to_ascii(author) for author in event.authors[event_bibkey]]
+            for event_bibkey, event_authors in event.authors.items():
+                event_authors = [to_ascii(author) for author in event_authors]
                 gains = {author:len(event_authors)-event_authors.index(author) for author in event_authors}
                 iDCG = ndcg(gains=gains, iDCG=1, results=event_authors)
 
@@ -252,7 +252,7 @@ if __name__ == "__main__":
             ### All PMIDs occuring in 'References' and 'Further Reading'.
             referenced_pmids = set(flatten_list_of_lists([source.get_pmids() for source in sources]))
 
-            with Pool(20) as pool:
+            with Pool(4) as pool:
                 eventlist.events = pool.starmap(analyse,
                                                 [(event,
                                                   revision,
