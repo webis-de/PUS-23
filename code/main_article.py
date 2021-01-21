@@ -6,7 +6,7 @@ from utility.utils import flatten_list_of_lists, levenshtein
 from utility.logger import Logger
 from preprocessor.preprocessor import Preprocessor
 from multiprocessing import Pool
-import unicodedata
+from unicodedata import normalize
 from re import search, split
 from argparse import ArgumentParser
 from os.path import basename, exists, sep
@@ -23,7 +23,7 @@ def occurrence(revision, result):
     return {"index":revision.index,"url":revision.url,"timestamp":revision.timestamp.string,"result":result}
 
 def to_ascii(string):
-    return unicodedata.normalize("NFD",string).encode("ASCII","ignore").decode("ASCII")
+    return normalize("NFD",string).encode("ASCII","ignore").decode("ASCII")
 
 def scroll_to_url(url, string):
     return url + "#:~:text=" + quote(string)
@@ -40,7 +40,7 @@ def ndcg(gains, iDCG, results):
     DCG = sum([(gains[results[i]])/(i+1) if results[i] in gains else 0 for i in range(len(results))])
     return DCG/iDCG
 
-def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_texts_ascii, referenced_author_sets_ascii, referenced_titles, referenced_pmids, preprocessor, language, thresholds):
+def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_texts_ascii, referenced_author_sets_ascii, preprocessed_referenced_titles, referenced_pmids, preprocessor, language, thresholds):
 
     #FIND EVENT TITLES
     if event.titles:
@@ -59,9 +59,7 @@ def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_t
                 normalised_edit_distance = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLD"]
                 #lower and tokenize event title
                 preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
-                for referenced_title, source_text in zip(referenced_titles, source_texts):
-                    #lower and tokenize referenced title
-                    preprocessed_referenced_title = preprocessor.preprocess(referenced_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
+                for preprocessed_referenced_title, source_text in zip(preprocessed_referenced_titles, source_texts):
                     #calculate token-based normalised edit distance
                     new_normalised_edit_distance = levenshtein(preprocessed_event_title, preprocessed_referenced_title)/len(preprocessed_event_title)
                     #update referenced_title if newly calculated normalised edit distance is smaller than old normalised edit distance
@@ -248,7 +246,9 @@ if __name__ == "__main__":
             source_texts = [source.get_text().strip() for source in sources]
             source_texts_ascii = [to_ascii(source_text) for source_text in source_texts]
             ### All titles occuring in 'References' and 'Further Reading'.
-            referenced_titles = [to_ascii(source.get_title(language)) for source in sources]
+            source_titles = [source.get_title(language) for source in sources]
+            source_titles_ascii = [to_ascii(source_title) for source_title in source_titles]
+            preprocessed_referenced_titles = [preprocessor.preprocess(referenced_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0] for referenced_title in source_titles_ascii]
             ### All PMIDs occuring in 'References' and 'Further Reading'.
             referenced_pmids = set(flatten_list_of_lists([source.get_pmids() for source in sources]))
             ### All authors occuring in 'References' and 'Further Reading'.
@@ -262,7 +262,7 @@ if __name__ == "__main__":
                                                   source_texts,
                                                   source_texts_ascii,
                                                   referenced_author_sets_ascii,
-                                                  referenced_titles,
+                                                  preprocessed_referenced_titles,
                                                   referenced_pmids,
                                                   preprocessor,
                                                   language,

@@ -2,19 +2,21 @@ import matplotlib.pyplot as plt
 from json import load
 import numpy as np
 
+HINT = 0.2
+
 def calculate_delay(match_year, event_year):
     if match_year:
-        return max(0.2, match_year - event_year + 1)
+        return max(HINT, match_year - event_year + 1)
     else:
-        return 0.2
+        return HINT
 
 def stringify_delay(delay):
-    if delay == 0.2:
+    if delay == HINT:
         return "-".rjust(20, " ")
     else:
         return str(delay - 1).rjust(20, " ")
 
-data = sorted([event for event in load(open("../analysis/DE_TEST/2021_01_20_21_27_55/CRISPR_de.json")) if event["type"] == "publication" and event["bibentries"]], key=lambda event: int(event["event_year"]))
+data = sorted([event for event in load(open("../analysis/DE_TEST/2021_01_21_12_09_09/CRISPR_de.json")) if event["type"] == "publication" and event["bibentries"]], key=lambda event: int(event["event_year"]))
 
 bibkey = [list(event["bibentries"].keys())[0] for event in data]
 event_years = [int(event["event_year"]) if event["event_year"] else None for event in data]
@@ -78,12 +80,22 @@ authors_jaccard_delays = [calculate_delay(match, year) for match,year in zip(aut
 doi_delays = [calculate_delay(match, year) for match,year in zip(doi_matches, event_years)]
 pmid_delays = [calculate_delay(match, year) for match,year in zip(pmid_matches, event_years)]
 
+event_years = [str(year) for year in event_years]
+year = event_years[0]
+for i in range(1, len(event_years)):
+    if event_years[i] == year:
+        event_years[i] = ""
+    else:
+        year = event_years[i]
+
 width = 0.1
-x = np.arange(len(title_exact_matches))
+x = np.arange(len(event_years))
 plt.figure(figsize=(50, 3), dpi=150)
-plt.subplots_adjust(bottom=0.03, top=0.99, left=0.01, right=0.998)
+plt.subplots_adjust(bottom=0.15, top=0.99, left=0.01, right=0.998)
 plt.margins(x=0.0005, y=0.005)
-plt.xticks(np.arange(len(title_exact_matches)))
+plt.xticks(np.arange(len(event_years)), event_years)
+plt.xlabel("PUBLICATIONS  (colours reprensent different metrics as per legend; years + 1, e.g. a column of height 1 means the publication occurred the same year; column hints for visualistion represent no occurrence)")
+plt.ylabel("OCCURRENCE DELAY IN YEARS")
 plt.bar(x - width*3, title_exact_delays, width=width, label="title_exact")
 plt.bar(x - width*2, title_ned_delays, width=width, label="title_ned")
 plt.bar(x - width, authors_exact_delays, width=width, label="authors_exact")
