@@ -40,7 +40,7 @@ def ndcg(gains, iDCG, results):
     DCG = sum([(gains[results[i]])/(i+1) if results[i] in gains else 0 for i in range(len(results))])
     return DCG/iDCG
 
-def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_texts_ascii, referenced_author_sets_ascii, preprocessed_referenced_titles, referenced_pmids, preprocessor, language, thresholds):
+def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_texts_ascii, preprocessed_source_titles_ascii, referenced_author_sets_ascii, referenced_pmids, preprocessor, language, thresholds):
 
     #FIND EVENT TITLES
     if event.titles:
@@ -59,10 +59,10 @@ def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_t
                 normalised_edit_distance = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLD"]
                 #lower and tokenize event title
                 preprocessed_event_title = preprocessor.preprocess(event_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0]
-                for preprocessed_referenced_title, source_text in zip(preprocessed_referenced_titles, source_texts):
+                for preprocessed_source_title_ascii, source_text in zip(preprocessed_source_titles_ascii, source_texts):
                     #calculate token-based normalised edit distance
-                    new_normalised_edit_distance = levenshtein(preprocessed_event_title, preprocessed_referenced_title)/len(preprocessed_event_title)
-                    #update referenced_title if newly calculated normalised edit distance is smaller than old normalised edit distance
+                    new_normalised_edit_distance = levenshtein(preprocessed_event_title, preprocessed_source_title_ascii)/len(preprocessed_event_title)
+                    #update source_title if newly calculated normalised edit distance is smaller than old normalised edit distance
                     if new_normalised_edit_distance <= normalised_edit_distance:
                         normalised_edit_distance = new_normalised_edit_distance
                         event_titles_processed[event_bibkey] = {"source_text":scroll_to_url(revision.url, source_text),"normalised_edit_distance":normalised_edit_distance}
@@ -202,6 +202,7 @@ if __name__ == "__main__":
 
     bibliography = Bibliography("../data/tracing-innovations-lit.bib")
     accountlist = AccountList("../data/CRISPR_accounts.csv")
+    preprocessor = Preprocessor(language)
 
     logger.start("Analysing articles [" + ", ".join(articles) + "]")
     logger.log("Using event file: " + basename(event_file))
@@ -210,9 +211,7 @@ if __name__ == "__main__":
     logger.log("Equalling events to attributes: " + ", ".join(equalling if equalling else ["-"]))
     logger.log("Using the below thresholds:")
     for threshold in thresholds:
-        logger.log(threshold + ": " + str(thresholds[threshold]))
-
-    preprocessor = Preprocessor(language)
+        logger.log(threshold + ": " + str(thresholds[threshold]))    
 
     for article in articles:
 
@@ -237,22 +236,21 @@ if __name__ == "__main__":
             #FIX REVISION URL BY REPLACEING SPACES WITH UNDERSCORES
             revision.url = revision.url.replace(" ", "_")
 
-            ### The full text, the lowered full text and all words of the revision. All characters are converted to ASCII.
-            revision_text_ascii = to_ascii(revision.get_text())
-            revision_text_ascii_lowered = revision_text_ascii.lower()
+            ### The lowered ASCII-normalised full text.
+            revision_text_ascii_lowered = to_ascii(revision.get_text()).lower()
             ### The sources of the revision, i.e. 'References' and 'Further Reading' elements.
             sources = revision.get_references() + revision.get_further_reading()
-            ### The texts of all sources, both full and tokenized.
+            ### The texts of all sources, both raw and ASCII-normalised.
             source_texts = [source.get_text().strip() for source in sources]
             source_texts_ascii = [to_ascii(source_text) for source_text in source_texts]
-            ### All titles occuring in 'References' and 'Further Reading'.
+            ### All titles occuring in 'References' and 'Further Reading', ASCII-normalised, lowered and tokenised.
             source_titles = [source.get_title(language) for source in sources]
             source_titles_ascii = [to_ascii(source_title) for source_title in source_titles]
-            preprocessed_referenced_titles = [preprocessor.preprocess(referenced_title, lower=True, stopping=False, sentenize=False, tokenize=True)[0] for referenced_title in source_titles_ascii]
+            preprocessed_source_titles_ascii = [preprocessor.preprocess(source_title_ascii, lower=True, stopping=False, sentenize=False, tokenize=True)[0] for source_title_ascii in source_titles_ascii]
+            ### All authors occuring in 'References' and 'Further Reading', ASCII-normalised.
+            referenced_author_sets_ascii = [[to_ascii(author[0]) for author in source.get_authors(language)] for source in sources]
             ### All PMIDs occuring in 'References' and 'Further Reading'.
             referenced_pmids = set(flatten_list_of_lists([source.get_pmids() for source in sources]))
-            ### All authors occuring in 'References' and 'Further Reading'.
-            referenced_author_sets_ascii = [[to_ascii(author[0]) for author in source.get_authors(language)] for source in sources]
 
             with Pool(20) as pool:
                 eventlist.events = pool.starmap(analyse,
@@ -261,8 +259,8 @@ if __name__ == "__main__":
                                                   revision_text_ascii_lowered,
                                                   source_texts,
                                                   source_texts_ascii,
+                                                  preprocessed_source_titles_ascii,
                                                   referenced_author_sets_ascii,
-                                                  preprocessed_referenced_titles,
                                                   referenced_pmids,
                                                   preprocessor,
                                                   language,
