@@ -42,92 +42,133 @@ def ndcg(gains, iDCG, results):
 
 def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_texts_ascii, preprocessed_source_titles_ascii, referenced_author_sets_ascii, referenced_pmids, preprocessor, language, thresholds):
 
-    #FIND EVENT TITLES
-    if event.titles:
-        #EXACT MATCH SEARCH
-        if not event.first_mentioned["titles"]["exact_match"]:
-            event_titles_exact = {}
+    NED_LOW = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][0]
+    NED_MID = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][1]
+    NED_HIGH = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][2]
+    EXACT = thresholds["EXACT_MATCH_RATIO_THRESHOLD"]
+    JACCARD = thresholds["JACCARD_SCORE_THRESHOLD"]
+    NDCG = thresholds["NDCG_SCORE_THRESHOLD"]
+
+    #VERBATIM EVENT TITLES
+    if event.titles and not event.first_mentioned["verbatim"].get("titles", None):
+            verbatim_title_results = {}
             for event_bibkey, event_title in event.titles.items():
                 if to_ascii(event_title.lower()) in revision_text_ascii_lowered:
-                    event_titles_exact[event_bibkey] = scroll_to_url(revision.url, event_title)
-            if len(event_titles_exact) == len(event.titles.values()):
-                event.first_mentioned["titles"]["exact_match"] = occurrence(revision, result=event_titles_exact)
-        #RELAXED REFERENCE SEARCH
-        if not event.first_mentioned["titles"]["ned"]:
-            event_titles_processed = {}
+                    verbatim_title_results[event_bibkey] = scroll_to_url(revision.url, event_title)
+            if len(verbatim_title_results) == len(event.titles.values()):
+                event.first_mentioned["verbatim"]["titles"] = occurrence(revision, result=verbatim_title_results)
+                
+    ##############################################################################################
+
+    #VERBATIM EVENT DOIS
+    if event.dois and not event.first_mentioned["verbatim"].get("dois", None):
+        verbatim_doi_results = {event_doi:scroll_to_url(revision.url, event_doi) for event_doi in event.dois if event_doi.lower() in revision_text_ascii_lowered}
+        if len(verbatim_doi_results) == len(event.dois):
+            event.first_mentioned["verbatim"]["dois"] = occurrence(revision, result=verbatim_doi_results)
+
+    ##############################################################################################
+
+    #VERBATIM EVENT PMIDS
+    if event.pmids and not event.first_mentioned["verbatim"].get("pmids", None):
+        verbatim_pmid_results = {event_pmid:scroll_to_url(revision.url, event_pmid) for event_pmid in event.pmids if event_pmid in referenced_pmids}
+        if len(verbatim_pmid_results) == len(event.pmids):
+            event.first_mentioned["verbatim"]["pmids"] = occurrence(revision, result=verbatim_pmid_results)
+
+    #############################################################################################
+
+    #RELAXED REFERENCE SEARCH
+    if event.titles:
+        if not event.first_mentioned["relaxed"].get("ned <= " + str(NED_LOW), None) or \
+           not event.first_mentioned["relaxed"].get("ned <= " + str(NED_MID), None) or \
+           not event.first_mentioned["relaxed"].get("ned <= " + str(NED_HIGH), None) or \
+           not event.first_mentioned["relaxed"].get("ned_and_exact", None) or \
+           not event.first_mentioned["relaxed"].get("ned_and_jaccard", None) or \
+           not event.first_mentioned["relaxed"].get("ned_and_ndcg", None):
+            
+            relaxed_results = {event_bibkey:{} for event_bibkey in event.titles}
+
+            #TITLES
             for event_bibkey, event_title in event.titles.items():
-                normalised_edit_distance = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLD"]
-                #lower and tokenize event title
+
                 preprocessed_event_title = preprocessor.preprocess(to_ascii(event_title), lower=True, stopping=False, sentenize=False, tokenize=True)[0]
+
                 for preprocessed_source_title_ascii, source_text in zip(preprocessed_source_titles_ascii, source_texts):
-                    #calculate token-based normalised edit distance
-                    new_normalised_edit_distance = levenshtein(preprocessed_event_title, preprocessed_source_title_ascii)/len(preprocessed_event_title)
-                    #update source_title if newly calculated normalised edit distance is smaller than old normalised edit distance
-                    if new_normalised_edit_distance <= normalised_edit_distance:
-                        normalised_edit_distance = new_normalised_edit_distance
-                        event_titles_processed[event_bibkey] = {"source_text":scroll_to_url(revision.url, source_text),"normalised_edit_distance":normalised_edit_distance}
 
-            if len(event_titles_processed) == len(event.titles):
-                event.first_mentioned["titles"]["ned"] = occurrence(revision, result=event_titles_processed)
+                    normalised_edit_distance = levenshtein(preprocessed_event_title, preprocessed_source_title_ascii)/len(preprocessed_event_title)
 
-    ##############################################################################################
+                    if normalised_edit_distance < relaxed_results[event_bibkey].get("ned_low", (None, NED_LOW))[1]:
+                        relaxed_results[event_bibkey]["ned_low"] = (source_text, normalised_edit_distance)
+                    if normalised_edit_distance < relaxed_results[event_bibkey].get("ned_mid", (None, NED_MID))[1]:
+                        relaxed_results[event_bibkey]["ned_mid"] = (source_text, normalised_edit_distance)
+                    if normalised_edit_distance < relaxed_results[event_bibkey].get("ned_high", (None, NED_HIGH))[1]:
+                        relaxed_results[event_bibkey]["ned_high"] = (source_text, normalised_edit_distance)
 
-    #FIND AUTHORS IN REFERENCES
-    if event.authors:
-        if not event.first_mentioned["authors"]["exact_match"] or not event.first_mentioned["authors"]["jaccard"] or not event.first_mentioned["authors"]["ndcg"]:
-            events_in_references_by_authors_exact_match = {}
-            events_in_references_by_authors_jaccard = {}
-            events_in_references_by_authors_ndcg = {}
-            for event_bibkey, event_authors in event.authors.items():
-                event_authors = [to_ascii(author) for author in event_authors]
-                gains = {author:len(event_authors)-event_authors.index(author) for author in event_authors}
-                iDCG = ndcg(gains=gains, iDCG=1, results=event_authors)
+            if not event.first_mentioned["relaxed"].get("ned <= " + str(NED_LOW), None) and False not in [1 if relaxed_results[event_bibkey].get("ned_low", False) else 0 for event_bibkey in event.titles]:
+                relaxed_title_results_low = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["ned_low"][0],
+                                                                          "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["ned_low"][0])},
+                                                           "normalised_edit_distance <= " + str(NED_LOW):relaxed_results[event_bibkey]["ned_low"][1]
+                                                           } for event_bibkey in event.titles}
+                event.first_mentioned["relaxed"]["ned <= " + str(NED_LOW)] = occurrence(revision, result=relaxed_title_results_low)
+                
+            if not event.first_mentioned["relaxed"].get("ned <= " + str(NED_MID), None) and False not in [1 if relaxed_results[event_bibkey].get("ned_mid", False) else 0 for event_bibkey in event.titles]:
+                relaxed_title_results_mid = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["ned_mid"][0],
+                                                                          "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["ned_mid"][0])},
+                                                           "normalised_edit_distance <= " + str(NED_MID):relaxed_results[event_bibkey]["ned_mid"][1]
+                                                           } for event_bibkey in event.titles}
+                event.first_mentioned["relaxed"]["ned <= " + str(NED_MID)] = occurrence(revision, result=relaxed_title_results_mid)
+                
+            if not event.first_mentioned["relaxed"].get("ned <= " + str(NED_HIGH), None) and False not in [1 if relaxed_results[event_bibkey].get("ned_high", False) else 0 for event_bibkey in event.titles]:
+                relaxed_title_results_high = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["ned_high"][0],
+                                                                           "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["ned_high"][0])},
+                                                            "normalised_edit_distance <= " + str(NED_HIGH):relaxed_results[event_bibkey]["ned_high"][1]
+                                                            } for event_bibkey in event.titles}
+                event.first_mentioned["relaxed"]["ned <= " + str(NED_HIGH)] = occurrence(revision, result=relaxed_title_results_high)
 
-                exact_match_ratio = thresholds["EXACT_MATCH_RATIO_THRESHOLD"]
-                jaccard_score = thresholds["JACCARD_SCORE_THRESHOLD"]
-                ndcg_score = thresholds["NDCG_SCORE_THRESHOLD"]
+            #AUTHORS
+            if event.authors:
+                for event_bibkey, event_authors in event.authors.items():
+                    
+                    event_authors = [to_ascii(author) for author in event_authors]
+                    gains = {author:len(event_authors)-event_authors.index(author) for author in event_authors}
+                    iDCG = ndcg(gains=gains, iDCG=1, results=event_authors)
 
-                for referenced_author_set_ascii, source_text, source_text_ascii in zip(referenced_author_sets_ascii, source_texts, source_texts_ascii):
+                    for referenced_author_set_ascii, source_text, source_text_ascii in zip(referenced_author_sets_ascii, source_texts, source_texts_ascii):
 
-                    new_exact_match_ratio = exact_match(event_authors, source_text_ascii)
-                    if new_exact_match_ratio >= exact_match_ratio:
-                        exact_match_ratio = new_exact_match_ratio
-                        events_in_references_by_authors_exact_match[event_bibkey] = {"source_text":scroll_to_url(revision.url, source_text), "exact_match_ratio":exact_match_ratio}                
+                        exact_score = exact_match(event_authors, source_text_ascii)
+                        jaccard_score = jaccard(event_authors, referenced_author_set_ascii)
+                        ndcg_score = ndcg(gains, iDCG, referenced_author_set_ascii)
 
-                    new_jaccard_score = jaccard(event_authors, referenced_author_set_ascii)
-                    if new_jaccard_score >= jaccard_score:
-                        jaccard_score = new_jaccard_score
-                        events_in_references_by_authors_jaccard[event_bibkey] = {"source_text":scroll_to_url(revision.url, source_text), "jaccard_score":jaccard_score}
+                        if exact_score >= relaxed_results[event_bibkey].get("exact", (None, EXACT))[1] and relaxed_results[event_bibkey].get("ned_high", (None, None))[0] == source_text:
+                            relaxed_results[event_bibkey]["exact"] = (source_text, exact_score, relaxed_results[event_bibkey].get("ned_high")[1])
+                        if jaccard_score >= relaxed_results[event_bibkey].get("jaccard", (None, JACCARD))[1] and relaxed_results[event_bibkey].get("ned_high", (None, None))[0] == source_text:
+                            relaxed_results[event_bibkey]["jaccard"] = (source_text, jaccard_score, relaxed_results[event_bibkey].get("ned_high")[1])
+                        if ndcg_score >= relaxed_results[event_bibkey].get("ndcg", (None, NDCG))[1] and relaxed_results[event_bibkey].get("ned_high", (None, None))[0] == source_text:
+                            relaxed_results[event_bibkey]["ndcg"] = (source_text, ndcg_score, relaxed_results[event_bibkey].get("ned_high")[1])
 
-                    new_ndcg_score = ndcg(gains, iDCG, referenced_author_set_ascii)
-                    if new_ndcg_score >= ndcg_score:
-                        ndcg_score = new_ndcg_score
-                        events_in_references_by_authors_ndcg[event_bibkey] = {"source_text":scroll_to_url(revision.url, source_text), "ndcg_score":ndcg_score}
+                    if not event.first_mentioned["relaxed"].get("ned_and_exact", None) and False not in [relaxed_results[event_bibkey].get("exact", False) for event_bibkey in event.authors]:
+                        events_in_references_by_authors_exact_match = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["exact"][0],
+                                                                                                    "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["exact"][0])},
+                                                                                     "exact_match_ratio": relaxed_results[event_bibkey]["exact"][1],
+                                                                                     "normalised_edit_distance <= " + str(NED_HIGH):relaxed_results[event_bibkey]["exact"][2]
+                                                                                     } for event_bibkey in event.authors}
+                        event.first_mentioned["relaxed"]["ned_and_exact"] = occurrence(revision, result=events_in_references_by_authors_exact_match)
 
-            if not event.first_mentioned["authors"]["exact_match"] and len(events_in_references_by_authors_exact_match) == len(event.authors):
-                event.first_mentioned["authors"]["exact_match"] = occurrence(revision, result=events_in_references_by_authors_exact_match)
+                    if not event.first_mentioned["relaxed"].get("ned_and_jaccard", None) and False not in [relaxed_results[event_bibkey].get("jaccard", False) for event_bibkey in event.authors]:
+                        events_in_references_by_authors_jaccard = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["jaccard"][0],
+                                                                                                "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["jaccard"][0])},
+                                                                                 "jaccard_score": relaxed_results[event_bibkey]["jaccard"][1],
+                                                                                 "normalised_edit_distance <= " + str(NED_HIGH):relaxed_results[event_bibkey]["jaccard"][2],
+                                                                                 } for event_bibkey in event.authors}
+                        event.first_mentioned["relaxed"]["ned_and_jaccard"] = occurrence(revision, result=events_in_references_by_authors_jaccard)
 
-            if not event.first_mentioned["authors"]["jaccard"] and len(events_in_references_by_authors_jaccard) == len(event.authors):
-                event.first_mentioned["authors"]["jaccard"] = occurrence(revision, result=events_in_references_by_authors_jaccard)
-
-            if not event.first_mentioned["authors"]["ndcg"] and len(events_in_references_by_authors_ndcg) == len(event.authors):
-                event.first_mentioned["authors"]["ndcg"] = occurrence(revision, result=events_in_references_by_authors_ndcg)
-
-    ##############################################################################################
-
-    #FIND EVENT DOIS
-    if event.dois and not event.first_mentioned["dois"]:
-        event_dois_in_text = {event_doi:scroll_to_url(revision.url, event_doi) for event_doi in event.dois if event_doi.lower() in revision_text_ascii_lowered}
-        if len(event_dois_in_text) == len(event.dois):
-            event.first_mentioned["dois"] = occurrence(revision, result=event_dois_in_text)
-
-    ##############################################################################################
-
-    #FIND EVENT PMIDS
-    if event.pmids and not event.first_mentioned["pmids"]:
-        event_pmids_in_references = {event_pmid:scroll_to_url(revision.url, event_pmid) for event_pmid in event.pmids if event_pmid in referenced_pmids}
-        if len(event_pmids_in_references) == len(event.pmids):
-            event.first_mentioned["pmids"] = occurrence(revision, result=event_pmids_in_references)
+                    if not event.first_mentioned["relaxed"].get("ned_and_ndcg", None) and False not in [relaxed_results[event_bibkey].get("ndcg", False) for event_bibkey in event.authors]:
+                        events_in_references_by_authors_ndcg = {event_bibkey:
+                                                                {"source_text":{"raw":relaxed_results[event_bibkey]["ndcg"][0],
+                                                                                "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["ndcg"][0])},
+                                                                 "ndcg_score": relaxed_results[event_bibkey]["ndcg"][1],
+                                                                 "normalised_edit_distance <= " + str(NED_HIGH):relaxed_results[event_bibkey]["ndcg"][2]
+                                                                 } for event_bibkey in event.authors}
+                        event.first_mentioned["relaxed"]["ned_and_ndcg"] = occurrence(revision, result=events_in_references_by_authors_ndcg)
 
     return event
 
@@ -162,10 +203,11 @@ if __name__ == "__main__":
     argument_parser.add_argument("-lang", "--language",
                                  default="en",
                                  help="en or de, defaults to en.")
-    argument_parser.add_argument("-ned", "--normalised_edit_distance_threshold",
+    argument_parser.add_argument("-ned", "--normalised_edit_distance_thresholds",
+                                 nargs="+",
                                  type=int,
-                                 default=0.2,
-                                 help="Threshold for normalised edit distance for titles in references.")
+                                 default=[0.2,0.3,0.4],
+                                 help="Thresholds for normalised edit distance for titles in references; three values for low, medium and high.")
     argument_parser.add_argument("-emt", "--exact_match_ratio_threshold",
                                  type=int,
                                  default=1.0,
@@ -188,7 +230,7 @@ if __name__ == "__main__":
     conditions = args["conditions"]
     equalling = args["equalling"]
     language = args["language"]
-    thresholds = {"NORMALISED_EDIT_DISTANCE_THRESHOLD":args["normalised_edit_distance_threshold"],
+    thresholds = {"NORMALISED_EDIT_DISTANCE_THRESHOLDS":args["normalised_edit_distance_thresholds"],
                   "EXACT_MATCH_RATIO_THRESHOLD":args["exact_match_ratio_threshold"],
                   "JACCARD_SCORE_THRESHOLD":args["jaccard_score_threshold"],
                   "NDCG_SCORE_THRESHOLD":args["ndcg_score_threshold"]}
@@ -228,6 +270,25 @@ if __name__ == "__main__":
         revision = next(revisions, None)
 
         eventlist = EventList(event_file, bibliography, accountlist, conditions, equalling)
+
+        NED_LOW = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][0]
+        NED_MID = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][1]
+        NED_HIGH = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][2]
+
+        for event in eventlist.events:
+            event.first_mentioned = {
+                "verbatim":{
+                    "titles":None,
+                    "dois":None,
+                    "pmids":None},
+                "relaxed":{
+                    "ned <= " + str(NED_LOW):None,
+                    "ned <= " + str(NED_MID):None,
+                    "ned <= " + str(NED_HIGH):None,
+                    "ned_and_exact":None,
+                    "ned_and_jaccard":None,
+                    "ned_and_ndcg":None}
+                        }
 
         while revision:
 

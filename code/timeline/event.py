@@ -26,18 +26,8 @@ class Event:
         self.authors = {bibentry.bibkey:bibentry.authors for bibentry in self.bibentries}
         self.dois = [bibentry.doi for bibentry in self.bibentries]
         self.pmids = [bibentry.pmid for bibentry in self.bibentries]
-        self.first_mentioned = {
-                                "titles":{
-                                    "exact_match":None,
-                                    "ned":None},
-                                "authors":{
-                                    "exact_match":None,
-                                    "jaccard":None,
-                                    "ndcg":None},
-                                "dois":None,
-                                "pmids":None
-                                }
         self.equalling = equalling
+        self.first_mentioned = {}
 
     def int(self, value):
         try:
