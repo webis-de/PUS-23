@@ -10,7 +10,7 @@ class Event:
         self.event_month = self.int(args["event_month"])
         self.event_day = self.int(args["event_day"])
         self.event_date = self.date(args["event_year"], args["event_month"], args["event_day"])
-        self.account = accountlist.accounts.get("account_id")
+        self.account = accountlist.accounts[int(args["account_id"])]
         self.sampled = bool(args["sampled"])
         self.event_text = args["event_text"]
         self.type = args["type"]

@@ -16,7 +16,7 @@ def stringify_delay(delay):
     else:
         return str(delay - 1).rjust(20, " ")
 
-data = sorted([event for event in load(open("../analysis/DE_TEST/2021_01_21_12_09_09/CRISPR_de.json")) if event["type"] == "publication" and event["bibentries"]], key=lambda event: int(event["event_year"]))
+data = sorted([event for event in load(open("../analysis/2021_01_21_11_53_58/CRISPR_en.json")) if event["type"] == "publication" and event["bibentries"]], key=lambda event: int(event["event_year"]))
 
 bibkey = [list(event["bibentries"].keys())[0] for event in data]
 event_years = [int(event["event_year"]) if event["event_year"] else None for event in data]
