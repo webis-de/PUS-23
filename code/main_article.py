@@ -62,7 +62,7 @@ def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_t
 
     #VERBATIM EVENT DOIS
     if event.dois and not event.first_mentioned["verbatim"].get("dois", None):
-        verbatim_doi_results = {event_doi:scroll_to_url(revision.url, event_doi) for event_doi in event.dois if event_doi.lower() in revision_text_ascii_lowered}
+        verbatim_doi_results = {event_doi:scroll_to_url(revision.url, event_doi) for event_doi in event.dois if event_doi and event_doi.lower() in revision_text_ascii_lowered}
         if len(verbatim_doi_results) == len(event.dois):
             event.first_mentioned["verbatim"]["dois"] = occurrence(revision, result=verbatim_doi_results)
 

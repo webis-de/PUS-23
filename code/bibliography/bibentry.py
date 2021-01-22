@@ -13,11 +13,11 @@ class Bibentry:
     def __init__(self, bibentry):
 
         self.bibkey = bibentry.key
-        self.title = self.replace_braces(bibentry.fields.get("title", ""))
+        self.title = self.replace_braces(bibentry.fields.get("title", None))
         self.authors = [self.replace_braces(person.last_names[0]) for person in bibentry.persons.get("author") if self.replace_braces(person.last_names[0])]
-        self.doi = bibentry.fields.get("doi", "")
-        self.pmid = bibentry.fields.get("pmid", "")
-        self.year = bibentry.fields.get("year", "")
+        self.doi = bibentry.fields.get("doi", None)
+        self.pmid = bibentry.fields.get("pmid", None)
+        self.year = bibentry.fields.get("year", None)
 
     def replace_braces(self, value):
         if type(value) == str:
