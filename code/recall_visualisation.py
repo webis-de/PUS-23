@@ -3,19 +3,24 @@ from os.path import dirname, sep
 from json import load
 import numpy as np
 
-HINT = 0.1
+NO_MATCH_OR_NEGATIVE = 0.05
+ZERO = 0.25
 
 def calculate_delay(match_year, event_year):
-    if match_year:
-        return max(HINT, match_year - event_year + 1)
+    if match_year != None:
+        delay = match_year - event_year
+        if delay < 0:
+            return NO_MATCH_OR_NEGATIVE
+        else:
+            return delay + ZERO
     else:
-        return HINT
+        return NO_MATCH_OR_NEGATIVE
 
 def stringify_delay(delay):
-    if delay == HINT or not delay:
+    if delay == NO_MATCH_OR_NEGATIVE:
         return "-".rjust(20, " ")
     else:
-        return str(delay - 1)
+        return str(int(delay - ZERO))
 
 def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
 
@@ -104,7 +109,7 @@ def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
         plt.subplots_adjust(bottom=0.15, top=0.99, left=0.01, right=0.998)
         plt.margins(x=0.0005, y=0.005)
         plt.xticks(np.arange(len(bibkey_list)), bibkey_list, rotation=90)
-        plt.xlabel("PUBLICATIONS\n(colours reprensent different metrics as per legend; years + 1, e.g. a column of height 1 means the publication occurred the same year; column hints for visualistion represent no match)")
+        plt.xlabel("PUBLICATIONS\n(colours represent different matching strategies as per legend | column hints of 0.1 represent no match or false positive (negative delay) | all matches +0.25 to visualise same-year occurrence)")
         plt.ylabel("OCCURRENCE DELAY IN YEARS")
         plt.bar(x - width*4, verbatim_title_delays, width=width, label="verbatim_title")
         plt.bar(x - width*3, verbatim_doi_delays, width=width, label="verbatim_doi")
