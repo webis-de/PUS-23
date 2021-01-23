@@ -3,7 +3,7 @@ from os.path import dirname, sep
 from json import load
 import numpy as np
 
-HINT = 0.2
+HINT = 0.1
 
 def calculate_delay(match_year, event_year):
     if match_year:
@@ -91,20 +91,20 @@ def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
 
     if skip_no_result:
         event_year_list = [str(year) for year in original_lists[1]]
-        year = event_year_list[0]
-        for i in range(1, len(event_year_list)):
-            if event_year_list[i] == year:
-                event_year_list[i] = ""
-            else:
-                year = event_year_list[i]
+##        year = event_year_list[0]
+##        for i in range(1, len(event_year_list)):
+##            if event_year_list[i] == year:
+##                event_year_list[i] = ""
+##            else:
+##                year = event_year_list[i]
 
         width = 0.1
-        x = np.arange(len(event_year_list))
-        plt.figure(figsize=(50, 3), dpi=150)
+        x = np.arange(len(bibkey_list))
+        plt.figure(figsize=(60, 12.5), dpi=200)
         plt.subplots_adjust(bottom=0.15, top=0.99, left=0.01, right=0.998)
         plt.margins(x=0.0005, y=0.005)
-        plt.xticks(np.arange(len(event_year_list)), event_year_list)
-        plt.xlabel("PUBLICATIONS  (colours reprensent different metrics as per legend; years + 1, e.g. a column of height 1 means the publication occurred the same year; column hints for visualistion represent no occurrence)")
+        plt.xticks(np.arange(len(bibkey_list)), bibkey_list, rotation=90)
+        plt.xlabel("PUBLICATIONS\n(colours reprensent different metrics as per legend; years + 1, e.g. a column of height 1 means the publication occurred the same year; column hints for visualistion represent no match)")
         plt.ylabel("OCCURRENCE DELAY IN YEARS")
         plt.bar(x - width*4, verbatim_title_delays, width=width, label="verbatim_title")
         plt.bar(x - width*3, verbatim_doi_delays, width=width, label="verbatim_doi")
