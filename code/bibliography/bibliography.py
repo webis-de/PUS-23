@@ -85,8 +85,3 @@ class Bibliography:
         plt.subplots_adjust(bottom=0.1, top=0.95, left=0.03, right=0.995)
         if not exists(directory): makedirs(directory)
         plt.savefig(directory + sep + "publication_distribution.png")
-
-if __name__ == "__main__":
-
-    b = Bibliography("../../data/tracing-innovations-lit.bib")
-    

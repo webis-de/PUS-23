@@ -4,7 +4,7 @@ from os.path import dirname, sep
 def calculate_and_write_recall_table(json_path, sort):
 
     with open(json_path) as file:
-        data = [event for event in load(file) if event["account"]]
+        data = [event for event in load(file) if event["bibentries"]]
 
     account_ids = sorted(set([event["account"]["account_id"] for event in data]), key = lambda x: int(x))
 
@@ -89,7 +89,9 @@ def calculate_and_write_recall_table(json_path, sort):
 
 if __name__ == "__main__":
 
-    calculate_and_write_recall_table("../analysis/2021_01_22_23_26_37/CRISPR_en.json", False)
-    calculate_and_write_recall_table("../analysis/2021_01_22_23_26_37/CRISPR_en.json", True)
+    json_file = "../analysis/2021_01_22_23_26_37/CRISPR_en.json"
+
+    calculate_and_write_recall_table(json_file, False)
+    calculate_and_write_recall_table(json_file, True)
 
 
