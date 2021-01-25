@@ -9,57 +9,62 @@ from pprint import pprint
 
 def heading(text):
     print(text)
-    print("="*len(text))
+    print("-"*len(text))
     print()
 
 if __name__ == "__main__":
-
-    bibliography = Bibliography("../data/tracing-innovations-lit.bib")
-    accountlist = AccountList("../data/CRISPR_accounts.csv")
-    eventlist = EventList("../data/CRISPR_publication-events.csv", bibliography, accountlist)
 
     conditions = [
         "event.type=='publication'",
         "event.extracted_from!='narrative_structure'",
         "not(event.extracted_from=='timeline_structure' and event.account_id in ['2','3','4'])"]
 
-    event_types = {}
+    EQUALLING = ["bibentries"]
 
-    for event in eventlist.events:
-        event_type = event.type if event.type else "-"
-        event_extracted_from = event.extracted_from if event.extracted_from else "-"
-        if event_type not in event_types:
-            event_types[event_type] = {}
-        if event_extracted_from not in event_types[event_type]:
-            event_types[event_type][event_extracted_from] = 0
-        event_types[event_type][event_extracted_from] += 1
+    for equalling in [[], EQUALLING]:
 
-    heading("\nEVENT TYPES")
-    pprint(event_types, width=10)
-
-    event_count = 0
-
-    for event in eventlist.events:
-        for condition in conditions:
-            if not eval(condition):
-                break
+        if equalling:
+            print("EQULLING OVER",equalling)
         else:
-            event_count += 1
+            print("NOT EQUALLING EVENTS.")
 
-    heading("\nEVENT COUNT")
-    print(len(eventlist.events), "(all)\n")
-    print(event_count, "with conditions:")
+        bibliography = Bibliography("../data/tracing-innovations-lit.bib")
+        accountlist = AccountList("../data/CRISPR_accounts.csv")
+        eventlist = EventList("../data/CRISPR_publication-events.csv", bibliography, accountlist, conditions, equalling)
 
-    print("".join(["\n - " + condition for condition in conditions]))
+        event_types = {}
 
-    for event in eventlist.events:
+        for event in eventlist.events:
+            event_type = event.type if event.type else "-"
+            event_extracted_from = event.extracted_from if event.extracted_from else "-"
+            if event_type not in event_types:
+                event_types[event_type] = {}
+            if event_extracted_from not in event_types[event_type]:
+                event_types[event_type][event_extracted_from] = 0
+            event_types[event_type][event_extracted_from] += 1
 
-        input()
-    
-##        heading(f"\nEVENT {event.event_id} (STRING)")
-##        print(event)
-        
-        heading(f"\nEVENT {event.event_id} (JSON)")
-        print([bibentry.bibkey for bibentry in event.bibentries])
+        heading("\nEVENT TYPES")
+        pprint(event_types, width=10)
+
+        event_count = 0
+
+        for event in eventlist.events:
+            for condition in conditions:
+                if not eval(condition):
+                    break
+            else:
+                event_count += 1
+
+        heading("\nEVENT COUNT")
+        print(len(eventlist.events), "(all)\n")
+        print(event_count, "with conditions:")
+
+        print("".join(["\n - " + condition for condition in conditions]))
+
+        heading("\nEVENTS WITH BIBENTRIES")
+
+        print(len([event for event in eventlist.events if event.bibentries]))
+
+        print("="*100)
 
         
