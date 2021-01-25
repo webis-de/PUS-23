@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
-from os.path import dirname, sep
 from json import load
+from os.path import dirname, sep
 import numpy as np
 
+#constants
 NO_MATCH_OR_NEGATIVE = 0.05
 ZERO = 0.25
 
@@ -21,6 +22,82 @@ def stringify_delay(delay):
         return "-".rjust(20, " ")
     else:
         return str(int(delay - ZERO))
+
+def calculate_and_write_recall_table(json_path, sort):
+
+    with open(json_path) as file:
+        data = [event for event in load(file) if event["bibentries"]]
+
+    account_ids = sorted(set([event["account"]["account_id"] for event in data]), key = lambda x: int(x))
+
+    if sort:
+        publication_events_by_account = {account_id:[] for account_id in account_ids}
+
+        for publication_event in data:
+            publication_events_by_account[publication_event["account"]["account_id"]].append(publication_event)
+    else:
+        publication_events_by_account = {"ALL ACOUNT IDs":[] for account_id in account_ids}
+
+        for publication_event in data:
+            publication_events_by_account["ALL ACOUNT IDs"].append(publication_event)   
+
+    with open(dirname(json_path) + sep + "recall" + ("_by_account" if sort else "") + ".csv", "w") as file:
+        for account_id, publication_events in publication_events_by_account.items():
+
+            file.write("Account ID: " + str(account_id) + "\n")
+            file.write("\n")
+            results = {"titles": {"data": [item for item in publication_events if item["first_mentioned"]["verbatim"]["titles"]],
+                                  "note": "each title occurs verbatim in revision"},
+                       "dois": {"data": [item for item in publication_events if item["first_mentioned"]["verbatim"]["dois"]],
+                                "note":"each doi occurs verbatim in revision"},
+                       "pmids": {"data": [item for item in publication_events if item["first_mentioned"]["verbatim"]["pmids"]],
+                                 "note":"each pmid occurs verbatim in a source (element in References or Further Reading)"},
+                       "ned <= 0.2": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned <= 0.2"]],
+                                      "note":"for each title there is a source with a title with normalised edit distance <= 0.2"},
+                       "ned <= 0.3": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned <= 0.3"]],
+                                      "note":"for each title there is a source with a title with normalised edit distance <= 0.3"},
+                       "ned <= 0.4": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned <= 0.4"]],
+                                      "note":"for each title there is a source with a title with normalised edit distance <= 0.4"},
+                       "ned_and_exact": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned_and_exact"]],
+                                     "note":"for each title there is a source with a title with normalised edit distance <= 0.4 and a list of authors with ratio >= 1.0"},
+                       "ned_and_jaccard": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned_and_jaccard"]],
+                                           "note":"for each title there is a source with a title with normalised edit distance <= 0.4 and a list of authors with Jaccard Index >= 0.8"},
+                       "ned_and_ndcg": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned_and_ndcg"]],
+                                        "note":"for each title there is a source with a title with normalised edit distance <= 0.4 and a list of authors with nDCG >= 0.8"},
+                       "any": {"data":
+                               [item for item in publication_events if
+                                item["first_mentioned"]["verbatim"]["titles"] or
+                                item["first_mentioned"]["verbatim"]["dois"] or 
+                                item["first_mentioned"]["verbatim"]["pmids"] or
+                                item["first_mentioned"]["relaxed"]["ned <= 0.2"] or
+                                item["first_mentioned"]["relaxed"]["ned <= 0.3"] or
+                                item["first_mentioned"]["relaxed"]["ned <= 0.4"] or
+                                item["first_mentioned"]["relaxed"]["ned_and_exact"] or
+                                item["first_mentioned"]["relaxed"]["ned_and_jaccard"] or
+                                item["first_mentioned"]["relaxed"]["ned_and_ndcg"]],
+                               "note":"any of the strategies above"},
+                       "verbatim and relaxed with author": {"data":
+                                                            [item for item in publication_events if
+                                                             item["first_mentioned"]["verbatim"]["titles"] or
+                                                             item["first_mentioned"]["verbatim"]["dois"] or 
+                                                             item["first_mentioned"]["verbatim"]["pmids"] or
+                                                             item["first_mentioned"]["relaxed"]["ned_and_exact"] or
+                                                             item["first_mentioned"]["relaxed"]["ned_and_jaccard"] or
+                                                             item["first_mentioned"]["relaxed"]["ned_and_ndcg"]],
+                                                            "note":"verbatim strategies and relaxed strategies with authors"},
+                       }
+
+            file.write("number of events" + "," + str(len(publication_events)) + "\n")
+            file.write("\n")
+            file.write("Strategy Employed to Identify First Occurrence" + "," + "Absolute" + "," + "Relative" + "," + "Notes" + "\n")
+            file.write("--- Verbatim Match Measures ---" + "\n")
+            for key,value in results.items():
+                if key == "any":
+                    file.write("--- Combined Measures ---" + "\n")
+                file.write(key + "," + str(len(value["data"])) + "," + str(round(len(value["data"])/len(publication_events)*100, 2)) + "," + value["note"] + "\n")
+                if key == "pmids":
+                    file.write("--- Relaxed Match Measures ---" + "\n")
+            file.write("\n")
 
 def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
 
@@ -96,14 +173,16 @@ def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
 
     if skip_no_result:
         event_year_list = [str(year) for year in original_lists[1]]
-##        year = event_year_list[0]
-##        for i in range(1, len(event_year_list)):
-##            if event_year_list[i] == year:
-##                event_year_list[i] = ""
-##            else:
-##                year = event_year_list[i]
+        '''
+        year = event_year_list[0]
+        for i in range(1, len(event_year_list)):
+            if event_year_list[i] == year:
+                event_year_list[i] = ""
+            else:
+                year = event_year_list[i]
+        '''
 
-        width = 0.1
+        width = 0.08
         x = np.arange(len(bibkey_list))
         plt.figure(figsize=(60, 12.5), dpi=200)
         plt.subplots_adjust(bottom=0.15, top=0.99, left=0.01, right=0.998)
@@ -126,5 +205,10 @@ def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
 if __name__ == "__main__":
 
     json_file = "../analysis/2021_01_22_23_26_37/CRISPR_en.json"
+    
     calculate_delays_and_write_table_and_plot(json_file, False)
     calculate_delays_and_write_table_and_plot(json_file, True)
+    calculate_and_write_recall_table(json_file, False)
+    calculate_and_write_recall_table(json_file, True)
+
+
