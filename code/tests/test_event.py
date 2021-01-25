@@ -7,7 +7,7 @@ class MockedAccountList:
 
     def __init__(self):
 
-        self.accounts = {"1":"1", "2":"2", "3":"3", "4":"4", "5":"5"}
+        self.accounts = {1:"1", 2:"2", 3:"3", 4:"4", 5:"5"}
 
 class MockedBibliography:
 

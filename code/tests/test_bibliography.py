@@ -15,16 +15,5 @@ class TestBibliography(unittest.TestCase):
                     print(bibentry)
                 AUTHOR = ("\t" + author)
 
-    def test_replace_braces(self):
-
-        bibliography = Bibliography(".." + sep + "data" + sep + "tracing-innovations-lit.bib")
-
-        title = '{Identification of Genes that Are Associated with DNA Repeats in Prokaryotes}'
-        persons = ['Jansen, Ruud', '{van Embden}, {Jan D. A.}', 'Gaastra, Wim', 'Schouls, {Leo M.}']
-
-        self.assertEqual(list(bibliography.bibentries.values())[0].replace_braces(title), "Identification of Genes that Are Associated with DNA Repeats in Prokaryotes")
-        self.assertEqual(list(bibliography.bibentries.values())[0].replace_braces(persons), ['Jansen, Ruud', 'van Embden, Jan D. A.', 'Gaastra, Wim', 'Schouls, Leo M.'])
-        self.assertEqual(list(bibliography.bibentries.values())[0].replace_braces(tuple(persons[1].split(", "))),('van Embden', 'Jan D. A.'))
-
 if __name__ == "__main__":
     unittest.main()
