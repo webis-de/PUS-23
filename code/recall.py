@@ -91,7 +91,7 @@ def calculate_and_write_recall_table(json_path, sort):
                                                              item["first_mentioned"]["relaxed"]["ned_and_exact"] or
                                                              item["first_mentioned"]["relaxed"]["ned_and_jaccard"] or
                                                              item["first_mentioned"]["relaxed"]["ned_and_ndcg"]],
-                                                            "note":"any of the verbatim strategies and or any of the relaxed strategies with authors"},
+                                                            "note":"any of the verbatim strategies or any of the relaxed strategies with authors"},
                        }
 
             file.write("number of events" + "," + str(len(publication_events)) + "\n")

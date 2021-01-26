@@ -14,7 +14,7 @@ def heading(text):
 
 if __name__ == "__main__":
 
-    conditions = []
+    conditions = ["event.account.account_id in [2,17]"]
 
     EQUALLING = ["bibentries"]
 
