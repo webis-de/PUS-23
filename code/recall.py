@@ -6,10 +6,11 @@ import numpy as np
 #constants
 NO_MATCH_OR_NEGATIVE = 0.05
 ZERO = 0.25
+ARTICLE_YEAR = 2005
 
 def calculate_delay(match_year, event_year):
     if match_year != None:
-        delay = match_year - event_year
+        delay = match_year - max(event_year, ARTICLE_YEAR)
         if delay < 0:
             return NO_MATCH_OR_NEGATIVE
         else:
@@ -19,7 +20,7 @@ def calculate_delay(match_year, event_year):
 
 def stringify_delay(delay):
     if delay == NO_MATCH_OR_NEGATIVE:
-        return "-".rjust(20, " ")
+        return "-"
     else:
         return str(int(delay - ZERO))
 
@@ -76,6 +77,12 @@ def calculate_and_write_recall_table(json_path, sort):
                                 item["first_mentioned"]["relaxed"]["ned_and_jaccard"] or
                                 item["first_mentioned"]["relaxed"]["ned_and_ndcg"]],
                                "note":"any of the strategies above"},
+                        "any verbatim": {"data":
+                               [item for item in publication_events if
+                                item["first_mentioned"]["verbatim"]["titles"] or
+                                item["first_mentioned"]["verbatim"]["dois"] or 
+                                item["first_mentioned"]["verbatim"]["pmids"]],
+                               "note":"any of the verbatim strategies above"},
                        "verbatim and relaxed with author": {"data":
                                                             [item for item in publication_events if
                                                              item["first_mentioned"]["verbatim"]["titles"] or
@@ -84,7 +91,7 @@ def calculate_and_write_recall_table(json_path, sort):
                                                              item["first_mentioned"]["relaxed"]["ned_and_exact"] or
                                                              item["first_mentioned"]["relaxed"]["ned_and_jaccard"] or
                                                              item["first_mentioned"]["relaxed"]["ned_and_ndcg"]],
-                                                            "note":"verbatim strategies and relaxed strategies with authors"},
+                                                            "note":"any of the verbatim strategies and or any of the relaxed strategies with authors"},
                        }
 
             file.write("number of events" + "," + str(len(publication_events)) + "\n")
@@ -171,6 +178,13 @@ def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
                        stringify_delay(ned_and_jaccard_delay) + "," + \
                        stringify_delay(ned_and_ndcg_delay) + "\n")
 
+        if not skip_no_result:
+            file.write("\n")
+            file.write("RECALL,")
+            for i in range(2, len(original_lists)):
+                file.write("," + str(round(len([item for item in original_lists[i] if item])/len(original_lists[i])*100, 2)))
+            
+
     if skip_no_result:
         event_year_list = [str(year) for year in original_lists[1]]
         '''
@@ -204,7 +218,7 @@ def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
 
 if __name__ == "__main__":
 
-    json_file = "../analysis/2021_01_22_23_26_37/CRISPR_en.json"
+    json_file = "../analysis/2021_01_25_14_44_39/CRISPR_en.json"
     
     calculate_delays_and_write_table_and_plot(json_file, False)
     calculate_delays_and_write_table_and_plot(json_file, True)

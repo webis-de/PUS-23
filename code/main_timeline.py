@@ -14,10 +14,7 @@ def heading(text):
 
 if __name__ == "__main__":
 
-    conditions = [
-        "event.type=='publication'",
-        "event.extracted_from!='narrative_structure'",
-        "not(event.extracted_from=='timeline_structure' and event.account_id in ['2','3','4'])"]
+    conditions = ["event.account.account_id in [2,17]"]
 
     EQUALLING = ["bibentries"]
 
