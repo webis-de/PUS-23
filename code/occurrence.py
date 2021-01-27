@@ -24,7 +24,7 @@ def stringify_delay(delay):
     else:
         return str(int(delay - ZERO))
 
-def calculate_and_write_recall_table(json_path, sort):
+def calculate_and_write_occurrence_table(json_path, sort):
 
     with open(json_path) as file:
         data = [event for event in load(file) if event["bibentries"]]
@@ -42,7 +42,7 @@ def calculate_and_write_recall_table(json_path, sort):
         for publication_event in data:
             publication_events_by_account["ALL ACOUNT IDs"].append(publication_event)   
 
-    with open(dirname(json_path) + sep + "recall" + ("_by_account" if sort else "") + ".csv", "w") as file:
+    with open(dirname(json_path) + sep + "occurrence" + ("_by_account" if sort else "") + ".csv", "w") as file:
         for account_id, publication_events in publication_events_by_account.items():
 
             file.write("Account ID: " + str(account_id) + "\n")
@@ -151,7 +151,7 @@ def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
     ned_and_jaccard_delays = [calculate_delay(match, year) for match,year in zip(original_lists[9], event_year_list)]
     ned_and_ndcg_delays = [calculate_delay(match, year) for match,year in zip(original_lists[10], event_year_list)]
 
-    with open(dirname(json_file) + sep + "recall" + "_by_bibkey" + ("_all" if not skip_no_result else "") + ".csv", "w") as file:
+    with open(dirname(json_file) + sep + "occurrence" + "_by_bibkey" + ("_all" if not skip_no_result else "") + ".csv", "w") as file:
         file.write("bibkey" + "," + \
                    "event_year" + "," + \
                    "verbatim_title" + "," + \
@@ -180,7 +180,7 @@ def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
 
         if not skip_no_result:
             file.write("\n")
-            file.write("RECALL,")
+            file.write("OCCURRENCE,")
             for i in range(2, len(original_lists)):
                 file.write("," + str(round(len([item for item in original_lists[i] if item])/len(original_lists[i])*100, 2)))
             
@@ -218,11 +218,11 @@ def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
 
 if __name__ == "__main__":
 
-    json_file = "../analysis/2021_01_25_14_44_39/CRISPR_en.json"
+    json_file = "../analysis/2021_01_26_22_22_55/CRISPR_en.json"
     
     calculate_delays_and_write_table_and_plot(json_file, False)
     calculate_delays_and_write_table_and_plot(json_file, True)
-    calculate_and_write_recall_table(json_file, False)
-    calculate_and_write_recall_table(json_file, True)
+    calculate_and_write_occurrence_table(json_file, False)
+    calculate_and_write_occurrence_table(json_file, True)
 
 
