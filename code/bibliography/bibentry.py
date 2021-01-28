@@ -19,6 +19,7 @@ class Bibentry:
         self.bibkey = bibentry.key
         self.title = self.replace_braces(bibentry.fields.get("title", None))
         self.authors = [self.replace_braces(person.last_names[0]) for person in bibentry.persons.get("author") if self.replace_braces(person.last_names[0])]
+        self.journal = bibentry.fields.get("journal", None)
         self.doi = bibentry.fields.get("doi", None)
         self.pmid = bibentry.fields.get("pmid", None)
         self.year = bibentry.fields.get("year", None)
