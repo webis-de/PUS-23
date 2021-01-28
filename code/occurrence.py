@@ -77,21 +77,31 @@ def calculate_and_write_occurrence_table(json_path, sort):
                                 item["first_mentioned"]["relaxed"]["ned_and_jaccard"] or
                                 item["first_mentioned"]["relaxed"]["ned_and_ndcg"]],
                                "note":"any of the strategies above"},
-                        "any verbatim": {"data":
-                               [item for item in publication_events if
-                                item["first_mentioned"]["verbatim"]["titles"] or
-                                item["first_mentioned"]["verbatim"]["dois"] or 
-                                item["first_mentioned"]["verbatim"]["pmids"]],
-                               "note":"any of the verbatim strategies above"},
-                       "verbatim and relaxed with author": {"data":
-                                                            [item for item in publication_events if
-                                                             item["first_mentioned"]["verbatim"]["titles"] or
-                                                             item["first_mentioned"]["verbatim"]["dois"] or 
-                                                             item["first_mentioned"]["verbatim"]["pmids"] or
-                                                             item["first_mentioned"]["relaxed"]["ned_and_exact"] or
-                                                             item["first_mentioned"]["relaxed"]["ned_and_jaccard"] or
-                                                             item["first_mentioned"]["relaxed"]["ned_and_ndcg"]],
-                                                            "note":"any of the verbatim strategies or any of the relaxed strategies with authors"},
+                       "verbatim": {"data":
+                                    [item for item in publication_events if
+                                     item["first_mentioned"]["verbatim"]["titles"] or
+                                     item["first_mentioned"]["verbatim"]["dois"] or
+                                     item["first_mentioned"]["verbatim"]["pmids"]],
+                                    "note":"any of the verbatim strategies above"},
+                       "verbatim|ned <= 0.2|ned_and_exact|ned_and_jaccard|ned_and_ndcg": {"data":
+                                                                                              [item for item in publication_events if
+                                                                                               item["first_mentioned"]["verbatim"]["titles"] or
+                                                                                               item["first_mentioned"]["verbatim"]["dois"] or
+                                                                                               item["first_mentioned"]["verbatim"]["pmids"] or
+                                                                                               item["first_mentioned"]["relaxed"]["ned <= 0.2"] or
+                                                                                               item["first_mentioned"]["relaxed"]["ned_and_exact"] or
+                                                                                               item["first_mentioned"]["relaxed"]["ned_and_jaccard"] or
+                                                                                               item["first_mentioned"]["relaxed"]["ned_and_ndcg"]],
+                                                                                              "note":"any of the verbatim strategies or title edit distance less or equal 0.2 or any of the relaxed strategies with authors"},
+                       "verbatim|ned_and_exact|ned_and_jaccard|ned_and_ndcg": {"data":
+                                                                                  [item for item in publication_events if
+                                                                                   item["first_mentioned"]["verbatim"]["titles"] or
+                                                                                   item["first_mentioned"]["verbatim"]["dois"] or
+                                                                                   item["first_mentioned"]["verbatim"]["pmids"] or
+                                                                                   item["first_mentioned"]["relaxed"]["ned_and_exact"] or
+                                                                                   item["first_mentioned"]["relaxed"]["ned_and_jaccard"] or
+                                                                                   item["first_mentioned"]["relaxed"]["ned_and_ndcg"]],
+                                                                                  "note":"any of the verbatim strategies or any of the relaxed strategies with authors"}
                        }
 
             file.write("number of events" + "," + str(len(publication_events)) + "\n")
@@ -220,9 +230,8 @@ if __name__ == "__main__":
 
     json_file = "../analysis/2021_01_26_22_22_55/CRISPR_en.json"
     
-    calculate_delays_and_write_table_and_plot(json_file, False)
-    calculate_delays_and_write_table_and_plot(json_file, True)
     calculate_and_write_occurrence_table(json_file, False)
-    calculate_and_write_occurrence_table(json_file, True)
+    calculate_delays_and_write_table_and_plot(json_file, True)
+    calculate_delays_and_write_table_and_plot(json_file, False)
 
 
