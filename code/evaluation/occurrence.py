@@ -65,43 +65,30 @@ def calculate_and_write_occurrence_table(json_path, sort):
                                            "note":"for each title there is a source with a title with normalised edit distance <= 0.4 and a list of authors with Jaccard Index >= 0.8"},
                        "ned_and_skat": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned_and_skat"]],
                                         "note":"for each title there is a source with a title with normalised edit distance <= 0.4 and a list of authors with Skat >= 0.8"},
-                       "any": {"data":
-                               [item for item in publication_events if
-                                item["first_mentioned"]["verbatim"]["titles"] or
-                                item["first_mentioned"]["verbatim"]["dois"] or 
-                                item["first_mentioned"]["verbatim"]["pmids"] or
-                                item["first_mentioned"]["relaxed"]["ned <= 0.2"] or
-                                item["first_mentioned"]["relaxed"]["ned <= 0.3"] or
-                                item["first_mentioned"]["relaxed"]["ned <= 0.4"] or
-                                item["first_mentioned"]["relaxed"]["ned_and_ratio"] or
-                                item["first_mentioned"]["relaxed"]["ned_and_jaccard"] or
-                                item["first_mentioned"]["relaxed"]["ned_and_skat"]],
-                               "note":"any of the strategies above"},
-                       "verbatim": {"data":
-                                    [item for item in publication_events if
-                                     item["first_mentioned"]["verbatim"]["titles"] or
-                                     item["first_mentioned"]["verbatim"]["dois"] or
-                                     item["first_mentioned"]["verbatim"]["pmids"]],
-                                    "note":"any of the verbatim strategies above"},
-                       "verbatim|ned <= 0.2|ned_and_ratio|ned_and_jaccard|ned_and_skat": {"data":
-                                                                                              [item for item in publication_events if
-                                                                                               item["first_mentioned"]["verbatim"]["titles"] or
-                                                                                               item["first_mentioned"]["verbatim"]["dois"] or
-                                                                                               item["first_mentioned"]["verbatim"]["pmids"] or
-                                                                                               item["first_mentioned"]["relaxed"]["ned <= 0.2"] or
-                                                                                               item["first_mentioned"]["relaxed"]["ned_and_ratio"] or
-                                                                                               item["first_mentioned"]["relaxed"]["ned_and_jaccard"] or
-                                                                                               item["first_mentioned"]["relaxed"]["ned_and_skat"]],
-                                                                                              "note":"any of the verbatim strategies or title edit distance less or equal 0.2 or any of the relaxed strategies with authors"},
-                       "verbatim|ned_and_ratio|ned_and_jaccard|ned_and_skat": {"data":
-                                                                                  [item for item in publication_events if
-                                                                                   item["first_mentioned"]["verbatim"]["titles"] or
-                                                                                   item["first_mentioned"]["verbatim"]["dois"] or
-                                                                                   item["first_mentioned"]["verbatim"]["pmids"] or
-                                                                                   item["first_mentioned"]["relaxed"]["ned_and_ratio"] or
-                                                                                   item["first_mentioned"]["relaxed"]["ned_and_jaccard"] or
-                                                                                   item["first_mentioned"]["relaxed"]["ned_and_skat"]],
-                                                                                  "note":"any of the verbatim strategies or any of the relaxed strategies with authors"}
+                       "any verbatim": {"data": [item for item in publication_events if any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]])],
+                                        "note":"any of the verbatim strategies above"},
+                       "verbatim|ned <= 0.2": {"data": [item for item in publication_events if any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["first_mentioned"]["relaxed"]["ned <= 0.2"]],
+                                               "note":"any of the verbatim strategies or title edit distance less or equal 0.2"},
+                       "verbatim|ned <= 0.3": {"data": [item for item in publication_events if any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["first_mentioned"]["relaxed"]["ned <= 0.3"]],
+                                               "note":"any of the verbatim strategies or title edit distance less or equal 0.3"},
+                       "verbatim|ned <= 0.4": {"data": [item for item in publication_events if any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["first_mentioned"]["relaxed"]["ned <= 0.4"]],
+                                               "note":"any of the verbatim strategies or title edit distance less or equal 0.4"},
+                       "verbatim|ned_and_ratio": {"data": [item for item in publication_events if any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["first_mentioned"]["relaxed"]["ned_and_ratio"]],
+                                                  "note":"any of the verbatim strategies or title edit distance less or equal 0.4 and a list of authors with ratio >= 1.0"},
+                       "verbatim|ned_and_jaccard": {"data": [item for item in publication_events if any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["first_mentioned"]["relaxed"]["ned_and_jaccard"]],
+                                                    "note":"any of the verbatim strategies or title edit distance less or equal 0.4 and a list of authors with Jaccard Index >= 0.8"},
+                       "verbatim|ned_and_skat": {"data": [item for item in publication_events if any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["first_mentioned"]["relaxed"]["ned_and_skat"]],
+                                                 "note":"any of the verbatim strategies or title edit distance less or equal 0.4 and a list of authors with Skat >= 0.8"},
+                       "verbatim|ned <= 0.2|ned_and_jaccard|ned_and_skat": {"data":  [item for item in publication_events if
+                                                                                      any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or
+                                                                                      any([item["first_mentioned"]["relaxed"][key] for key in ["ned <= 0.2","ned_and_jaccard","ned_and_skat"]])
+                                                                                      ],
+                                                                            "note":"any of the verbatim strategies or title edit distance less or equal 0.2 or title edit distance less or equal 0.4 and a list of authors with Skat >= 0.8 or Jaccard Index >= 0.8"},
+                       "verbatim|ned <= 0.2|ned_and_skat": {"data":[item for item in publication_events if
+                                                                    any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or
+                                                                    any([item["first_mentioned"]["relaxed"][key] for key in ["ned <= 0.2","ned_and_skat"]])
+                                                                    ],
+                                                            "note":"any of the verbatim strategies or title edit distance less or equal 0.2 or title edit distance less or equal 0.4 and a list of authors with Skat >= 0.8"}
                        }
 
             file.write("number of events" + "," + str(len(publication_events)) + "\n")
@@ -109,7 +96,7 @@ def calculate_and_write_occurrence_table(json_path, sort):
             file.write("Strategy Employed to Identify First Occurrence" + "," + "Absolute" + "," + "Relative" + "," + "Notes" + "\n")
             file.write("--- Verbatim Match Measures ---" + "\n")
             for key,value in results.items():
-                if key == "any":
+                if key == "any verbatim":
                     file.write("--- Combined Measures ---" + "\n")
                 file.write(key + "," + str(len(value["data"])) + "," + str(round(len(value["data"])/len(publication_events)*100, 2)) + "," + value["note"] + "\n")
                 if key == "pmids":
@@ -228,10 +215,10 @@ def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
 
 if __name__ == "__main__":
 
-    json_file = "../../analysis/TEST/2021_01_29_18_39_55/CRISPR_de.json"
+    from path import json_path
     
-    calculate_and_write_occurrence_table(json_file, False)
-    calculate_delays_and_write_table_and_plot(json_file, True)
-    calculate_delays_and_write_table_and_plot(json_file, False)
+    calculate_and_write_occurrence_table(json_path, False)
+    calculate_delays_and_write_table_and_plot(json_path, True)
+    calculate_delays_and_write_table_and_plot(json_path, False)
 
 

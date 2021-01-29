@@ -1,10 +1,15 @@
 from os.path import basename, dirname, sep
 from json import load, dumps
+from path import json_path
 
-json_file = "../../analysis/TEST/2021_01_29_18_39_55/CRISPR_de.json"
-excluded_methods = ["ned_and_ratio"]
+excluded_methods = ["ned <= 0.2",
+                    "ned <= 0.3",
+                    "ned <= 0.4",
+                    "ned_and_ratio",
+                    "ned_and_jaccard",
+                    "ned_and_skat"]
 
-with open(json_file) as file:
+with open(json_path) as file:
     events = load(file)
 
 reduced_events = []
@@ -23,7 +28,7 @@ for event in events:
         event["first_mentioned"] = occurrences[0]
         reduced_events.append(event)
         
-with open(json_file.replace(".json", "_reduced.json"), "w") as file:
+with open(json_path.replace(".json", "_reduced.json"), "w") as file:
     file.write("[" + "\n")
     file.write(",\n".join([dumps(event) for event in reduced_events]))
     file.write("\n" + "]")

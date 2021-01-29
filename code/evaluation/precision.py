@@ -1,8 +1,7 @@
 from json import load, dumps
 from os.path import basename, dirname, sep
 from pprint import pprint
-
-json_path = "../../analysis/TEST/2021_01_29_18_32_05/CRISPR_de.json"
+from path import json_path
 
 with open(json_path) as file:
     data = load(file)
