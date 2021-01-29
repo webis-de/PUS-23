@@ -56,14 +56,9 @@ class Bibliography:
         Args:
             bib_keys: A list of strings representing bib_keys.
         Returns:
-            A list of Bibentries.
+            A dictionary of Bibentries.
         """
-        bibentries = []
-        for bib_key in bib_keys:
-            publication = self.bibentries.get(bib_key)
-            if publication:
-                bibentries.append(publication)
-        return bibentries
+        return {bib_key:self.bibentries[bib_key] for bib_key in bib_keys if self.bibentries[bib_key]}
 
     def plot_publication_distribution_to_file(self, directory):
         """

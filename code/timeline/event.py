@@ -19,10 +19,10 @@ class Event:
         self.wos_keys = args["wos_keys"]
         self.extracted_from = args["extracted_from"]
         self.comment = args["comment"]
-        self.titles = {bibentry.bibkey:bibentry.title for bibentry in self.bibentries}
-        self.authors = {bibentry.bibkey:bibentry.authors for bibentry in self.bibentries}
-        self.dois = [bibentry.doi for bibentry in self.bibentries]
-        self.pmids = [bibentry.pmid for bibentry in self.bibentries]
+        self.titles = {bibkey:bibentry.title for bibkey,bibentry in self.bibentries.items()}
+        self.authors = {bibkey:bibentry.authors for bibkey,bibentry in self.bibentries.items()}
+        self.dois = [bibentry.doi for bibentry in self.bibentries.values()]
+        self.pmids = [bibentry.pmid for bibentry in self.bibentries.values()]
         self.equalling = equalling
         self.first_mentioned = {}
 
@@ -69,7 +69,7 @@ class Event:
             copy["account"] = self.account.__dict__
         except AttributeError:
             copy["account"] = None
-        copy["bibentries"] = {bibentry.bibkey:bibentry.__dict__ for bibentry in copy["bibentries"]}
+        copy["bibentries"] = {bibkey:bibentry.__dict__ for bibkey,bibentry in copy["bibentries"].items()}
         return copy
 
     def prettyprint(self, structure, indent = ""):
