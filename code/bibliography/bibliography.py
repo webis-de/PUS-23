@@ -54,7 +54,7 @@ class Bibliography:
         Get all Bibentries pertaining to the bib_keys provided.
 
         Args:
-            bib_keys: A list of String representing bib_keys.
+            bib_keys: A list of strings representing bib_keys.
         Returns:
             A list of Bibentries.
         """

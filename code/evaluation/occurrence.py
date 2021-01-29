@@ -59,12 +59,12 @@ def calculate_and_write_occurrence_table(json_path, sort):
                                       "note":"for each title there is a source with a title with normalised edit distance <= 0.3"},
                        "ned <= 0.4": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned <= 0.4"]],
                                       "note":"for each title there is a source with a title with normalised edit distance <= 0.4"},
-                       "ned_and_exact": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned_and_exact"]],
+                       "ned_and_ratio": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned_and_ratio"]],
                                      "note":"for each title there is a source with a title with normalised edit distance <= 0.4 and a list of authors with ratio >= 1.0"},
                        "ned_and_jaccard": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned_and_jaccard"]],
                                            "note":"for each title there is a source with a title with normalised edit distance <= 0.4 and a list of authors with Jaccard Index >= 0.8"},
-                       "ned_and_ndcg": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned_and_ndcg"]],
-                                        "note":"for each title there is a source with a title with normalised edit distance <= 0.4 and a list of authors with nDCG >= 0.8"},
+                       "ned_and_skat": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned_and_skat"]],
+                                        "note":"for each title there is a source with a title with normalised edit distance <= 0.4 and a list of authors with Skat >= 0.8"},
                        "any": {"data":
                                [item for item in publication_events if
                                 item["first_mentioned"]["verbatim"]["titles"] or
@@ -73,9 +73,9 @@ def calculate_and_write_occurrence_table(json_path, sort):
                                 item["first_mentioned"]["relaxed"]["ned <= 0.2"] or
                                 item["first_mentioned"]["relaxed"]["ned <= 0.3"] or
                                 item["first_mentioned"]["relaxed"]["ned <= 0.4"] or
-                                item["first_mentioned"]["relaxed"]["ned_and_exact"] or
+                                item["first_mentioned"]["relaxed"]["ned_and_ratio"] or
                                 item["first_mentioned"]["relaxed"]["ned_and_jaccard"] or
-                                item["first_mentioned"]["relaxed"]["ned_and_ndcg"]],
+                                item["first_mentioned"]["relaxed"]["ned_and_skat"]],
                                "note":"any of the strategies above"},
                        "verbatim": {"data":
                                     [item for item in publication_events if
@@ -83,24 +83,24 @@ def calculate_and_write_occurrence_table(json_path, sort):
                                      item["first_mentioned"]["verbatim"]["dois"] or
                                      item["first_mentioned"]["verbatim"]["pmids"]],
                                     "note":"any of the verbatim strategies above"},
-                       "verbatim|ned <= 0.2|ned_and_exact|ned_and_jaccard|ned_and_ndcg": {"data":
+                       "verbatim|ned <= 0.2|ned_and_ratio|ned_and_jaccard|ned_and_skat": {"data":
                                                                                               [item for item in publication_events if
                                                                                                item["first_mentioned"]["verbatim"]["titles"] or
                                                                                                item["first_mentioned"]["verbatim"]["dois"] or
                                                                                                item["first_mentioned"]["verbatim"]["pmids"] or
                                                                                                item["first_mentioned"]["relaxed"]["ned <= 0.2"] or
-                                                                                               item["first_mentioned"]["relaxed"]["ned_and_exact"] or
+                                                                                               item["first_mentioned"]["relaxed"]["ned_and_ratio"] or
                                                                                                item["first_mentioned"]["relaxed"]["ned_and_jaccard"] or
-                                                                                               item["first_mentioned"]["relaxed"]["ned_and_ndcg"]],
+                                                                                               item["first_mentioned"]["relaxed"]["ned_and_skat"]],
                                                                                               "note":"any of the verbatim strategies or title edit distance less or equal 0.2 or any of the relaxed strategies with authors"},
-                       "verbatim|ned_and_exact|ned_and_jaccard|ned_and_ndcg": {"data":
+                       "verbatim|ned_and_ratio|ned_and_jaccard|ned_and_skat": {"data":
                                                                                   [item for item in publication_events if
                                                                                    item["first_mentioned"]["verbatim"]["titles"] or
                                                                                    item["first_mentioned"]["verbatim"]["dois"] or
                                                                                    item["first_mentioned"]["verbatim"]["pmids"] or
-                                                                                   item["first_mentioned"]["relaxed"]["ned_and_exact"] or
+                                                                                   item["first_mentioned"]["relaxed"]["ned_and_ratio"] or
                                                                                    item["first_mentioned"]["relaxed"]["ned_and_jaccard"] or
-                                                                                   item["first_mentioned"]["relaxed"]["ned_and_ndcg"]],
+                                                                                   item["first_mentioned"]["relaxed"]["ned_and_skat"]],
                                                                                   "note":"any of the verbatim strategies or any of the relaxed strategies with authors"}
                        }
 
@@ -129,11 +129,11 @@ def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
     ned_02_list = [int(event["first_mentioned"]["relaxed"]["ned <= 0.2"]["timestamp"][:4]) if event["first_mentioned"]["relaxed"]["ned <= 0.2"] else None for event in data]
     ned_03_list = [int(event["first_mentioned"]["relaxed"]["ned <= 0.3"]["timestamp"][:4]) if event["first_mentioned"]["relaxed"]["ned <= 0.3"] else None for event in data]
     ned_04_list = [int(event["first_mentioned"]["relaxed"]["ned <= 0.4"]["timestamp"][:4]) if event["first_mentioned"]["relaxed"]["ned <= 0.4"] else None for event in data]
-    ned_and_exact_list = [int(event["first_mentioned"]["relaxed"]["ned_and_exact"]["timestamp"][:4]) if event["first_mentioned"]["relaxed"]["ned_and_exact"] else None for event in data]
+    ned_and_ratio_list = [int(event["first_mentioned"]["relaxed"]["ned_and_ratio"]["timestamp"][:4]) if event["first_mentioned"]["relaxed"]["ned_and_ratio"] else None for event in data]
     ned_and_jaccard_list = [int(event["first_mentioned"]["relaxed"]["ned_and_jaccard"]["timestamp"][:4]) if event["first_mentioned"]["relaxed"]["ned_and_jaccard"] else None for event in data]
-    ned_and_ndcg_list = [int(event["first_mentioned"]["relaxed"]["ned_and_ndcg"]["timestamp"][:4]) if event["first_mentioned"]["relaxed"]["ned_and_ndcg"] else None for event in data]
+    ned_and_skat_list = [int(event["first_mentioned"]["relaxed"]["ned_and_skat"]["timestamp"][:4]) if event["first_mentioned"]["relaxed"]["ned_and_skat"] else None for event in data]
 
-    original_lists = [bibkey_list, event_year_list, verbatim_title_list, verbatim_doi_list, verbatim_pmid_list, ned_02_list, ned_03_list, ned_04_list, ned_and_exact_list, ned_and_jaccard_list, ned_and_ndcg_list]
+    original_lists = [bibkey_list, event_year_list, verbatim_title_list, verbatim_doi_list, verbatim_pmid_list, ned_02_list, ned_03_list, ned_04_list, ned_and_ratio_list, ned_and_jaccard_list, ned_and_skat_list]
 
     if skip_no_result:
         value_lists = original_lists[2:]
@@ -157,9 +157,9 @@ def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
     ned_02_delays = [calculate_delay(match, year) for match,year in zip(original_lists[5], event_year_list)]
     ned_03_delays = [calculate_delay(match, year) for match,year in zip(original_lists[6], event_year_list)]
     ned_04_delays = [calculate_delay(match, year) for match,year in zip(original_lists[7], event_year_list)]
-    ned_and_exact_delays = [calculate_delay(match, year) for match,year in zip(original_lists[8], event_year_list)]
+    ned_and_ratio_delays = [calculate_delay(match, year) for match,year in zip(original_lists[8], event_year_list)]
     ned_and_jaccard_delays = [calculate_delay(match, year) for match,year in zip(original_lists[9], event_year_list)]
-    ned_and_ndcg_delays = [calculate_delay(match, year) for match,year in zip(original_lists[10], event_year_list)]
+    ned_and_skat_delays = [calculate_delay(match, year) for match,year in zip(original_lists[10], event_year_list)]
 
     with open(dirname(json_file) + sep + "occurrence" + "_by_bibkey" + ("_all" if not skip_no_result else "") + ".csv", "w") as file:
         file.write("bibkey" + "," + \
@@ -170,12 +170,12 @@ def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
                    "ned <= 0.2" + "," + \
                    "ned <= 0.3" + "," + \
                    "ned <= 0.4" + "," + \
-                   "ned_and_exact" + "," + \
+                   "ned_and_ratio" + "," + \
                    "ned_and_jaccard" + "," + \
-                   "ned_and_ndcg" + "\n")
+                   "ned_and_skat" + "\n")
 
-        for bibkey, event_year, verbatim_title_delay, verbatim_doi_delay, verbatim_pmid_delay, ned_02_delay, ned_03_delay, ned_04_delay, ned_and_exact_delay, ned_and_jaccard_delay, ned_and_ndcg_delay in \
-            zip(bibkey_list, event_year_list, verbatim_title_delays, verbatim_doi_delays, verbatim_pmid_delays, ned_02_delays, ned_03_delays, ned_04_delays, ned_and_exact_delays, ned_and_jaccard_delays, ned_and_ndcg_delays):
+        for bibkey, event_year, verbatim_title_delay, verbatim_doi_delay, verbatim_pmid_delay, ned_02_delay, ned_03_delay, ned_04_delay, ned_and_ratio_delay, ned_and_jaccard_delay, ned_and_skat_delay in \
+            zip(bibkey_list, event_year_list, verbatim_title_delays, verbatim_doi_delays, verbatim_pmid_delays, ned_02_delays, ned_03_delays, ned_04_delays, ned_and_ratio_delays, ned_and_jaccard_delays, ned_and_skat_delays):
             file.write(str(bibkey) + "," + \
                        str(event_year) + "," + \
                        stringify_delay(verbatim_title_delay) + "," + \
@@ -184,9 +184,9 @@ def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
                        stringify_delay(ned_02_delay) + "," + \
                        stringify_delay(ned_03_delay) + "," + \
                        stringify_delay(ned_04_delay) + "," + \
-                       stringify_delay(ned_and_exact_delay) + "," + \
+                       stringify_delay(ned_and_ratio_delay) + "," + \
                        stringify_delay(ned_and_jaccard_delay) + "," + \
-                       stringify_delay(ned_and_ndcg_delay) + "\n")
+                       stringify_delay(ned_and_skat_delay) + "\n")
 
         if not skip_no_result:
             file.write("\n")
@@ -220,15 +220,15 @@ def calculate_delays_and_write_table_and_plot(json_file, skip_no_result):
         plt.bar(x - width*1, ned_02_delays, width=width, label="ned <= 0.2")
         plt.bar(x + width*0, ned_03_delays, width=width, label="ned <= 0.3")
         plt.bar(x + width*1, ned_04_delays, width=width, label="ned <= 0.4")
-        plt.bar(x + width*2, ned_and_exact_delays, width=width, label="ned_and_exact")
+        plt.bar(x + width*2, ned_and_ratio_delays, width=width, label="ned_and_ratio")
         plt.bar(x + width*3, ned_and_jaccard_delays, width=width, label="ned_and_jaccard")
-        plt.bar(x + width*4, ned_and_ndcg_delays, width=width, label="ned_and_ndcg")
+        plt.bar(x + width*4, ned_and_skat_delays, width=width, label="ned_and_skat")
         plt.legend()
         plt.savefig(dirname(json_file) + sep + "delays.png")
 
 if __name__ == "__main__":
 
-    json_file = "../analysis/2021_01_26_22_22_55/CRISPR_en.json"
+    json_file = "../../analysis/TEST/2021_01_29_18_39_55/CRISPR_de.json"
     
     calculate_and_write_occurrence_table(json_file, False)
     calculate_delays_and_write_table_and_plot(json_file, True)

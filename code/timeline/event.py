@@ -15,9 +15,6 @@ class Event:
         self.event_text = args["event_text"]
         self.type = args["type"]
         self.subtype = args["subtype"]
-        #self.actors = [actor.strip() for actor in split("[,;] *", args["actors"].strip()) if actor.strip()]
-        #self.places = [place.strip() for place in split("[,;] *", args["places"].strip()) if place.strip()]
-        #self.keywords = [keyword.replace("\"", "").strip() for keyword in split("; *", args["keywords"]) if keyword.strip()]
         self.bibentries = bibliography.get_bibentries(split("; *", args["bib_keys"]))
         self.wos_keys = args["wos_keys"]
         self.extracted_from = args["extracted_from"]

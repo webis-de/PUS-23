@@ -4,16 +4,13 @@ from timeline.accountlist import AccountList
 from bibliography.bibliography import Bibliography
 from utility.utils import flatten_list_of_lists, levenshtein
 from utility.logger import Logger
-from preprocessor.preprocessor import Preprocessor
 from multiprocessing import Pool
 from unicodedata import normalize
-from re import search, split
 from argparse import ArgumentParser
 from os.path import basename, exists, sep
 from os import makedirs
 from json import load, dumps
 from urllib.parse import quote, unquote
-from math import log
 
 ####################################################################
 # This file serves as an entry point to analyse Wikipedia articles.#
@@ -36,18 +33,24 @@ def jaccard(list1, list2):
     union = set(list1).union(set(list2))
     return len(intersection)/len(union)
 
-def ndcg(gains, iDCG, results):
-    DCG = sum([(gains[results[i]])/(i+1) if results[i] in gains else 0 for i in range(len(results))])
-    return DCG/iDCG
+def skat(gains, ideal, expected, provided):
+    score = 0
+    for position, item in enumerate(provided, 1):
+        if item in gains:
+            if expected.index(item) == provided.index(item):
+                score += gains[item]/position
+            else:
+                score -= gains[item]/position
+    return score/ideal
 
-def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_texts_ascii, preprocessed_source_titles_ascii, referenced_author_sets_ascii, referenced_pmids, preprocessor, language, thresholds):
+def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_texts_ascii, source_titles, source_titles_ascii_lowered, referenced_author_sets_ascii, referenced_pmids, language, thresholds):
 
     NED_LOW = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][0]
     NED_MID = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][1]
     NED_HIGH = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][2]
-    EXACT = thresholds["EXACT_MATCH_RATIO_THRESHOLD"]
+    EXACT = thresholds["RATIO_SCORE_THRESHOLD"]
     JACCARD = thresholds["JACCARD_SCORE_THRESHOLD"]
-    NDCG = thresholds["NDCG_SCORE_THRESHOLD"]
+    SKAT = thresholds["SKAT_SCORE_THRESHOLD"]
 
     #VERBATIM EVENT TITLES
     if event.titles and not event.first_mentioned["verbatim"].get("titles", None):
@@ -81,20 +84,20 @@ def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_t
         if not event.first_mentioned["relaxed"].get("ned <= " + str(NED_LOW), None) or \
            not event.first_mentioned["relaxed"].get("ned <= " + str(NED_MID), None) or \
            not event.first_mentioned["relaxed"].get("ned <= " + str(NED_HIGH), None) or \
-           not event.first_mentioned["relaxed"].get("ned_and_exact", None) or \
+           not event.first_mentioned["relaxed"].get("ned_and_ratio", None) or \
            not event.first_mentioned["relaxed"].get("ned_and_jaccard", None) or \
-           not event.first_mentioned["relaxed"].get("ned_and_ndcg", None):
+           not event.first_mentioned["relaxed"].get("ned_and_skat", None):
             
             relaxed_results = {event_bibkey:{} for event_bibkey in event.titles}
 
             #TITLES
             for event_bibkey, event_title in event.titles.items():
 
-                preprocessed_event_title = preprocessor.preprocess(to_ascii(event_title), lower=True, stopping=False, sentenize=False, tokenize=True)[0]
+                event_title_ascii_lowered = to_ascii(event_title.lower())
 
-                for preprocessed_source_title_ascii, source_text in zip(preprocessed_source_titles_ascii, source_texts):
+                for source_title_ascii_lowered, source_text in zip(source_titles_ascii_lowered, source_texts):
 
-                    normalised_edit_distance = levenshtein(preprocessed_event_title, preprocessed_source_title_ascii)/len(preprocessed_event_title)
+                    normalised_edit_distance = levenshtein(event_title_ascii_lowered, source_title_ascii_lowered)/len(event_title_ascii_lowered)
 
                     if normalised_edit_distance < relaxed_results[event_bibkey].get("ned_low", (None, NED_LOW))[1]:
                         relaxed_results[event_bibkey]["ned_low"] = (source_text, normalised_edit_distance)
@@ -129,29 +132,29 @@ def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_t
                 for event_bibkey, event_authors in event.authors.items():
                     
                     event_authors = [to_ascii(author) for author in event_authors]
-                    gains = {author:len(event_authors)-event_authors.index(author) for author in event_authors}
-                    iDCG = ndcg(gains=gains, iDCG=1, results=event_authors)
+                    gains = {author:len(event_authors) - event_authors.index(author) for author in event_authors}
+                    ideal = sum([(gains.get(event_author, 0))/index for index,event_author in enumerate(event_authors, 1)])
 
                     for referenced_author_set_ascii, source_text, source_text_ascii in zip(referenced_author_sets_ascii, source_texts, source_texts_ascii):
 
                         exact_score = exact_match(event_authors, source_text_ascii)
                         jaccard_score = jaccard(event_authors, referenced_author_set_ascii)
-                        ndcg_score = ndcg(gains, iDCG, referenced_author_set_ascii)
+                        skat_score = skat(gains, ideal, event_authors, referenced_author_set_ascii)
 
                         if exact_score >= relaxed_results[event_bibkey].get("exact", (None, EXACT))[1] and relaxed_results[event_bibkey].get("ned_high", (None, None))[0] == source_text:
                             relaxed_results[event_bibkey]["exact"] = (source_text, exact_score, relaxed_results[event_bibkey].get("ned_high")[1])
                         if jaccard_score >= relaxed_results[event_bibkey].get("jaccard", (None, JACCARD))[1] and relaxed_results[event_bibkey].get("ned_high", (None, None))[0] == source_text:
                             relaxed_results[event_bibkey]["jaccard"] = (source_text, jaccard_score, relaxed_results[event_bibkey].get("ned_high")[1])
-                        if ndcg_score >= relaxed_results[event_bibkey].get("ndcg", (None, NDCG))[1] and relaxed_results[event_bibkey].get("ned_high", (None, None))[0] == source_text:
-                            relaxed_results[event_bibkey]["ndcg"] = (source_text, ndcg_score, relaxed_results[event_bibkey].get("ned_high")[1])
+                        if skat_score >= relaxed_results[event_bibkey].get("skat", (None, SKAT))[1] and relaxed_results[event_bibkey].get("ned_high", (None, None))[0] == source_text:
+                            relaxed_results[event_bibkey]["skat"] = (source_text, skat_score, relaxed_results[event_bibkey].get("ned_high")[1])
 
-                    if not event.first_mentioned["relaxed"].get("ned_and_exact", None) and False not in [relaxed_results[event_bibkey].get("exact", False) for event_bibkey in event.authors]:
+                    if not event.first_mentioned["relaxed"].get("ned_and_ratio", None) and False not in [relaxed_results[event_bibkey].get("exact", False) for event_bibkey in event.authors]:
                         events_in_references_by_authors_exact_match = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["exact"][0],
                                                                                                     "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["exact"][0])},
-                                                                                     "exact_match_ratio": relaxed_results[event_bibkey]["exact"][1],
+                                                                                     "ratio_score": relaxed_results[event_bibkey]["exact"][1],
                                                                                      "normalised_edit_distance <= " + str(NED_HIGH):relaxed_results[event_bibkey]["exact"][2]
                                                                                      } for event_bibkey in event.authors}
-                        event.first_mentioned["relaxed"]["ned_and_exact"] = occurrence(revision, result=events_in_references_by_authors_exact_match)
+                        event.first_mentioned["relaxed"]["ned_and_ratio"] = occurrence(revision, result=events_in_references_by_authors_exact_match)
 
                     if not event.first_mentioned["relaxed"].get("ned_and_jaccard", None) and False not in [relaxed_results[event_bibkey].get("jaccard", False) for event_bibkey in event.authors]:
                         events_in_references_by_authors_jaccard = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["jaccard"][0],
@@ -161,14 +164,14 @@ def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_t
                                                                                  } for event_bibkey in event.authors}
                         event.first_mentioned["relaxed"]["ned_and_jaccard"] = occurrence(revision, result=events_in_references_by_authors_jaccard)
 
-                    if not event.first_mentioned["relaxed"].get("ned_and_ndcg", None) and False not in [relaxed_results[event_bibkey].get("ndcg", False) for event_bibkey in event.authors]:
-                        events_in_references_by_authors_ndcg = {event_bibkey:
-                                                                {"source_text":{"raw":relaxed_results[event_bibkey]["ndcg"][0],
-                                                                                "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["ndcg"][0])},
-                                                                 "ndcg_score": relaxed_results[event_bibkey]["ndcg"][1],
-                                                                 "normalised_edit_distance <= " + str(NED_HIGH):relaxed_results[event_bibkey]["ndcg"][2]
+                    if not event.first_mentioned["relaxed"].get("ned_and_skat", None) and False not in [relaxed_results[event_bibkey].get("skat", False) for event_bibkey in event.authors]:
+                        events_in_references_by_authors_skat = {event_bibkey:
+                                                                {"source_text":{"raw":relaxed_results[event_bibkey]["skat"][0],
+                                                                                "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["skat"][0])},
+                                                                 "skat_score": relaxed_results[event_bibkey]["skat"][1],
+                                                                 "normalised_edit_distance <= " + str(NED_HIGH):relaxed_results[event_bibkey]["skat"][2]
                                                                  } for event_bibkey in event.authors}
-                        event.first_mentioned["relaxed"]["ned_and_ndcg"] = occurrence(revision, result=events_in_references_by_authors_ndcg)
+                        event.first_mentioned["relaxed"]["ned_and_skat"] = occurrence(revision, result=events_in_references_by_authors_skat)
 
     return event
 
@@ -208,18 +211,18 @@ if __name__ == "__main__":
                                  type=int,
                                  default=[0.2,0.3,0.4],
                                  help="Thresholds for normalised edit distance for titles in references; three values for low, medium and high.")
-    argument_parser.add_argument("-emt", "--exact_match_ratio_threshold",
+    argument_parser.add_argument("-ratio", "--ratio_score_threshold",
                                  type=int,
                                  default=1.0,
-                                 help="Exact_match ratio threshold for authors in reference.")
-    argument_parser.add_argument("-jst", "--jaccard_score_threshold",
+                                 help="Ratio score threshold for authors in reference.")
+    argument_parser.add_argument("-jaccard", "--jaccard_score_threshold",
                                  type=int,
                                  default=0.8,
                                  help="Jaccard score threshold for authors in reference.")
-    argument_parser.add_argument("-nst", "--ndcg_score_threshold",
+    argument_parser.add_argument("-skat", "--skat_score_threshold",
                                  type=int,
                                  default=0.8,
-                                 help="nDCG threshold for authors in reference.")
+                                 help="Skat score threshold for authors in reference.")
 
     args = vars(argument_parser.parse_args())
 
@@ -231,9 +234,9 @@ if __name__ == "__main__":
     equalling = args["equalling"]
     language = args["language"]
     thresholds = {"NORMALISED_EDIT_DISTANCE_THRESHOLDS":args["normalised_edit_distance_thresholds"],
-                  "EXACT_MATCH_RATIO_THRESHOLD":args["exact_match_ratio_threshold"],
+                  "RATIO_SCORE_THRESHOLD":args["ratio_score_threshold"],
                   "JACCARD_SCORE_THRESHOLD":args["jaccard_score_threshold"],
-                  "NDCG_SCORE_THRESHOLD":args["ndcg_score_threshold"]}
+                  "SKAT_SCORE_THRESHOLD":args["skat_score_threshold"]}
 
     logger = Logger(output_directory)
     output_directory = logger.directory
@@ -244,7 +247,6 @@ if __name__ == "__main__":
 
     bibliography = Bibliography("../data/tracing-innovations-lit.bib")
     accountlist = AccountList("../data/CRISPR_accounts.csv")
-    preprocessor = Preprocessor(language)
 
     logger.start("Analysing articles [" + ", ".join(articles) + "]")
     logger.log("Using event file: " + basename(event_file))
@@ -285,9 +287,9 @@ if __name__ == "__main__":
                     "ned <= " + str(NED_LOW):None,
                     "ned <= " + str(NED_MID):None,
                     "ned <= " + str(NED_HIGH):None,
-                    "ned_and_exact":None,
+                    "ned_and_ratio":None,
                     "ned_and_jaccard":None,
-                    "ned_and_ndcg":None}
+                    "ned_and_skat":None}
                         }
 
         while revision:
@@ -298,16 +300,15 @@ if __name__ == "__main__":
             revision.url = revision.url.replace(" ", "_")
 
             ### The lowered ASCII-normalised full text.
-            revision_text_ascii_lowered = to_ascii(revision.get_text()).lower()
+            revision_text_ascii_lowered = to_ascii(revision.get_text().lower())
             ### The sources of the revision, i.e. 'References' and 'Further Reading' elements.
             sources = revision.get_references() + revision.get_further_reading()
             ### The texts of all sources, both raw and ASCII-normalised.
             source_texts = [source.get_text().strip() for source in sources]
             source_texts_ascii = [to_ascii(source_text) for source_text in source_texts]
-            ### All titles occuring in 'References' and 'Further Reading', ASCII-normalised, lowered and tokenised.
+            ### All titles occuring in 'References' and 'Further Reading', both raw and ASCII-normalised and lowered.
             source_titles = [source.get_title(language) for source in sources]
-            source_titles_ascii = [to_ascii(source_title) for source_title in source_titles]
-            preprocessed_source_titles_ascii = [preprocessor.preprocess(source_title_ascii, lower=True, stopping=False, sentenize=False, tokenize=True)[0] for source_title_ascii in source_titles_ascii]
+            source_titles_ascii_lowered = [to_ascii(source_title).lower() for source_title in source_titles]
             ### All authors occuring in 'References' and 'Further Reading', ASCII-normalised.
             referenced_author_sets_ascii = [[to_ascii(author[0]) for author in source.get_authors(language)] for source in sources]
             ### All PMIDs occuring in 'References' and 'Further Reading'.
@@ -320,10 +321,10 @@ if __name__ == "__main__":
                                                   revision_text_ascii_lowered,
                                                   source_texts,
                                                   source_texts_ascii,
-                                                  preprocessed_source_titles_ascii,
+                                                  source_titles,
+                                                  source_titles_ascii_lowered,
                                                   referenced_author_sets_ascii,
                                                   referenced_pmids,
-                                                  preprocessor,
                                                   language,
                                                   thresholds)
                                                  for event in eventlist.events])

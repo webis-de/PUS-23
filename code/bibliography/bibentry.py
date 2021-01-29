@@ -10,6 +10,7 @@ class Bibentry:
         bibkey: The bibkey of this bibentry.
         title: The title of this bibentry.
         authors: The authors of this bibentry.
+        journal: The journal of this bibentry.
         doi: The doi of this bibentry.
         pmid: The pmid of this bibentry.
         year: The year of this bibentry.
@@ -25,6 +26,12 @@ class Bibentry:
         self.year = bibentry.fields.get("year", None)
 
     def replace_braces(self, value):
+        """
+        Replaces curly braces in a string or the string elements of a list or tuple.
+
+        Returns:
+            The string or list or tuple provided, with curly braces removed.
+        """
         if type(value) == str:
             return value.replace("{","").replace("}","")
         elif type(value) == list:

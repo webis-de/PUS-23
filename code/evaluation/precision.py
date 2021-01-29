@@ -2,7 +2,7 @@ from json import load, dumps
 from os.path import basename, dirname, sep
 from pprint import pprint
 
-json_path = "../analysis/2021_01_25_14_44_39/CRISPR_en.json"
+json_path = "../../analysis/TEST/2021_01_29_18_32_05/CRISPR_de.json"
 
 with open(json_path) as file:
     data = load(file)
@@ -39,7 +39,7 @@ for event in data:
             if match and ((title and title in match) or (doi and doi in match) or (pmid and pmid in match)):
                 correct = True
             else:
-                correct = input("\nPRESS ENTER IF CORRECT, ENTER ANY OTHER KEY AND PRESS ENTER IF INCORRECT. ")
+                correct = input("\nPRESS ENTER IF CORRECT, ENTER ANY OTHER KEY AND PRESS ENTER IF INCORRECT. ") == ""
             if correct:
                 precisions[key][0] += 1
             precisions[key][1] += 1

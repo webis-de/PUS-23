@@ -1,8 +1,8 @@
 from os.path import basename, dirname, sep
 from json import load, dumps
 
-json_file = "../analysis/2021_01_25_14_44_39/CRISPR_en.json"
-excluded_methods = ["ned <= 0.3","ned <= 0.4"]
+json_file = "../../analysis/TEST/2021_01_29_18_39_55/CRISPR_de.json"
+excluded_methods = ["ned_and_ratio"]
 
 with open(json_file) as file:
     events = load(file)
