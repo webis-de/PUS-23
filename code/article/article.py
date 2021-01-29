@@ -28,6 +28,17 @@ class Article:
         self.timestamps = []
 
     def get_revisions(self, first = 0, final = float("inf")):
+        """
+        Get revisions from first to final as provided (both included).
+        Will return all revisions on file if no parameters provided.
+
+        Args:
+            first: First revision index to return.
+            final: Final revision to return.
+
+        Returns:
+            A list of revisions.
+        """
         with open(self.filepath) as file:
             for line in enumerate(file):
                 if line[0] < first:
@@ -40,6 +51,16 @@ class Article:
         return self.revisions
 
     def get_revision(self, index = None, revid = None):
+        """
+        Gets the first revision on file with the provided index or revid.
+
+        Args:
+            index: The index of the revision.
+            revid: The revid of the revision.
+
+        Returns:
+            A revision; None if index or revid does not match.
+        """
         revisions = self.yield_revisions()
         revision = next(revisions)
         while revision:
@@ -50,10 +71,51 @@ class Article:
             revision = next(revisions)
 
     def yield_revisions(self):
+        """
+        Provides an iterartor over all revisions on file.
+
+        Yields:
+            A revision.
+        """
         with open(self.filepath) as file:
             for line in file:
                 revision = loads(line)
                 yield Revision(**revision)
+
+    def bibliography_analysis(self):
+        """
+        Checks the revision history of an article for titles, DOIs and PMIDs
+        and writes them to a JSON file in the same directory.
+
+        Titles with no more than 80 percent alphabetical characters (whitespace excluded)
+        are discarded. Titles are not cleaned for near-duplicates.
+        """
+        revisions = self.yield_revisions()
+
+        revision = next(revisions, None)
+
+        bib = {"titles":{}, "dois":{}, "pmids":{}}
+
+        while revision:
+            print(revision.index)
+            for source in revision.get_references() + revision.get_further_reading():
+                title = source.get_title(self.filename.split("_")[-1])
+                if title:
+                    if title not in bib["titles"]:
+                        if len([c for c in title.replace(" ","") if c.isalpha()])/len(title) > 0.8:
+                            bib["titles"][title] = source.get_text()
+                doi_set = source.get_dois()
+                for doi in doi_set:
+                    if doi not in bib["dois"]:
+                        bib["dois"][doi] = source.get_text()
+                pmid_set = source.get_pmids()
+                for pmid in pmid_set:
+                    if pmid not in bib["pmids"]:
+                        bib["pmids"][pmid] = source.get_text()
+            revision = next(revisions, None)
+
+        with open(self.filepath + "_bib.json", "w") as file:
+            dump(bib, file)
 
     def track_field_values_in_article(self, fields, bibliography):
         """
@@ -199,6 +261,12 @@ class Article:
         plt.savefig(directory + sep + filename)
 
     def calculate_revision_size_difference(self):
+        """
+        Provides a list of size differences between all revisions on file.
+
+        Returns:
+            A list of n-1 integers for the size difference between all n revisions on file.
+        """
         revisions = self.yield_revisions()
         size_differences = []
         
