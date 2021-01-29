@@ -1,8 +1,9 @@
-from .revision.revision import Revision
+from revision.revision import Revision
 from os.path import basename, exists, sep
 from os import makedirs
 from json import loads, dump
 import matplotlib.pyplot as plt
+from unicodedata import normalize
 
 class Article:
     """
@@ -101,17 +102,18 @@ class Article:
             for source in revision.get_references() + revision.get_further_reading():
                 title = source.get_title(self.filename.split("_")[-1])
                 if title:
+                    title = to_ascii(title).lower().replace("-","")
                     if title not in bib["titles"]:
                         if len([c for c in title.replace(" ","") if c.isalpha()])/len(title) > 0.8:
-                            bib["titles"][title] = source.get_text()
+                            bib["titles"][title] = {"source_text": source.get_text(), "timestamp": revision.timestamp.string}
                 doi_set = source.get_dois()
                 for doi in doi_set:
                     if doi not in bib["dois"]:
-                        bib["dois"][doi] = source.get_text()
+                        bib["dois"][doi] = {"source_text": source.get_text(), "timestamp": revision.timestamp.string}
                 pmid_set = source.get_pmids()
                 for pmid in pmid_set:
                     if pmid not in bib["pmids"]:
-                        bib["pmids"][pmid] = source.get_text()
+                        bib["pmids"][pmid] = {"source_text": source.get_text(), "timestamp": revision.timestamp.string}
             revision = next(revisions, None)
 
         with open(self.filepath + "_bib.json", "w") as file:
@@ -297,3 +299,9 @@ class Article:
         filename = self.name.lower() + "_wikipedia_revision_size_differences" + ".png"
         if not exists(directory): makedirs(directory)
         plt.savefig(directory + sep + filename)
+
+def to_ascii(string):
+    return normalize("NFD",string).encode("ASCII","ignore").decode("ASCII")
+
+article = Article("../../articles/CRISPR_en")
+article.bibliography_analysis()

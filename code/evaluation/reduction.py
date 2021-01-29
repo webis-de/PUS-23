@@ -2,12 +2,13 @@ from os.path import basename, dirname, sep
 from json import load, dumps
 from path import json_path
 
-excluded_methods = ["ned <= 0.2",
+excluded_methods = [#"ned <= 0.2",
                     "ned <= 0.3",
                     "ned <= 0.4",
                     "ned_and_ratio",
                     "ned_and_jaccard",
-                    "ned_and_skat"]
+                    #"ned_and_skat"
+                    ]
 
 with open(json_path) as file:
     events = load(file)
