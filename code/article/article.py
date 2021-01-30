@@ -1,4 +1,4 @@
-from revision.revision import Revision
+from .revision.revision import Revision
 from os.path import basename, exists, sep
 from os import makedirs
 from json import loads, dump
@@ -300,8 +300,5 @@ class Article:
         if not exists(directory): makedirs(directory)
         plt.savefig(directory + sep + filename)
 
-def to_ascii(string):
-    return normalize("NFD",string).encode("ASCII","ignore").decode("ASCII")
-
-article = Article("../../articles/CRISPR_en")
-article.bibliography_analysis()
+    def to_ascii(self, string):
+        return normalize("NFD",string).encode("ASCII","ignore").decode("ASCII")
