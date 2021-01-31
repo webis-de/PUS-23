@@ -106,21 +106,21 @@ def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_t
                     if normalised_edit_distance < relaxed_results[event_bibkey].get("ned_high", (None, NED_HIGH))[1]:
                         relaxed_results[event_bibkey]["ned_high"] = (source_text, normalised_edit_distance)
 
-            if not event.first_mentioned["relaxed"].get("ned <= " + str(NED_LOW), None) and False not in [1 if relaxed_results[event_bibkey].get("ned_low", False) else 0 for event_bibkey in event.titles]:
+            if not event.first_mentioned["relaxed"].get("ned <= " + str(NED_LOW), None) and all([relaxed_results[event_bibkey].get("ned_low", False) for event_bibkey in event.titles]):
                 relaxed_title_results_low = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["ned_low"][0],
                                                                           "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["ned_low"][0])},
                                                            "normalised_edit_distance <= " + str(NED_LOW):relaxed_results[event_bibkey]["ned_low"][1]
                                                            } for event_bibkey in event.titles}
                 event.first_mentioned["relaxed"]["ned <= " + str(NED_LOW)] = occurrence(revision, result=relaxed_title_results_low)
                 
-            if not event.first_mentioned["relaxed"].get("ned <= " + str(NED_MID), None) and False not in [1 if relaxed_results[event_bibkey].get("ned_mid", False) else 0 for event_bibkey in event.titles]:
+            if not event.first_mentioned["relaxed"].get("ned <= " + str(NED_MID), None) and all([relaxed_results[event_bibkey].get("ned_mid", False) for event_bibkey in event.titles]):
                 relaxed_title_results_mid = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["ned_mid"][0],
                                                                           "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["ned_mid"][0])},
                                                            "normalised_edit_distance <= " + str(NED_MID):relaxed_results[event_bibkey]["ned_mid"][1]
                                                            } for event_bibkey in event.titles}
                 event.first_mentioned["relaxed"]["ned <= " + str(NED_MID)] = occurrence(revision, result=relaxed_title_results_mid)
                 
-            if not event.first_mentioned["relaxed"].get("ned <= " + str(NED_HIGH), None) and False not in [1 if relaxed_results[event_bibkey].get("ned_high", False) else 0 for event_bibkey in event.titles]:
+            if not event.first_mentioned["relaxed"].get("ned <= " + str(NED_HIGH), None) and all([relaxed_results[event_bibkey].get("ned_high", False) for event_bibkey in event.titles]):
                 relaxed_title_results_high = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["ned_high"][0],
                                                                            "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["ned_high"][0])},
                                                             "normalised_edit_distance <= " + str(NED_HIGH):relaxed_results[event_bibkey]["ned_high"][1]
@@ -148,7 +148,7 @@ def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_t
                         if skat_score >= relaxed_results[event_bibkey].get("skat", (None, SKAT))[1] and relaxed_results[event_bibkey].get("ned_high", (None, None))[0] == source_text:
                             relaxed_results[event_bibkey]["skat"] = (source_text, skat_score, relaxed_results[event_bibkey].get("ned_high")[1])
 
-                    if not event.first_mentioned["relaxed"].get("ned_and_ratio", None) and False not in [relaxed_results[event_bibkey].get("exact", False) for event_bibkey in event.authors]:
+                    if not event.first_mentioned["relaxed"].get("ned_and_ratio", None) and all([relaxed_results[event_bibkey].get("exact", False) for event_bibkey in event.authors]):
                         events_in_references_by_authors_exact_match = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["exact"][0],
                                                                                                     "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["exact"][0])},
                                                                                      "ratio_score": relaxed_results[event_bibkey]["exact"][1],
@@ -156,7 +156,7 @@ def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_t
                                                                                      } for event_bibkey in event.authors}
                         event.first_mentioned["relaxed"]["ned_and_ratio"] = occurrence(revision, result=events_in_references_by_authors_exact_match)
 
-                    if not event.first_mentioned["relaxed"].get("ned_and_jaccard", None) and False not in [relaxed_results[event_bibkey].get("jaccard", False) for event_bibkey in event.authors]:
+                    if not event.first_mentioned["relaxed"].get("ned_and_jaccard", None) and all([relaxed_results[event_bibkey].get("jaccard", False) for event_bibkey in event.authors]):
                         events_in_references_by_authors_jaccard = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["jaccard"][0],
                                                                                                 "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["jaccard"][0])},
                                                                                  "jaccard_score": relaxed_results[event_bibkey]["jaccard"][1],
@@ -164,13 +164,12 @@ def analyse(event, revision, revision_text_ascii_lowered, source_texts, source_t
                                                                                  } for event_bibkey in event.authors}
                         event.first_mentioned["relaxed"]["ned_and_jaccard"] = occurrence(revision, result=events_in_references_by_authors_jaccard)
 
-                    if not event.first_mentioned["relaxed"].get("ned_and_skat", None) and False not in [relaxed_results[event_bibkey].get("skat", False) for event_bibkey in event.authors]:
-                        events_in_references_by_authors_skat = {event_bibkey:
-                                                                {"source_text":{"raw":relaxed_results[event_bibkey]["skat"][0],
-                                                                                "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["skat"][0])},
-                                                                 "skat_score": relaxed_results[event_bibkey]["skat"][1],
-                                                                 "normalised_edit_distance <= " + str(NED_HIGH):relaxed_results[event_bibkey]["skat"][2]
-                                                                 } for event_bibkey in event.authors}
+                    if not event.first_mentioned["relaxed"].get("ned_and_skat", None) and all([relaxed_results[event_bibkey].get("skat", False) for event_bibkey in event.authors]):
+                        events_in_references_by_authors_skat = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["skat"][0],
+                                                                                             "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["skat"][0])},
+                                                                              "skat_score": relaxed_results[event_bibkey]["skat"][1],
+                                                                              "normalised_edit_distance <= " + str(NED_HIGH):relaxed_results[event_bibkey]["skat"][2]
+                                                                              } for event_bibkey in event.authors}
                         event.first_mentioned["relaxed"]["ned_and_skat"] = occurrence(revision, result=events_in_references_by_authors_skat)
 
     return event
