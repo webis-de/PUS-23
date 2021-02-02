@@ -4,6 +4,7 @@ from os import makedirs
 from json import loads, dump
 import matplotlib.pyplot as plt
 from unicodedata import normalize
+from Levenshtein import distance
 
 class Article:
     """
@@ -83,13 +84,16 @@ class Article:
                 revision = loads(line)
                 yield Revision(**revision)
 
-    def bibliography_analysis(self):
+    def bibliography_analysis(self, clean_titles = False):
         """
         Checks the revision history of an article for titles, DOIs and PMIDs
         and writes them to a JSON file in the same directory.
 
         Titles with no more than 80 percent alphabetical characters (whitespace excluded)
-        are discarded. Titles are not cleaned for near-duplicates.
+        are discarded. Titles can be cleaned for near-duplicates.
+
+        Args:
+            clean_titles: Clean near-duplicate titles if set to True.
         """
         revisions = self.yield_revisions()
 
@@ -102,10 +106,17 @@ class Article:
             for source in revision.get_references() + revision.get_further_reading():
                 title = source.get_title(self.filename.split("_")[-1])
                 if title:
-                    title = to_ascii(title).lower().replace("-","")
+                    title = self.to_ascii(title).lower().replace("-","")
                     if title not in bib["titles"]:
                         if len([c for c in title.replace(" ","") if c.isalpha()])/len(title) > 0.8:
-                            bib["titles"][title] = {"source_text": source.get_text(), "timestamp": revision.timestamp.string}
+                            if clean_titles:
+                                for existing_title in bib["titles"].keys():
+                                    if distance(title, existing_title)/len(title) < 0.2:
+                                        break
+                                else:
+                                    bib["titles"][title] = {"source_text": source.get_text(), "timestamp": revision.timestamp.string}
+                            else:
+                                bib["titles"][title] = {"source_text": source.get_text(), "timestamp": revision.timestamp.string}
                 doi_set = source.get_dois()
                 for doi in doi_set:
                     if doi not in bib["dois"]:

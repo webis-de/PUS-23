@@ -313,7 +313,7 @@ if __name__ == "__main__":
             ### All PMIDs occuring in 'References' and 'Further Reading'.
             referenced_pmids = set(flatten_list_of_lists([source.get_pmids() for source in sources]))
 
-            with Pool(24) as pool:
+            with Pool(1) as pool:
                 eventlist.events = pool.starmap(analyse,
                                                 [(event,
                                                   revision,
