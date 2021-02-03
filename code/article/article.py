@@ -102,11 +102,12 @@ class Article:
         bib = {"titles":{}, "dois":{}, "pmids":{}}
 
         while revision:
-            print(revision.index)
+            if revision.index % 100 == 0:
+                print(revision.index)
             for source in revision.get_references() + revision.get_further_reading():
                 title = source.get_title(self.filename.split("_")[-1])
                 if title:
-                    title = self.to_alnum(self.to_lower(self.to_ascii(title)))
+                    title = self.to_alnum(self.to_lower(self.to_ascii(title))).strip()
                     if title not in bib["titles"]:
                         if len([c for c in title.replace(" ","") if c.isalpha()])/len(title) > 0.8:
                             if clean_titles:

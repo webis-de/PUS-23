@@ -17,7 +17,7 @@ article = Article("../articles/CRISPR_en")
 
 article.bibliography_analysis()
 
-bibliography_titles = ([to_alnum(to_lower(to_ascii(title))) for title in bibliography.titles])
+bibliography_titles = ([to_alnum(to_lower(to_ascii(title))).strip() for title in bibliography.titles])
 bibliography_dois = ([doi.lower() for doi in bibliography.dois if doi])
 bibliography_pmids = ([pmid for pmid in bibliography.pmids if pmid])
 
@@ -34,7 +34,7 @@ print()
 
 data = load(open("../articles/CRISPR_en_bib.json"))
 
-article_titles = [to_alnum(to_lower(to_ascii(title))) for title in data["titles"].keys()]
+article_titles = [to_alnum(to_lower(to_ascii(title))).strip() for title in data["titles"].keys()]
 articles_dois = data["dois"].keys()
 articles_pmids = data["pmids"].keys()
 

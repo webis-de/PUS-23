@@ -120,23 +120,25 @@ class Source:
         text = self.get_text()
         if language == "en":
             try:
-                #split at year
-                text = split(r"\(.*?\)\.? ?", text, 1)[1].strip()
+                #try to find quoted title
+                matches = list(finditer(r"\".*?\"", text))
+                #get longest match
+                match = sorted(matches, key=lambda match: match.end() - match.start(), reverse=True)[0]
+                #get span of match
+                text = text[match.start():match.end()]
+                #remove quotation marks
+                title = text.replace("\"", "")
+            except IndexError:
                 try:
-                    #try to find quoted title
-                    match = next(finditer(r"\".*?\"", text))
-                    #get span of first match
-                    text = text[match.start():match.end()]
-                    #remove quotation marks
-                    title = text.replace("\"", "")
-                except StopIteration:
-                    #split at stop
+                    #split at year
+                    text = split(r"\(.*?\)\.? ?", text, 1)[1].strip()
+                    #split at stop and get first element
                     text = text.split(".")[0]
                     #remove quotation marks
                     title = text.replace("\"", "")
-                return title
-            except IndexError:
-                return ""
+                except IndexError:
+                    return ""
+            return title
         if language == "de":
             try:
                 #split at :
