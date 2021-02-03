@@ -106,7 +106,7 @@ class Article:
             for source in revision.get_references() + revision.get_further_reading():
                 title = source.get_title(self.filename.split("_")[-1])
                 if title:
-                    title = self.to_ascii(title).lower().replace("-","")
+                    title = self.to_alnum(self.to_lower(self.to_ascii(title)))
                     if title not in bib["titles"]:
                         if len([c for c in title.replace(" ","") if c.isalpha()])/len(title) > 0.8:
                             if clean_titles:
@@ -313,3 +313,9 @@ class Article:
 
     def to_ascii(self, string):
         return normalize("NFD",string).encode("ASCII","ignore").decode("ASCII")
+
+    def to_lower(self, string):
+        return string.lower()
+
+    def to_alnum(self, string):
+        return "".join([character for character in string if character.isalnum() or character in [" "]])
