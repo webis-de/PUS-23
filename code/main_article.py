@@ -49,7 +49,7 @@ def skat(gains, ideal, expected, provided):
                 score -= gains[item]/position
     return score/ideal
 
-def analyse(event, revision, revision_text_ascii_lower_alnum, source_texts, source_texts_ascii, source_titles, source_titles_ascii_lower_alnum, referenced_author_sets_ascii, referenced_pmids, language, thresholds):
+def analyse(event, revision, revision_text_lower, revision_text_lower_ascii, revision_text_lower_ascii_alnum, source_texts, source_texts_ascii, source_titles, source_titles_lower_ascii_alnum, referenced_author_sets_ascii, referenced_pmids, language, thresholds):
 
     NED_LOW = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][0]
     NED_MID = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][1]
@@ -62,7 +62,7 @@ def analyse(event, revision, revision_text_ascii_lower_alnum, source_texts, sour
     if event.titles and not event.first_mentioned["verbatim"].get("titles", None):
             verbatim_title_results = {}
             for event_bibkey, event_title in event.titles.items():
-                if to_alnum(to_lower(to_ascii(event_title))) in revision_text_ascii_lower_alnum:
+                if to_alnum(to_ascii(to_lower(event_title))) in revision_text_lower_ascii_alnum:
                     verbatim_title_results[event_bibkey] = scroll_to_url(revision.url, event_title)
             if len(verbatim_title_results) == len(event.titles.values()):
                 event.first_mentioned["verbatim"]["titles"] = occurrence(revision, result=verbatim_title_results)
@@ -71,7 +71,7 @@ def analyse(event, revision, revision_text_ascii_lower_alnum, source_texts, sour
 
     #VERBATIM EVENT DOIS
     if event.dois and not event.first_mentioned["verbatim"].get("dois", None):
-        verbatim_doi_results = {event_doi:scroll_to_url(revision.url, event_doi) for event_doi in event.dois if event_doi and to_alnum(to_lower(event_doi)) in revision_text_ascii_lower_alnum}
+        verbatim_doi_results = {event_doi:scroll_to_url(revision.url, event_doi) for event_doi in event.dois if event_doi and to_lower(event_doi) in revision_text_lower}
         if len(verbatim_doi_results) == len(event.dois):
             event.first_mentioned["verbatim"]["dois"] = occurrence(revision, result=verbatim_doi_results)
 
@@ -99,11 +99,11 @@ def analyse(event, revision, revision_text_ascii_lower_alnum, source_texts, sour
             #TITLES
             for event_bibkey, event_title in event.titles.items():
 
-                event_title_ascii_lower_alnum = to_alnum(to_lower(to_ascii(event_title)))
+                event_title_lower_ascii_alnum = to_alnum(to_ascii(to_lower(event_title)))
 
-                for source_title_ascii_lower_alnum, source_text in zip(source_titles_ascii_lower_alnum, source_texts):
+                for source_title_lower_ascii_alnum, source_text in zip(source_titles_lower_ascii_alnum, source_texts):
 
-                    normalised_edit_distance = levenshtein(event_title_ascii_lower_alnum, source_title_ascii_lower_alnum)/len(event_title_ascii_lower_alnum)
+                    normalised_edit_distance = levenshtein(event_title_lower_ascii_alnum, source_title_lower_ascii_alnum)/len(event_title_lower_ascii_alnum)
 
                     if normalised_edit_distance < relaxed_results[event_bibkey].get("ned_low", (None, NED_LOW))[1]:
                         relaxed_results[event_bibkey]["ned_low"] = (source_text, normalised_edit_distance)
@@ -304,8 +304,12 @@ if __name__ == "__main__":
             #FIX REVISION URL BY REPLACEING SPACES WITH UNDERSCORES
             revision.url = revision.url.replace(" ", "_")
 
+            ### The lowered full text.
+            revision_text_lower = to_lower(revision.get_text())
+            ### The lowered ASCII-normalised full text.
+            revision_text_lower_ascii = to_ascii(to_lower(revision_text_lower))
             ### The lowered ASCII-normalised full text, stripped of any characters except latin alphabet and spaces.
-            revision_text_ascii_lower_alnum = to_alnum(to_lower(to_ascii(revision.get_text())))
+            revision_text_lower_ascii_alnum = to_alnum(revision_text_lower_ascii)
             ### The sources of the revision, i.e. 'References' and 'Further Reading' elements.
             sources = revision.get_references() + revision.get_further_reading()
             ### The texts of all sources, both raw and ASCII-normalised.
@@ -313,7 +317,7 @@ if __name__ == "__main__":
             source_texts_ascii = [to_ascii(source_text) for source_text in source_texts]
             ### All titles occuring in 'References' and 'Further Reading', both raw and ASCII-normalised and lowered and stripped of any characters except latin alphabet and spaces.
             source_titles = [source.get_title(language) for source in sources]
-            source_titles_ascii_lower_alnum = [to_alnum(to_lower(to_ascii(source_title))) for source_title in source_titles]
+            source_titles_lower_ascii_alnum = [to_alnum(to_ascii(to_lower(source_title))) for source_title in source_titles]
             ### All authors occuring in 'References' and 'Further Reading', ASCII-normalised.
             referenced_author_sets_ascii = [[to_ascii(author[0]) for author in source.get_authors(language)] for source in sources]
             ### All PMIDs occuring in 'References' and 'Further Reading'.
@@ -323,11 +327,13 @@ if __name__ == "__main__":
                 eventlist.events = pool.starmap(analyse,
                                                 [(event,
                                                   revision,
-                                                  revision_text_ascii_lower_alnum,
+                                                  revision_text_lower,
+                                                  revision_text_lower_ascii,
+                                                  revision_text_lower_ascii_alnum,
                                                   source_texts,
                                                   source_texts_ascii,
                                                   source_titles,
-                                                  source_titles_ascii_lower_alnum,
+                                                  source_titles_lower_ascii_alnum,
                                                   referenced_author_sets_ascii,
                                                   referenced_pmids,
                                                   language,
