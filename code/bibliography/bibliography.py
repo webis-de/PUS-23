@@ -59,7 +59,13 @@ class Bibliography:
         Returns:
             A dictionary of Bibentries.
         """
-        return {bib_key:self.bibentries[bib_key] for bib_key in bib_keys if self.bibentries[bib_key]}
+        bibentries = {}
+        for bib_key in bib_keys:
+            if bib_key in self.bibentries:
+                bibentries[bib_key] = self.bibentries[bib_key]
+            else:
+                print("Missing bibkey:", bib_key)
+        return bibentries
 
     def plot_publication_distribution_to_file(self, directory):
         """

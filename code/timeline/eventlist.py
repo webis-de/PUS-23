@@ -30,13 +30,21 @@ class EventList:
             for row_number, row in enumerate(csv_reader, 1):
                 try:
                     args = {header[i].strip():row[i].strip() for i in range(len(header))}
+                    #create event object from arguments and bibliography
                     event = Event(args, bibliography, accountlist, equalling)
+                    #check conditions and skip events not matching them
                     for condition in conditions:
                         if not eval(condition):
                             break
                     else:
+                        #check if event is already present in list of events; uses equalling attribues
                         if event not in self.events:
-                            self.events.append(event)
+                            #check equalling attributes and skip events who have no values for those attributes
+                            for attribute in equalling:
+                                if not eval("event." + attribute):
+                                    break
+                            else:
+                                self.events.append(event)
                 except ValueError:
                     print("Could not parse row " + str(row_number) + " in events: " + str(row))
 
