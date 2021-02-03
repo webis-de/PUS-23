@@ -156,7 +156,6 @@ class Article:
             count += 1
             print(count)
             text = "".join(["".join(source.get_text()) for source in revision.get_further_reading() + revision.get_references()]).lower()
-            #text = revision.get_text().lower()
             for field in tracks:
                 for field_value in tracks[field]:
                     if field_value.lower() in text:
@@ -218,23 +217,23 @@ class Article:
 
         Args:
             track: A dictionary item with the below format:
-                  (bibkey, {bibkey_value1:[timestamp1,timestamp2,timestamp3,...],
-                            bibkey_value2:[timestamp4,timestamp6,timestamp9,...],
-                            ...}).
+                  (track, {value1:[timestamp1,timestamp2,timestamp3,...],
+                           value2:[timestamp4,timestamp6,timestamp9,...],
+                           ...}).
             directory: The directory to which the plot will be saved.
         """
         if not self.revisions: self.get_revisions()
-        bibkey = track[0]
-        bibkey_value_dictionary = track[1]
-        plt.figure(figsize=(int(len(self.timestamps) * 0.15) + 10, 10), dpi=100)
-        plt.title("Timeline of " + bibkey[0].upper() + bibkey[1:])
+        track_name = track[0]
+        value_dictionary = track[1]
+        plt.figure(figsize=(int(len(self.timestamps) * 0.15), int(len(value_dictionary)) * 0.12), dpi=75)
+        plt.title("Timeline of " + track_name[0].upper() + track_name[1:])
         plt.xticks(list(range(len(self.timestamps))), self.timestamps, rotation='vertical')
         plt.xlim((0, len(self.timestamps)))
-        for bibkey_value in bibkey_value_dictionary:
-            timestamps = bibkey_value_dictionary[bibkey_value]
-            plt.plot([self.timestamps.index(timestamp) for timestamp in timestamps], [bibkey_value[:30] + "(...)" * (bibkey_value[30:] != "")] * len(timestamps), "o")
+        for value in value_dictionary:
+            timestamps = value_dictionary[value]
+            plt.plot([self.timestamps.index(timestamp) for timestamp in timestamps], [value] * len(timestamps), "o")
         plt.subplots_adjust(bottom=0.175, top=0.95, left=0.1, right=0.995)
-        filename = self.name.lower() + "_wikipedia_revision_history_" + bibkey + ".png"
+        filename = self.name.lower() + "_wikipedia_revision_history_" + track_name + ".png"
         if not exists(directory): makedirs(directory)
         plt.savefig(directory + sep + filename)
 

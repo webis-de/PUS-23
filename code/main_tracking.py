@@ -10,7 +10,7 @@ from os.path import sep
 
 if __name__ == "__main__":
 
-    output_directory = ".." + sep + "results"
+    output_directory = ".." + sep + "results_foo"
 
     #read bibliography from CSV
     bibliography = Bibliography(".." + sep + "data" + sep + "tracing-innovations-lit.bib")
