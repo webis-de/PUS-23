@@ -28,6 +28,7 @@ class Bibliography:
         self.titles = [bibentry.title for bibentry in self.bibentries.values()]
         self.authors = sorted(set([bibentry.authors[0] for bibentry in self.bibentries.values()]))
         self.dois = [bibentry.doi for bibentry in self.bibentries.values()]
+        self.pmids = [bibentry.pmid for bibentry in self.bibentries.values()]
         self.years = [int(bibentry.year) for bibentry in self.bibentries.values()]        
 
     def field_values(self, field):

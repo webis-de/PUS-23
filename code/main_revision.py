@@ -35,7 +35,7 @@ if __name__ == "__main__":
         #Open scraped article and get random revision.
         if SELECTION == "index":
             #reasonable index for en 1935, for de 100
-            index = 1935
+            index = 136
             line = 0
             with open(FILEPATH) as article:
                 while line < index:
