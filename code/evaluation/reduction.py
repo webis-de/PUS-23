@@ -64,3 +64,13 @@ with open(json_path.replace(".json", "_reduced.json"), "w") as file:
     file.write("[" + "\n")
     file.write(",\n".join([dumps(event) for event in reduced_events]))
     file.write("\n" + "]")
+
+with open(basename(json_path) + sep + "methods.txt", "w") as file:
+    method_map = {}
+    for event in reduced_events:
+            first_method = event["first_mentioned"]["method"]
+            if first_method not in method_map:
+                    method_map[first_method] = 0
+            method_map[first_method] += 1
+    for key,value in method_map.items():
+        file.write(key + ": " + str(value) + "\n")

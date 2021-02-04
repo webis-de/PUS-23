@@ -45,11 +45,8 @@ for event in data:
 
 print()
 
-pprint(precisions)
-
-print()
-
-for key,value in precisions.items():
-    print(key, round(value[0]/value[1]*100, 2))
+with open(dirname(json_path) + sep + "precision.txt", "w") as file:
+    for key, value in precisions.items():
+        file.write(key + " " + "correct: " + str(value[0]) + "/" + str(value[1]) + " " + str(round(value[0]/value[1]*100, 2)) + "\n")
             
             
