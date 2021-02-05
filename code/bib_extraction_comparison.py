@@ -12,8 +12,10 @@ def to_lower(string):
 def to_alnum(string):
     return "".join([character for character in string if character.isalnum() or character in [" "]])
 
+REVISION_PATH = "../articles/2021-01-09/CRISPR_gene_editing_en"
+
 bibliography = Bibliography("../data/tracing-innovations-lit.bib")
-article = Article("../articles/CRISPR_en")
+article = Article(REVISION_PATH)
 
 article.bibliography_analysis()
 
@@ -32,7 +34,7 @@ print("Duplicates:", set([pmid for pmid in bibliography_pmids if bibliography_pm
 
 print()
 
-data = load(open("../articles/CRISPR_en_bib.json"))
+data = load(open(REVISION_PATH + "_bib.json"))
 
 article_titles = [to_alnum(to_lower(to_ascii(title))).strip() for title in data["titles"].keys()]
 articles_dois = data["dois"].keys()
