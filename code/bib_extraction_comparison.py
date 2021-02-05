@@ -12,10 +12,11 @@ def to_lower(string):
 def to_alnum(string):
     return "".join([character for character in string if character.isalnum() or character in [" "]])
 
-REVISION_PATH = "../articles/2021-01-09/CRISPR_gene_editing_en"
+ARTICLE_DIRECTORY = "../articles/"
+ARTICLE = "CRISPR_en"
 
 bibliography = Bibliography("../data/tracing-innovations-lit.bib")
-article = Article(REVISION_PATH)
+article = Article(ARTICLE_DIRECTORY + ARTICLE)
 
 article.bibliography_analysis()
 
@@ -34,18 +35,18 @@ print("Duplicates:", set([pmid for pmid in bibliography_pmids if bibliography_pm
 
 print()
 
-data = load(open(REVISION_PATH + "_bib.json"))
+data = load(open(ARTICLE_DIRECTORY + ARTICLE +"_bib.json"))
 
 article_titles = [to_alnum(to_lower(to_ascii(title))).strip() for title in data["titles"].keys()]
 articles_dois = data["dois"].keys()
 articles_pmids = data["pmids"].keys()
 
-print("Number of Titles in CRISPR article (incl. near-duplicates):",len(article_titles))
-print("Number of DOIs in CRISPR article:",len(articles_dois))
-print("Number of PMIDs in CRISPR article:",len(articles_pmids))
+print(f"Number of Titles in {ARTICLE} article (incl. near-duplicates):",len(article_titles))
+print(f"Number of DOIs in {ARTICLE} article:",len(articles_dois))
+print(f"Number of PMIDs in {ARTICLE} article:",len(articles_pmids))
 
 print()
 
-print("Size of intersection of titles:", len(set(bibliography_titles).intersection(set(article_titles))))
-print("Size of intersection of DOIs:", len(set(bibliography_dois).intersection(set(articles_dois))))
-print("Size of intersection of PMIDs:", len(set(bibliography_pmids).intersection(set(articles_pmids))))
+print(f"Size of intersection of titles:", len(set(bibliography_titles).intersection(set(article_titles))))
+print(f"Size of intersection of DOIs:", len(set(bibliography_dois).intersection(set(articles_dois))))
+print(f"Size of intersection of PMIDs:", len(set(bibliography_pmids).intersection(set(articles_pmids))))
