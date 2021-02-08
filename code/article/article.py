@@ -128,6 +128,8 @@ class Article:
                         bib["pmids"][pmid] = {"source_text": source.get_text(), "timestamp": revision.timestamp.string}
             revision = next(revisions, None)
 
+        bib = {method:{field:bib[method][field] for field in sorted(bib[method].keys())} for method in bib.keys()}
+
         with open(self.filepath + "_bib.json", "w") as file:
             dump(bib, file)
 
