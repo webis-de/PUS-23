@@ -6,9 +6,12 @@ documents = {"CRISPR_narrative-events.csv":{"key":"1wRwgRmMYluVJPrr_p-BKn6fycDGm
              "CRISPR_publication-events.csv":{"key":"1wRwgRmMYluVJPrr_p-BKn6fycDGmZ_JdlI-5dWUKnMw",
                                               "gid":"1337994121",
                                               "output":"csv"},
-            "CRISPR_accounts.csv":{"key":"1wRwgRmMYluVJPrr_p-BKn6fycDGmZ_JdlI-5dWUKnMw",
+             "CRISPR_publication-events-hochzitierte.csv":{"key":"1wRwgRmMYluVJPrr_p-BKn6fycDGmZ_JdlI-5dWUKnMw",
+                                                       "gid":"1044799910",
+                                                       "output":"csv"},
+             "CRISPR_accounts.csv":{"key":"1wRwgRmMYluVJPrr_p-BKn6fycDGmZ_JdlI-5dWUKnMw",
                                     "gid":"1402599909",
-                                    "output":"csv"}
+                                    "output":"csv"},
              }
 
 for filename,parameters in documents.items():
