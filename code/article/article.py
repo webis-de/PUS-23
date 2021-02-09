@@ -280,12 +280,11 @@ class Article:
         Provides a list of size differences between all revisions on file.
 
         Returns:
-            A list of n-1 integers for the size difference between all n revisions on file.
+            A list of n integers for the size difference between all n revisions on file. Value for first revision is set to revision.size
         """
-        revisions = self.yield_revisions()
-        size_differences = []
-        
+        revisions = self.yield_revisions()        
         revision = next(revisions)
+        size_differences = [revision.size] # first value set to revision.size just to have vector of length n
         for next_revision in revisions:
             size_differences.append(next_revision.size - revision.size)
             revision = next_revision
@@ -300,7 +299,7 @@ class Article:
             directory: The directory to which the plot will be saved.
         """
 
-        size_differences = [diff if abs(diff) < 5000 else 500 for diff in self.calculate_revision_size_difference()]
+        size_differences = [diff if abs(diff) < 5000 else 500 for diff in self.calculate_revision_size_difference()] # Note that first diff is the size of the first ever revision
 
         plt.figure(figsize=(10, 2), dpi=1000)
         plt.title(self.name + " Revision Size Differences")
