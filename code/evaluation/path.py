@@ -1,1 +1,1 @@
-json_path = "../../analysis/2021_02_03_18_20_16/CRISPR_en.json"
+json_path = "../../analysis/2021_02_08_23_08_14/CRISPR_en.json"
