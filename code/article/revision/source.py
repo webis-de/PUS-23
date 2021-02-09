@@ -220,9 +220,9 @@ class Source:
             Arno-style search and parsing without regex and in one dict comprehension (may be faster)
         """
         return {
-            'DOI': self.get_dois[0] if self.get_dois else '',
-            'PMID': self.get_pmids[0] if self.get_pmids else '',
-            'PMC': self.get_pmcs[0] if self.get_pmcs else '',
+            'DOI': self.get_dois()[0] if self.get_dois() else '',
+            'PMID': self.get_pmids()[0] if self.get_pmids() else '',
+            'PMC': self.get_pmcs()[0] if self.get_pmcs() else '',
         }
         # OLD VERSION, but please don't delete
         # d = {k:'' for k in ['DOI','PMC','PMID']}
