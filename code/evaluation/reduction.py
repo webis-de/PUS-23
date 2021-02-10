@@ -14,6 +14,8 @@ relaxed_methods = ["ned <= 0.2",
                    "ned_and_skat"
                    ]
 
+precedence = verbatim_methods + relaxed_methods
+
 with open(json_path) as file:
     events = load(file)
 
@@ -24,7 +26,7 @@ for event in events:
     methods.update({k:v for k,v in event["first_mentioned"]["verbatim"].items() if v})
     methods.update({k:v for k,v in event["first_mentioned"]["relaxed"].items() if v})
 
-    for method,occurrence in sorted(methods.items(), key = lambda item: item[1]["index"]):
+    for method,occurrence in sorted(sorted(methods.items(), key = lambda item: precedence.index(item[0])), key = lambda item: item[1]["index"]):
         if method in verbatim_methods:
             occurrence["method"] = method
             event["first_mentioned"] = occurrence
@@ -60,12 +62,12 @@ for event in events:
                 reduced_events.append(event)
                 break
         
-with open(json_path.replace(".json", "_reduced.json"), "w") as file:
+with open(json_path.replace(".json", "_reduced_ALT.json"), "w") as file:
     file.write("[" + "\n")
     file.write(",\n".join([dumps(event) for event in reduced_events]))
     file.write("\n" + "]")
 
-with open(dirname(json_path) + sep + "methods.txt", "w") as file:
+with open(dirname(json_path) + sep + "methods_ALT.txt", "w") as file:
     method_map = {}
     for event in reduced_events:
             first_method = event["first_mentioned"]["method"]
