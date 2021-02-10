@@ -23,21 +23,22 @@ for event in data:
                 journal = event["bibentries"][bibkey]["journal"]
             except KeyError:
                 journal = None
-            print("="*50)
-            print("BIBLIOGRAPH ENTRY:")
-            print("Title:", title)
-            print("Authors:", authors)
-            print("DOI:", doi)
-            print("PMID:", pmid)
-            print("Year:", year)
-            print("Journal:", journal)
-            print()
             match = event["first_mentioned"]["relaxed"][key]["result"][bibkey]["source_text"]["raw"]
-            print("MATCH:")
-            print(match)
+
             if match and ((title and title in match) or (doi and doi in match) or (pmid and pmid in match)):
                 correct = True
             else:
+                print("="*50)
+                print("BIBLIOGRAPH ENTRY:")
+                print("Title:", title)
+                print("Authors:", authors)
+                print("DOI:", doi)
+                print("PMID:", pmid)
+                print("Year:", year)
+                print("Journal:", journal)
+                print()
+                print("MATCH:")
+                print(match)
                 correct = input("\nPRESS ENTER IF CORRECT, ENTER ANY OTHER KEY AND PRESS ENTER IF INCORRECT. ") == ""
             if correct:
                 precisions[key][0] += 1
