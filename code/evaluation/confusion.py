@@ -22,14 +22,18 @@ method_matrix = [[0]*len(methods) for _ in methods]
 strategy_matrix = [[0,0],[0,0]]
 
 for event in events:
-    if any(event["first_mentioned"]["verbatim"].values()) and not any(event["first_mentioned"]["relaxed"].values()):
+    if any(event["first_mentioned"]["verbatim"].values()) and \
+       any(event["first_mentioned"]["relaxed"].values()) and \
+       min([value["index"] for value in event["first_mentioned"]["relaxed"].values() if value]) < min([value["index"] for value in event["first_mentioned"]["verbatim"].values() if value]):
         strategy_matrix[0][1] += 1
-    if any(event["first_mentioned"]["relaxed"].values()) and not any(event["first_mentioned"]["verbatim"].values()):
+    if any(event["first_mentioned"]["relaxed"].values()) and \
+       any(event["first_mentioned"]["verbatim"].values()) and \
+       min([value["index"] for value in event["first_mentioned"]["verbatim"].values() if value]) < min([value["index"] for value in event["first_mentioned"]["relaxed"].values() if value]):
         strategy_matrix[1][0] += 1
     results = {k:v for k,v in list(event["first_mentioned"]["verbatim"].items()) + list(event["first_mentioned"]["relaxed"].items())}
     for i in range(len(methods)):
         for j in range(len(methods)):
-            if results[methods[i]] and not results[methods[j]]:
+            if results[methods[i]] and results[methods[j]] and results[methods[j]]["index"] < results[methods[i]]["index"]:
                 method_matrix[i][j] += 1
 width = 16
 

@@ -278,6 +278,8 @@ if __name__ == "__main__":
 
         eventlist = EventList(event_file, bibliography, accountlist, conditions, equalling)
 
+        print(len(eventlist.events))
+
         NED_LOW = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][0]
         NED_MID = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][1]
         NED_HIGH = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][2]
