@@ -1,6 +1,6 @@
 from json import load
 from pprint import pprint
-from path import json_path
+from path import JSON_CORRECT
 from datetime import datetime
 
 def median(array):
@@ -20,7 +20,7 @@ def delta(timestamp1, timestamp2):
 
 method_delays = {"absolute":{},"relative":{}}
 
-data = load(open(json_path))
+data = load(open(JSON_CORRECT))
 
 for event in data:
     

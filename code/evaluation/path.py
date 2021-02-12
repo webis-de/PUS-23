@@ -1,1 +1,5 @@
-json_path = "../../analysis/2021_02_09 rework/publication-events/CRISPR_en_annotated.json"
+directory = "../../analysis/2021_02_09/publication-events/"
+JSON = directory + "CRISPR_en.json"
+JSON_ANNOTATED = directory + "CRISPR_en_annotated.json"
+JSON_CORRECT = directory + "CRISPR_en_correct.json"
+JSON_REDUCED = directory + "CRISPR_en_reduced.json"

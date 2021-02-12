@@ -165,15 +165,15 @@ def plot_delays(json_file, data, methods):
 
 if __name__ == "__main__":
 
-    from path import json_path
+    from path import JSON
 
-    occurrence(json_path, False)
+    occurrence(JSON, False)
 
-    delays = calculate_delays(json_path, True)
-    delays_all = calculate_delays(json_path, False)
+    delays = calculate_delays(JSON, True)
+    delays_all = calculate_delays(JSON, False)
 
-    write_delay_table(json_path, delays, True)
-    write_delay_table(json_path, delays_all, False)
+    write_delay_table(JSON, delays, True)
+    write_delay_table(JSON, delays_all, False)
 
     methods = ["titles","dois","pmids"]
-    plot_delays(json_path, delays, methods)
+    plot_delays(JSON, delays, methods)
