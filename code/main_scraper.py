@@ -21,7 +21,7 @@ if __name__ == "__main__":
                                  default="../articles",
                                  help="The relative or absolute path to the directory to which the revisions will be saved.")
     argument_parser.add_argument("-a", "--articles",
-                                 default="../data/articles_custom.json",
+                                 default="../data/relevant_articles/articles_arno.json",
                                  help="Either the relative of abolute path to a JSON file of articles " + \
                                       "or quoted string of comma-separated articles, " + \
                                       "e.g. 'Cas9,The CRISPR JOURNAL'.")
