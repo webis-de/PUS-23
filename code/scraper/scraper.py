@@ -127,6 +127,8 @@ class Scraper:
             if exists(str(directory) + sep + self.filename):
                 self._rvstartid(directory + sep + self.filename)
                 self.updating = True
+            else:
+                self.rvcontinue = True
             while self._collect_revisions(directory, deadline, number, verbose, gethtml):
                 pass
             return 0
@@ -180,39 +182,42 @@ class Scraper:
             False if maximum number of revision to scrape has been reached, scraped revision
             date is on day of deadline or there are no more revisions, else True.
         """
-        response = GET(self.api_url, params=self.parameters, headers=self.headers)
-        response_json = response.json()
-        sleep(self._delay())
-        for revision in response_json["query"]["pages"][self.page_id]["revisions"]:
-            if self.revision_count >= number:
-                return False
-            if not self._before(revision["timestamp"], deadline):
-                return False
-            revision_url = self.article_url + "&oldid=" + str(revision["revid"])
-            self._save(directory,
-                      {"revid":revision["revid"],
-                       "parentid":revision["parentid"],
-                       "url":revision_url,
-                       "user":revision["user"],
-                       "userid":revision["userid"],
-                       "timestamp":revision["timestamp"],
-                       "size":revision["size"],
-                       "wikitext":revision["slots"]["main"].get("*", ""),
-                       "html":self._download_html(revision_url) if gethtml else None,
-                       "comment":revision.get("comment",""),
-                       "minor":revision.get("minor",""),
-                       "index":self.revision_count})
-            self.revision_count += 1
-            if self.updating: self.update_count += 1
-            if self.revision_count % 100 == 0:
-                self.logger.end_check(self.revision_count)
-            else:
-                if verbose: print(self.revision_count)
-
-        self.rvcontinue = response_json.get("continue",{}).get("rvcontinue",None)
         if self.rvcontinue:
-            self.parameters["rvstartid"] = self.rvcontinue.split("|")[1]
-            return True
+            response = GET(self.api_url, params=self.parameters, headers=self.headers)
+            response_json = response.json()
+            sleep(self._delay())
+            for revision in response_json["query"]["pages"][self.page_id]["revisions"]:
+                if self.revision_count >= number:
+                    return False
+                if not self._before(revision["timestamp"], deadline):
+                    return False
+                revision_url = self.article_url + "&oldid=" + str(revision["revid"])
+                self._save(directory,
+                          {"revid":revision["revid"],
+                           "parentid":revision["parentid"],
+                           "url":revision_url,
+                           "user":revision["user"],
+                           "userid":revision["userid"],
+                           "timestamp":revision["timestamp"],
+                           "size":revision["size"],
+                           "wikitext":revision["slots"]["main"].get("*", ""),
+                           "html":self._download_html(revision_url) if gethtml else None,
+                           "comment":revision.get("comment",""),
+                           "minor":revision.get("minor",""),
+                           "index":self.revision_count})
+                self.revision_count += 1
+                if self.updating: self.update_count += 1
+                if self.revision_count % 100 == 0:
+                    self.logger.end_check(self.revision_count)
+                else:
+                    if verbose: print(self.revision_count)
+
+            self.rvcontinue = response_json.get("continue",{}).get("rvcontinue",None)
+            if self.rvcontinue:
+                self.parameters["rvstartid"] = self.rvcontinue.split("|")[1]
+                return True
+            else:
+                return False
         else:
             return False
 
