@@ -196,8 +196,8 @@ class Scraper:
                           {"revid":revision["revid"],
                            "parentid":revision["parentid"],
                            "url":revision_url,
-                           "user":revision["user"],
-                           "userid":revision["userid"],
+                           "user":revision.get("user", None),
+                           "userid":revision.get("userid", None),
                            "timestamp":revision["timestamp"],
                            "size":revision["size"],
                            "wikitext":revision["slots"]["main"].get("*", ""),
@@ -208,7 +208,7 @@ class Scraper:
                 self.revision_count += 1
                 if self.updating: self.update_count += 1
                 if self.revision_count % 100 == 0:
-                    self.logger.end_check("revision count:",self.revision_count,"revid:",revision["revid"])
+                    self.logger.end_check("revision count:",str(self.revision_count).rjust(5, " "),"revid:"revision["revid"])
                 else:
                     if verbose: print(self.revision_count)
 
