@@ -208,7 +208,7 @@ class Scraper:
                 self.revision_count += 1
                 if self.updating: self.update_count += 1
                 if self.revision_count % 100 == 0:
-                    self.logger.end_check(self.revision_count)
+                    self.logger.end_check("revision count:",self.revision_count,"revid":revision["revid"])
                 else:
                     if verbose: print(self.revision_count)
 
