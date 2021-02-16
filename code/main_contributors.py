@@ -50,12 +50,12 @@ def calculate_contributions(article_directory, article_title, text_file, json_fi
             JSN = contribution.json(editors)
             TBL = contribution.table(editors)
 
-            if length_diff(text, previous_text) < 0.1:
+            if length_diff(text, previous_text) < 0.2:
                 print(revision.index, "Revision considerably shorter: skipping.")
                 text_file.write("Revision considerably shorter: skipping." + "\n")
                 text_file.write(TBL)
                 continue
-            elif length_diff(text, previous_text) > 10:
+            elif length_diff(text, previous_text) > 5:
                 print(revision.index, "Revision considerably longer: skipping.")
                 text_file.write("Revision considerably longer: skipping." + "\n")
                 text_file.write(TBL)
@@ -133,9 +133,9 @@ def plot_contributions(contributions, basename, threshold = 0.0):
 if __name__ == "__main__":
     
     output_directory = ".." + sep + "contributors_test_wikitext"
-    article_directory = "../articles/no_html"
+    article_directory = "../articles"
     article_title = "CRISPR_en"
-    basename = output_directory + sep + article_title + "_revision_contributors"
+    basename = output_directory + sep + article_title + "_revision_contributors_3"
 
     contributions = get_contributions(output_directory,
                                       article_title,
