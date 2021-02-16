@@ -208,9 +208,9 @@ class Scraper:
                 self.revision_count += 1
                 if self.updating: self.update_count += 1
                 if self.revision_count % 100 == 0:
-                    self.logger.end_check("revision count:",str(self.revision_count).rjust(5, " "),"revid:"revision["revid"])
+                    self.logger.end_check(self.revision_count)
                 else:
-                    if verbose: print(self.revision_count)
+                    if verbose: print("revision count:",str(self.revision_count).rjust(5, " "),"revid:",revision["revid"])
 
             self.rvcontinue = response_json.get("continue",{}).get("rvcontinue",None)
             if self.rvcontinue:
