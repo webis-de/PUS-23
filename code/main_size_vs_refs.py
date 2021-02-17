@@ -12,8 +12,8 @@ def corr_coef(X,Y):
     mean_y = sum(Y) / len(Y)
 
     Sxy = 0
-    Sxx = 1
-    Syy = 1
+    Sxx = 0
+    Syy = 0
     for i in range (0, len(X)):
         Sxy += (X[i] - mean_x) * (Y[i] - mean_y)
         Sxx += (X[i] - mean_x)**2
@@ -26,7 +26,7 @@ save = True
 
 for filepath in filepaths:
 
-    articletitle = unquote(basename(filepath)).replace("_", " ")[:-3]
+    articletitle = "'" + unquote(basename(filepath)).replace("_", " ")[:-3] + "'"
 
     if not exists(filepath + "_revision_size_vs_reference_length.json"):
 
@@ -105,11 +105,11 @@ for filepath in filepaths:
         reference_counts = data["reference_counts"]
 
     try:
-        cc = corr_coef(sizes, reference_counts)
+        pcc = round(corr_coef(sizes, reference_counts), 3)
     except:
-        cc = "ERROR"
+        pcc = "n/a"
 
-    print("Correlation Coefficient:", cc)
+    print("PCC:", pcc)
 
     print("Plotting " + articletitle)
 
@@ -131,7 +131,7 @@ for filepath in filepaths:
     ax1.set_ylim(ymin=0)
     ax2.set_ylim(ymin=0)
     #plt.subplots_adjust(bottom=0.12, top=0.98, left=0.12, right=0.88)
-    plt.title("Correlation Coefficient: " + str(cc))
+    plt.title("PCC: " + str(pcc))
     fig.tight_layout()
     plt.savefig(filepath + "_revision_size_vs_reference_length.png")
     plt.close('all')
