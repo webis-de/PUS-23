@@ -37,11 +37,13 @@ for filepath in filepaths:
         first_revision = article.get_revision(0)
 
         timeslices = []
-        for year in range(2000, 2021):
+        for year in range(2000, 2022):
             if year < first_revision.timestamp.year: continue
             for month in range(1, 13):
                 if year == first_revision.timestamp.year and month < first_revision.timestamp.month: continue
                 timeslices.append(str(month) + "/" + str(year))
+                if year == 2021 and month == 2:
+                    break
 
         data = {timeslice:{"size":[],"refcount":[]} for timeslice in timeslices}
 
@@ -56,8 +58,6 @@ for filepath in filepaths:
             if revision.index % 100 == 0:
                 print(revision.index)
             if revision.index != 0 and revision.size == 0:
-                continue
-            if revision.index != 0 and (revision.size/last_size < 0.2 or revision.size/last_size > 5):
                 continue
             else:
                 count += 1
