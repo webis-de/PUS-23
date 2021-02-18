@@ -1,6 +1,7 @@
 from .timestamp import Timestamp
 from .source import Source
 from .section import Section
+from .arno_section import Arno_Section
 from pprint import pformat
 from requests import get
 from lxml import html, etree
@@ -165,4 +166,58 @@ class Revision:
 
     def __str__(self):
         return pformat(self.__dict__)
+
+
+    def get_arno_sections(self):
+        """
+        Get the sections of the revision.
+
+        Returns:
+            Sections as a list of Arno_Section objects.
+        """
+        # extract sections in order of appearance and regardless of section level (using regex to cut the html)
+        headline_range = range(1,7) # quick hack
+        starts = [m.start() for m in finditer(r'|'.join([r'<h{0}.*?h{0}>'.format(i) for i in headline_range]), self.html)]
+        ends = [m.end() for m in finditer(r'|'.join([r'<h{0}.*?h{0}>'.format(i) for i in headline_range]), self.html)]
+        headings_html = [self.html[start:end] for start, end in zip(starts,ends)]
+        texts_html = [self.html[end:start] for end, start in zip(ends, starts[1:])] + [self.html[ends[-1]:]]
+        # create lonesome sections
+        sections = [Arno_Section(heading_html.strip(), text_html.strip()) for heading_html, text_html in zip(headings_html, texts_html)]
+        # assign parents, children, next, and previous
+        last_parents = [None for i in range(0,10)]
+        last_section = None
+        for section in sections:
+          if last_section:
+            last_section.next = section
+            if section.level > last_section.level:
+              last_section.children.append(section)
+              section.parent = last_section
+              last_parents[section.level] = section
+            elif section.level == last_section.level:
+              if last_section.parent:
+                section.parent = last_section.parent
+                last_section.parent.children.append(section)
+              last_parents[section.level] = section
+            elif section.level < last_section.level:
+              if last_parents[section.level]:
+                if last_parents[section.level].parent:
+                  section.parent = last_parents[section.level].parent 
+                  last_parents[section.level].parent .children.append(section)
+            section.previous = last_section
+          last_section = section
+          last_parents[section.level] = section
+        return sections
+
+    def get_specific_arno_sections(self, selection):
+        """
+        Get specific sections based on a selection of headings.
+
+        Args:
+            selection: iterator of strings (each string representing a desired heading)
+
+        Returns:
+            Sections as a list of Arno_Section objects.
+        """
+        return [section for section in self.get_arno_sections() if any(section.heading == heading for heading in selection)]
+
     
