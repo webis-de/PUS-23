@@ -2,7 +2,8 @@ import lxml
 
 class Arno_Section:
   
-  def __init__(self, heading_html, text_html):
+  def __init__(self, revision, heading_html, text_html):
+    self.revision = revision
     self.heading_html = heading_html
     self.heading = ''.join(lxml.html.fromstring(heading_html).itertext()) if heading_html else ''
     self.text_html = text_html
@@ -16,7 +17,7 @@ class Arno_Section:
   
   def get_html(self):
     """
-    Get the html of the section (excluding the html of its subsections).
+    Get the html of the section (excluding its subsections).
 
     Returns:
         The html as a string.
@@ -34,7 +35,7 @@ class Arno_Section:
   
   def get_text(self):
     """
-    Get the full text of the section (excluding the text of its subsections).
+    Get the full text of the section (excluding its subsections).
 
     Returns:
         The full text as a string.
@@ -52,9 +53,42 @@ class Arno_Section:
 
   def get_hrefs(self):
     """
-    Return all hrefs in the section.
+    Return all hrefs in the section (excluding its subsections).
 
     Returns:
         A list of hrefs as strings.
     """
-    return [element.get("href") for element in self.lxml.html.fromstring(self.get_html()).xpath(".//a")]
+    return [element.get("href") for element in lxml.html.fromstring(self.get_html()).xpath(".//a")]
+
+  def get_all_hrefs(self):
+    """
+    Return all hrefs in the section and all its subsections.
+
+    Returns:
+        A list of hrefs as strings.
+    """
+    return [element.get("href") for element in lxml.html.fromstring(self.get_all_html()).xpath(".//a")]
+
+  def get_references(self):
+    """
+    Return all references in the section (excluding its subsections).
+
+    Returns:
+        A list of hrefs as strings.
+    """
+    ref_ids = [href[1:] for href in self.get_hrefs() if href.startswith('#cite_note')]
+    return sorted([ref for ref in self.revision.get_references() if ref.get_id() in ref_ids], key=lambda x: x.get_text())
+
+  def get_all_references(self):
+    """
+    Return all references in the section and all its subsections.
+
+    Returns:
+        A list of hrefs as strings.
+    """
+    ref_ids = [href[1:] for href in self.get_all_hrefs() if href.startswith('#cite_note')]
+    return sorted([ref for ref in self.revision.get_references() if ref.get_id() in ref_ids], key=lambda x: x.get_text())
+    
+
+    
+

@@ -182,7 +182,7 @@ class Revision:
         headings_html = [self.html[start:end] for start, end in zip(starts,ends)]
         texts_html = [self.html[end:start] for end, start in zip(ends, starts[1:])] + [self.html[ends[-1]:]]
         # create lonesome sections
-        sections = [Arno_Section(heading_html.strip(), text_html.strip()) for heading_html, text_html in zip(headings_html, texts_html)]
+        sections = [Arno_Section(self, heading_html.strip(), text_html.strip()) for heading_html, text_html in zip(headings_html, texts_html)]
         # assign parents, children, next, and previous
         last_parents = [None for i in range(0,10)]
         last_section = None
