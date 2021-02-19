@@ -168,7 +168,7 @@ class Revision:
         return pformat(self.__dict__)
 
 
-    def get_arno_sections(self):
+    def get_arno_sections(self, headline_range = range(1,7)):
         """
         Get the sections of the revision.
 
@@ -176,9 +176,9 @@ class Revision:
             Sections as a list of Arno_Section objects.
         """
         # extract sections in order of appearance and regardless of section level (using regex to cut the html)
-        headline_range = range(1,7) # quick hack
-        starts = [m.start() for m in finditer(r'|'.join([r'<h{0}.*?h{0}>'.format(i) for i in headline_range]), self.html)]
-        ends = [m.end() for m in finditer(r'|'.join([r'<h{0}.*?h{0}>'.format(i) for i in headline_range]), self.html)]
+        indices = list(finditer(r'|'.join([r'<h{0}.*?h{0}>'.format(i) for i in headline_range]), self.html))
+        starts = [m.start() for m in indices]
+        ends = [m.end() for m in indices]
         headings_html = [self.html[start:end] for start, end in zip(starts,ends)]
         texts_html = [self.html[end:start] for end, start in zip(ends, starts[1:])] + [self.html[ends[-1]:]]
         # create lonesome sections
@@ -208,7 +208,7 @@ class Revision:
           last_parents[section.level] = section
         return sections
 
-    def get_specific_arno_sections(self, selection):
+    def get_specific_sections(self, selection):
         """
         Get specific sections based on a selection of headings.
 
@@ -219,5 +219,8 @@ class Revision:
             Sections as a list of Arno_Section objects.
         """
         return [section for section in self.get_arno_sections() if any(section.heading == heading for heading in selection)]
+
+    def get_section_headings(self, show_parents=True):
+        return [section.get_fullheading() if show_parents else section.heading for section in self.get_arno_sections()]
 
     
