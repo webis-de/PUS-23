@@ -176,7 +176,7 @@ class Revision:
             Sections as a list of Arno_Section objects.
         """
         # extract sections in order of appearance and regardless of section level (using regex to cut the html)
-        indices = list(finditer(r'|'.join([r'<h{0}.*?h{0}>'.format(i) for i in headline_range]), self.html))
+        indices = list(finditer(r'|'.join([fr'<h{i}.*?h{i}>' for i in range(1,7)]), self.html))
         starts = [m.start() for m in indices]
         ends = [m.end() for m in indices]
         headings_html = [self.html[start:end] for start, end in zip(starts,ends)]
