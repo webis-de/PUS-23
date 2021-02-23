@@ -127,13 +127,13 @@ class Revision:
     def get_referenced_authors(self, language, sources):
         return [source.get_authors(language) for source in sources]
 
-    def get_referenced_titles(self, language, source):
+    def get_referenced_titles(self, language, sources):
         return [source.get_title(language) for source in sources]
 
-    def get_referenced_dois(self, source):
+    def get_referenced_dois(self, sources):
         return [source.get_dois() for source in sources]
 
-    def get_referenced_pmids(self, source):
+    def get_referenced_pmids(self, sources):
         return [source.get_pmids() for source in sources]
 
     def get_lr_contexts(self, keyphrase, width=50, lower=False):
