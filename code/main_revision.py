@@ -20,9 +20,9 @@ def heading(text, file):
 if __name__ == "__main__":
 
     PROCESSING = ["", "_raw", "_preprocessor", "_spacy"][0]
-    SELECTION = ["index", "revid", "random"][0]
+    SELECTION = ["index", "revid", "random"][1]
     LANGUAGE = ["en", "de"][0]
-    FILEPATH = "../articles/2020-12-12/CRISPR_" + LANGUAGE
+    FILEPATH = "../articles/2021-02-14/CRISPR_" + LANGUAGE
 
     preprocessor = Preprocessor(LANGUAGE, ["prokaryotic antiviral system", "10.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"])
     if LANGUAGE == "en":
@@ -35,7 +35,7 @@ if __name__ == "__main__":
         #Open scraped article and get random revision.
         if SELECTION == "index":
             #reasonable index for en 1935, for de 100
-            index = 136
+            index = 10
             line = 0
             with open(FILEPATH) as article:
                 while line < index:
@@ -43,11 +43,11 @@ if __name__ == "__main__":
                     line += 1
                 revision = Revision(**loads(article.readline()))
         elif SELECTION == "revid":
-            revid = 648831944
+            revid = 701817377            
             with open(FILEPATH) as article:
                 for line in article:
                     revision = Revision(**loads(line))
-                    if revision.revid == 648831944:
+                    if revision.revid == revid:
                         break
             index = revision.index
         else:

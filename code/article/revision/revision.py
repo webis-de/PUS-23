@@ -64,7 +64,10 @@ class Revision:
 
     def get_wikitext(self):
         return self.wikitext
-        
+
+    def tree(self):
+        return Section(self.etree_from_html()[0], "root").tree() 
+
     def get_text(self):
         try:
             return "".join(self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].xpath("//text()")).strip()
