@@ -4,11 +4,12 @@ from queue import Queue
 
 class Section:
 
-    def __init__(self, source, name = "", parent = None, headings = ["h2","h3","h4","h5","h6"]):
+    def __init__(self, source, name = "", parent = None, level = 0, headings = ["h2","h3","h4","h5","h6"]):
 
         self.source = source
         self.name = name
         self.parent = parent
+        self.level = level
         self.subsections = []
         self.headings = headings
 
@@ -30,7 +31,13 @@ class Section:
         """
         return [element.get("href") for element in self.source.xpath("./" + ("/" * deep) + "a")]
 
-    def tree(self):
+    def tree(self, level = 1):
+        """
+        Creates a nested section tree from this section.
+
+        Returns:
+            A section tree of headings, paragraphs and divs.
+        """
         if any([element.tag not in  ["p","div"] for element in self.source]):
             elements = []
             name = "Intro"
@@ -38,15 +45,45 @@ class Section:
                 if element.tag in ["p","div"] + self.headings[1:]:
                     elements.append(element)
                 elif element.tag in self.headings[:1]:
-                    if elements:
-                        self.subsections.append(Section(elements, name, self, self.headings[1:]))
-                        self.subsections[-1].tree()
-                    name = element.xpath(".//text()")[0]
+                    self._elements_to_subsection(elements, name, level)
+                    name = "".join(element.itertext())
                     elements = []
-            if elements:
-                self.subsections.append(Section(elements, name, self, self.headings[1:]))
-                self.subsections[-1].tree()
+            self._elements_to_subsection(elements, name, level)
+        else:
+            self.subsections = [Section(element, element.tag, self, level) for element in self.source]
         return self
+
+    def find(self, strings, sections = []):
+        """
+        Recursively finds all subsections in the section tree with any of the given strings in the title.
+
+        Args:
+            string: A list of strings to search in the title.
+            sections: Sections that will be returned.
+        Returns:
+            A list of sections.
+        """
+        for subsection in self.subsections:
+            for string in strings:
+                if string in subsection.name:
+                    sections.append(subsection)
+                    break
+            subsection.find(strings, sections)
+        return sections
+
+    def _elements_to_subsection(self, elements, name, level):
+        """
+        Turns a list of elements into a new subsection and calls tree on it.
+
+        Args:
+            elements: A list of HTML elements.
+            name: The name of the subsection.
+            level: The level of this subsection.
+        """
+        if elements:
+            subsection = Section(elements, name, self, level, self.headings[1:])
+            self.subsections.append(subsection)
+            subsection.tree(level + 1)
 
     def _queue_subsections(self):
         """
@@ -63,18 +100,43 @@ class Section:
                 queue.put(subsubsection)
         return queue
 
-    def nested_json(self, first=True):
+    def parent_path(self):
+        """
+        Get the path of parent names.
+
+        Returns:
+            The /-separated path to this section.
+        """
+        if not self.parent:
+            return ""
+        else:
+            return self.parent.parent_path() + "/" + self.name
+
+    def parent_name(self):
+        """
+        Get the parent name.
+
+        Returns:
+            The name of the parent; None if root.
+        """
+        return self.parent.name if self.parent else None
+
+    def nested_json(self):
         """
         Return this section as a json object.
 
         Returns:
             This section as a dictionary.
         """
-        json = {}
-        #if not first: json["text"] = self.get_text(deep=True).replace("\n","")
+        
         if self.subsections:
-            json[self.name] = [element.nested_json(False) for element in self.subsections]
+            json = {"level":self.level,"parent":self.parent_name(), "path":self.parent_path()}
+            json[self.name] = {index:element.nested_json() for index,element in enumerate(self.subsections,1)}
         else:
-            json[self.name] = {index:"".join(element.itertext()).replace("\n","").strip() for index,element in enumerate(self.source,1)}
+            json = {}
+            json = {"level":self.level,
+                    "parent":self.parent_name(),
+                    "path":self.parent_path(),
+                    self.name:"".join(self.source.itertext()).replace("\n","").strip()}
         return json
 

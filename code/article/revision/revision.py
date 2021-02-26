@@ -66,7 +66,10 @@ class Revision:
         return self.wikitext
 
     def tree(self):
-        return Section(self.etree_from_html()[0], "root").tree() 
+        return Section(self.etree_from_html()[0], "root").tree()
+
+    def find(self, text):
+        return self.tree.find(text)
 
     def get_text(self):
         try:
