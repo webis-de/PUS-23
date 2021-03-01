@@ -4,11 +4,13 @@ from queue import Queue
 
 class Section:
 
-    def __init__(self, source, name = "", parent = None, level = 0, headings = ["h2","h3","h4","h5","h6"]):
+    def __init__(self, source, name = "root", parent = None, level = 0, headings = ["h2","h3","h4","h5","h6"]):
 
         self.source = source
         self.name = name
         self.parent = parent
+        self.prev = None
+        self.next = None
         self.level = level
         self.subsections = []
         self.headings = headings
@@ -17,6 +19,8 @@ class Section:
         """
         Get the full text of the element.
 
+        Args:
+            deep: Get text below top level.
         Returns:
             The full section as a string.
         """
@@ -26,6 +30,8 @@ class Section:
         """
         Return all hrefs in the element.
 
+        Args:
+            deep: Get hrefs below top level.
         Returns:
             A list of hrefs as strings.
         """
@@ -35,6 +41,8 @@ class Section:
         """
         Creates a nested section tree from this section.
 
+        Args:
+            level: Level of this section in the tree; 'root' at 0.
         Returns:
             A section tree of headings, paragraphs and divs.
         """
@@ -51,7 +59,7 @@ class Section:
             self._elements_to_subsection(elements, name, level)
         else:
             self.subsections = [Section(element, element.tag, self, level) for element in self.source]
-        return self
+        return self._siblings()
 
     def find(self, strings, sections = []):
         """
@@ -84,6 +92,14 @@ class Section:
             subsection = Section(elements, name, self, level, self.headings[1:])
             self.subsections.append(subsection)
             subsection.tree(level + 1)
+
+    def _siblings(self):
+        for subsection1,subsection2 in zip(self.subsections[:-1], self.subsections[1:]):
+            subsection1.next = subsection2
+            subsection2.prev = subsection1
+        for subsection in self.subsections:
+            subsection._siblings()
+        return self
 
     def _queue_subsections(self):
         """
@@ -121,7 +137,7 @@ class Section:
         """
         return self.parent.name if self.parent else None
 
-    def nested_json(self):
+    def json(self):
         """
         Return this section as a json object.
 
@@ -130,13 +146,19 @@ class Section:
         """
         
         if self.subsections:
-            json = {"level":self.level,"parent":self.parent_name(), "path":self.parent_path()}
-            json[self.name] = {index:element.nested_json() for index,element in enumerate(self.subsections,1)}
+            json = {"level":self.level,
+                    "parent":self.parent_name(),
+                    "path":self.parent_path(),
+                    "prev":self.prev.name if self.prev else None,
+                    "next":self.next.name if self.next else None}
+            json[self.name] = {index:element.json() for index,element in enumerate(self.subsections,1)}
         else:
             json = {}
             json = {"level":self.level,
                     "parent":self.parent_name(),
                     "path":self.parent_path(),
+                    "prev":"".join(self.prev.source.itertext()).replace("\n","").strip() if self.prev else None,
+                    "next":"".join(self.next.source.itertext()).replace("\n","").strip() if self.next else None,
                     self.name:"".join(self.source.itertext()).replace("\n","").strip()}
         return json
 
