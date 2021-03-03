@@ -156,7 +156,8 @@ class Revision:
         """
         # extract sections in order of appearance and regardless of section level (using regex to cut the html)
         indices = list(finditer(r'|'.join([fr'<h{i}.*?h{i}>' for i in range(1,7)]), self.html))
-        print(indices)
+        if not indices:
+            return []
         starts = [m.start() for m in indices]
         ends = [m.end() for m in indices]
         headings_html = [self.html[start:end] for start, end in zip(starts,ends)]

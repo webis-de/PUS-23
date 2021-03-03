@@ -4,7 +4,7 @@ class Arno_Section:
     def __init__(self, revision, heading_html, text_html):
         self.revision = revision
         self.heading_html = heading_html
-        self.heading = ''.join(lxml.html.fromstring(heading_html).itertext()) if heading_html else ''
+        self.heading = ''.join(lxml.html.fromstring(heading_html).itertext()).split('[edit]')[0].strip() if heading_html else ''
         self.text_html = text_html
         self.text = ''.join(lxml.html.fromstring(text_html).itertext()) if text_html else ''
         self.level = int(heading_html.strip()[2:3]) # so far, ony one-digit levels
