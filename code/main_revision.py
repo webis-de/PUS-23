@@ -98,7 +98,7 @@ if __name__ == "__main__":
                 file.write(str(category) + "\n")
 
             #Print all references in History section.
-            heading("\nREFERECES IN HISTORY SECTION", file)
+            heading("\nREFERENCES IN HISTORY SECTION", file)
             history_section_tree = section_tree.find("History")[0]
             for source in history_section_tree.get_sources(revision.get_references()):
                 file.write(source.get_text() + "\n")
@@ -109,9 +109,8 @@ if __name__ == "__main__":
             for source in sources.items():
                 heading("\n" + source[0] + " " + "(" + str(len(source[1])) + ")", file)
                 for reference in source[1]:
-                    #file.write("HTML: " + html.tostring(reference.source).decode("utf-8") + "\n")
+                    #file.write("HTML: " + html.tostring(reference.html).decode("utf-8") + "\n")
                     file.write("REFERENCE TEXT: " + reference.get_text().strip() + "\n")
-                    file.write("ID: " + str(reference.get_reference_ids()) + "\n")
                     #file.write("REFERENCE TEXT TOKENISED: " + "|".join(preprocessor.preprocess(reference.get_text().strip(), lower=False, stopping=False, sentenize=False, tokenize=True)[0]) + "\n")
                     file.write("\n")
                     file.write("AUTHORS: " + str(reference.get_authors(LANGUAGE)) + "\n")

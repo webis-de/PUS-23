@@ -23,7 +23,7 @@ with open("sections.txt", "w") as file:
     history_section_tree = section_tree.find(["History"])[0]
     file.write(pformat(history_section_tree.json(), width=200, sort_dicts=False) + "\n\n")
 
-    file.write("Authors in History Section\n\n")
+    file.write("Titles and Authors in History Section\n\n")
     for source in history_section_tree.get_sources(revision.get_references()):
-        file.write(source.get_text())
+        file.write(source.get_title("en") + "\n")
         file.write(str(source.get_authors("en")) + "\n\n")
