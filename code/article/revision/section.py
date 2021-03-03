@@ -1,5 +1,5 @@
 from re import sub
-from lxml import etree
+from lxml import html as HTML
 from queue import Queue
 from copy import deepcopy
 
@@ -61,7 +61,7 @@ class Section:
                 else:
                     self.subsections[-1].append(element)
             else:
-                self.subsections.append(etree.ElementBase())
+                self.subsections.append(HTML.fromstring('<div> class="section" </div>'))
                 self.subsections[-1].append(element)
         self.subsections = [self._html_to_section(html) for html in self.subsections]
         self._siblings()
@@ -129,10 +129,28 @@ class Section:
         return paragraphs
 
     def get_headings(self, headings = []):
-        headings += [element for element in self.html.iter("h2","h3","h4","h5","h6")]
+        headings += [element for element in self.html.iter(["h2","h3","h4","h5","h6"])]
         for subsection in self.subsections:
             subsection.get_headings(headings)
         return headings
+
+    def get_lists(self, lists = []):
+        lists += [element for element in self.html.iter(["ol","ul"])]
+        for subsection in self.subsections:
+            subsection.get_lists(lists)
+        return lists
+
+    def get_tables(self, tables = []):
+        tables += [element for element in self.html.iter(["table"])]
+        for subsection in self.subsections:
+            subsection.get_tables(tables)
+        return tables
+
+    def get_captions(self, captions = []):
+        captions += [element for element in self.html.iter() if "thumbcaption" in element.classes]
+        for subsection in self.subsections:
+            subsection.get_captions(captions)
+        return captions
 
     def parent_path(self):
         """

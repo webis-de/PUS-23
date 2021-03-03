@@ -74,51 +74,25 @@ class Revision:
         except IndexError:
             return "".join(self.etree_from_html().xpath(".//text()")).strip()
 
-    def get_sections(self):
-        #get all sections, i.e. paragraphs, lists, headings, captions, tables
-        return self.get_paragraphs() + self.get_lists() + self.get_headings() + self.get_captions() + self.get_tables()
-
-    def get_paragraphs(self):
-        #get all unclassified paragraphs
-        return self.section_tree().get_paragraphs()
-        xpath_expression = "./p[not(@class)]"
-        try:
-            return [Section(section) for section in self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].xpath(xpath_expression)]
-        except IndexError:
-            return [Section(section) for section in self.etree_from_html().xpath(xpath_expression)]
-
-    def get_lists(self):
-        #get all ordered lists and unordered lists
-        xpath_expression = "|".join(["./" + tag + "[not(@class)]" for tag in ["ol","ul"]])
-        try:
-            return [Section(section) for section in self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].xpath(xpath_expression)]
-        except IndexError:
-            return [Section(section) for section in self.etree_from_html().xpath(xpath_expression)]
-
     def get_headings(self):
         #get all headlines
         return self.section_tree().get_headings()
-        xpath_expression = "|".join(["./" + tag + "[not(@class)]" for tag in ["h1","h2","h3","h4","h5","h6"]])
-        try:
-            return [Section(section) for section in self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].xpath(xpath_expression)]
-        except IndexError:
-            return [Section(section) for section in self.etree_from_html().xpath(xpath_expression)]
+
+    def get_paragraphs(self):
+        #get all paragraphs
+        return self.section_tree().get_paragraphs()
+
+    def get_lists(self):
+        #get all ordered lists and unordered lists
+        return self.section_tree().get_lists()
 
     def get_captions(self):
         #get all captions and thumbnails
-        xpath_expression = ".//div[@class='thumbcaption']"
-        try:
-            return [Section(section) for section in self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].xpath(xpath_expression)]
-        except IndexError:
-            return [Section(section) for section in self.etree_from_html().xpath(xpath_expression)]
+        return self.section_tree().get_captions()
 
     def get_tables(self):
         #get all tables
-        xpath_expression = ".//table"
-        try:
-            return [Section(section) for section in self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].xpath(xpath_expression)]
-        except IndexError:
-            return [Section(section) for section in self.etree_from_html().xpath(xpath_expression)]
+        return self.section_tree().get_tables()
 
     def get_categories(self):
         return [(element.text, element.get("href")) for element in self.etree_from_html().xpath(".//div[@id='mw-normal-catlinks']//a")[1:]]

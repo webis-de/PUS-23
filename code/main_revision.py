@@ -1,4 +1,4 @@
-from article.revision.revision import Revision
+from article.article import Article
 from preprocessor.preprocessor import Preprocessor
 from spacy.lang.en import English
 from spacy.lang.de import German
@@ -31,37 +31,10 @@ if __name__ == "__main__":
         spacy = German()
 
     with open("revision_extraction" + PROCESSING + ".txt", "w", encoding="utf-8") as file:        
-
-        #Open scraped article and get random revision.
-        if SELECTION == "index":
-            #reasonable index for en 1935, for de 100
-            index = 10
-            line = 0
-            with open(FILEPATH) as article:
-                while line < index:
-                    article.readline()
-                    line += 1
-                revision = Revision(**loads(article.readline()))
-        elif SELECTION == "revid":
-            revid = 701817377            
-            with open(FILEPATH) as article:
-                for line in article:
-                    revision = Revision(**loads(line))
-                    if revision.revid == revid:
-                        break
-            index = revision.index
-        else:
-            revision_count = 0
-            with open(FILEPATH) as file_to_count:
-                for line in file_to_count:
-                    revision_count += 1
-            index = randint(0, revision_count - 1)
-            line = 0
-            with open(FILEPATH) as article:
-                while line < index:
-                    article.readline()
-                    line += 1
-                revision = Revision(**loads(article.readline()))
+        revid = None if SELECTION == "random" else 701817377
+        index = randint(0, len(open(FILEPATH).readlines()) - 1) if SELECTION == "random" else None
+        revision = Article(FILEPATH).get_revision(index, revid)
+        index = revision.index
         
         preprocessing_start = datetime.now()
         if PROCESSING == "_raw" or PROCESSING == "":
@@ -92,32 +65,32 @@ if __name__ == "__main__":
         if not PROCESSING:
 
             #All sections from html
-            sections = revision.get_sections()
+            section_tree = revision.section_tree()
 
             #Print paragraphs from html
             heading("\nPARAGRAPHS", file)
-            paragraphs = revision.get_paragraphs()
+            paragraphs = section_tree.get_paragraphs()
             file.write(sub(r"\n\n+", "\n\n", "\n\n".join([paragraph.xpath("string()") for paragraph in paragraphs])) + "\n")
 
             #Print headings from html
             heading("\nHEADINGS", file)
-            headings = revision.get_headings()
+            headings = section_tree.get_headings()
             file.write(sub(r"\n\n+", "\n\n", "\n\n".join([heading.xpath("string()") for heading in headings])) + "\n")
 
             #Print lists from html
             heading("\nLISTS", file)
-            lists = revision.get_lists()
-            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([section.get_text() for section in lists])) + "\n")
+            lists = section_tree.get_lists()
+            file.write(sub(r"\n+", "\n", "\n".join([uolist.xpath("string()") for uolist in lists])) + "\n\n")
+            
+            #Print tables from html
+            heading("\nTABLES", file)
+            tables = section_tree.get_tables()
+            file.write(sub(r"\n+", "\n", "\n".join([table.xpath("string()")  for table in tables])) + "\n\n")
 
             #Print captions from html
             heading("\nCAPTIONS", file)
-            captions = revision.get_captions()
-            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([section.get_text() for section in captions])) + "\n")
-
-            #Print tables from html
-            heading("\nTABLES", file)
-            tables = revision.get_tables()
-            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([section.get_text() for section in tables])) + "\n")
+            captions = section_tree.get_captions()
+            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([caption.xpath("string()") for caption in captions])) + "\n")
 
             #Print all categories.
             heading("\nCATEGORIES", file)

@@ -21,8 +21,10 @@ def corr_coef(X,Y):
 
     return Sxy / sqrt(Sxx * Syy)
 
-filepaths = glob("../articles/2021-02-14/*_en")
-save = True
+filepaths = glob("../articles/TEST/*_en")
+SAVE = False
+TIMESLICING = True
+FINAL_YEAR, FINAL_MONTH = 2021, 2
 
 for filepath in filepaths:
 
@@ -34,73 +36,62 @@ for filepath in filepaths:
         
         article = Article(filepath)
 
-        first_revision = article.get_revision(0)
+        first_timestamp = article.get_revision(0).timestamp
+        FIRST_YEAR, FIRST_MONTH = first_timestamp.year, first_timestamp.month
 
-        timeslices = []
-        for year in range(2000, 2022):
-            if year < first_revision.timestamp.year: continue
-            for month in range(1, 13):
-                if year == first_revision.timestamp.year and month < first_revision.timestamp.month: continue
-                timeslices.append(str(month) + "/" + str(year))
-                if year == 2021 and month == 2:
-                    break
+        if TIMESLICING:
+            timeslices = []
+            timeslice_ticks = []
+            for year in range(FIRST_YEAR, FINAL_YEAR + 1):
+                for month in range(1, 13):
+                    if (year > FIRST_YEAR or month >= FIRST_MONTH) and \
+                       (year < FINAL_YEAR or month <= FINAL_MONTH):
+                        timeslices.append(str(month) + "/" + str(year))
+                        timeslice_ticks.append(str(year) if str(year) not in timeslice_ticks else "")
+            data = {timeslice:{"size":[],"refcount":[]} for timeslice in timeslices}
 
-        data = {timeslice:{"size":[],"refcount":[]} for timeslice in timeslices}
+            for revision in article.yield_revisions():
+                timeslice = str(revision.timestamp.month) + "/" + str(revision.timestamp.year)
+                
+                if revision.index % 100 == 0: print(revision.index)
+                if timeslice in data:
+                    data[timeslice]["size"].append(revision.size)
+                    data[timeslice]["refcount"].append(len(revision.get_references() + revision.get_further_reading()))
 
-        last_size = None
+            prev_size = 0
+            prev_refcount = 0
 
-        count = 0
+            for timeslice in data:
+                try:
+                    data[timeslice]["size"] = sum(data[timeslice]["size"])/len(data[timeslice]["size"])
+                    prev_size = data[timeslice]["size"]
+                except ZeroDivisionError:
+                    data[timeslice]["size"] = prev_size
+                try:
+                    data[timeslice]["refcount"] = sum(data[timeslice]["refcount"])/len(data[timeslice]["refcount"])
+                    prev_refcount = data[timeslice]["refcount"]
+                except ZeroDivisionError:
+                    data[timeslice]["refcount"] = prev_refcount
 
-        for revision in article.yield_revisions():
-            timeslice = str(revision.timestamp.month) + "/" + str(revision.timestamp.year)
-            if timeslice not in data:
-                continue
-            if revision.index % 100 == 0:
-                print(revision.index)
-            if revision.index != 0 and revision.size == 0:
-                continue
-            else:
-                count += 1
-                data[timeslice]["size"].append(revision.size)
-                data[timeslice]["refcount"].append(len(revision.get_references() + revision.get_further_reading()))
-            last_size = revision.size
-
-        prev_size = 0
-        prev_refcount = 0
-
-        for timeslice in data:
-            try:
-                data[timeslice]["size"] = sum(data[timeslice]["size"])/len(data[timeslice]["size"])
-                prev_size = data[timeslice]["size"]
-            except ZeroDivisionError:
-                data[timeslice]["size"] = prev_size
-            try:
-                data[timeslice]["refcount"] = sum(data[timeslice]["refcount"])/len(data[timeslice]["refcount"])
-                prev_refcount = data[timeslice]["refcount"]
-            except ZeroDivisionError:
-                data[timeslice]["refcount"] = prev_refcount
-
-        sizes = [timeslice["size"] for timeslice in data.values()]
-        reference_counts = [timeslice["refcount"] for timeslice in data.values()]
-        timeslices = list(data.keys())
-
-        last_timeslice = timeslices[0].split("/")[-1]
-        new_timeslices = [timeslices[0].split("/")[-1]]
-        for timeslice in timeslices[1:]:
-            new_timeslice = timeslice.split("/")[-1]
-            if new_timeslice == last_timeslice:
-                new_timeslices.append("")
-            else:
-                new_timeslices.append(new_timeslice)
-                last_timeslice = new_timeslice
-        if save:
-            dump({"new_timeslices":new_timeslices,
+            sizes = [timeslice["size"] for timeslice in data.values()]
+            reference_counts = [timeslice["refcount"] for timeslice in data.values()]
+        else:
+            sizes = []
+            reference_counts = []
+            for revision in article.yield_revisions():
+                if revision.index % 100 == 0: print(revision.index)
+                sizes.append(revision.size)
+                reference_counts.append(len(revision.get_references() + revision.get_further_reading()))
+            timeslice_ticks = range(len(sizes))
+                           
+        if SAVE:
+            dump({"timeslice_ticks":timeslice_ticks,
                   "sizes":sizes,
                   "reference_counts":reference_counts},
                  open(filepath + "_revision_size_vs_reference_length.json", "w"))
     else:
         data = load(open(filepath + "_revision_size_vs_reference_length.json"))
-        new_timeslices = data["new_timeslices"]
+        timeslice_ticks = data["timeslice_ticks"]
         sizes = data["sizes"]
         reference_counts = data["reference_counts"]
 
@@ -110,7 +101,6 @@ for filepath in filepaths:
         pcc = "n/a"
 
     print("PCC:", pcc)
-
     print("Plotting " + articletitle)
 
     reference_counts_color = "y"
@@ -120,7 +110,7 @@ for filepath in filepaths:
     sizes_label = f"Size of {articletitle}"
 
     fig, ax1 = plt.subplots()
-    plt.xticks(list(range(len(new_timeslices))), new_timeslices, rotation=90)
+    plt.xticks(list(range(len(timeslice_ticks))), timeslice_ticks, rotation=90)
     ax1.plot(list(range(len(reference_counts))), reference_counts, label=reference_counts_label, color=reference_counts_color)
     ax1.set_ylabel(reference_counts_label, color=reference_counts_color)
     ax1.tick_params('y', colors=reference_counts_color)
