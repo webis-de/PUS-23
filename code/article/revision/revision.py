@@ -61,15 +61,12 @@ class Revision:
             return html.fromstring(self.html)
         except etree.ParserError:
             return html.fromstring("<html></html>")
+    
+    def section_tree(self):
+        return Section(self.etree_from_html()[0]).tree()
 
     def get_wikitext(self):
         return self.wikitext
-
-    def tree(self):
-        return Section(self.etree_from_html()[0], "root").tree()
-
-    def find(self, text):
-        return self.tree.find(text)
 
     def get_text(self):
         try:

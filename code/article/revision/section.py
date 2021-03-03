@@ -4,9 +4,9 @@ from queue import Queue
 
 class Section:
 
-    def __init__(self, source, name = "root", parent = None, level = 0, headings = ["h2","h3","h4","h5","h6"]):
+    def __init__(self, html, name = "root", parent = None, level = 0, headings = ["h2","h3","h4","h5","h6"]):
 
-        self.source = source
+        self.html = html
         self.name = name
         self.parent = parent
         self.prev = None
@@ -15,51 +15,80 @@ class Section:
         self.subsections = []
         self.headings = headings
 
-    def get_text(self, deep = True):
+    def get_text(self, level = 0, exclude = ["div", "table", "style"], include_heading = False):
         """
-        Get the full text of the element.
+        Get the text of this section.
 
         Args:
-            deep: Get text below top level.
+            level: The depth to which text from subsections will be retrieved.
+            exclude: List of HTML elements to exclude.
         Returns:
-            The full section as a string.
+            The text of the section a string cleaned of superflous spaces and line breaks.
         """
-        return sub(r" +", " ", " ".join(self.source.xpath("./" + ("/" * deep) + "text()")))
+        heading = (self.name + "\n\n") * include_heading
+        text = "\n\n".join([sub(r" +", " ", "".join(element.xpath(".//text()")).replace("\n", ""))
+                          for element in self.html if element.tag not in exclude])
+        if level != 0:
+            return heading + text + "\n" + "\n".join([subsection.get_text(level - 1, exclude) for subsection in self.subsections])
+        else:
+            return heading + text
 
-    def get_hrefs(self, deep = True):
+    def get_hrefs(self, level = 0):
         """
-        Return all hrefs in the element.
+        Return all hrefs in the section.
 
         Args:
-            deep: Get hrefs below top level.
+            level: The depth to which hrefs from subsections will be retrieved.
         Returns:
             A list of hrefs as strings.
         """
-        return [element.get("href") for element in self.source.xpath("./" + ("/" * deep) + "a")]
+        return [element.get("href") for element in self.html.xpath(".//a")]
 
-    def tree(self, level = 1):
+    def tree(self):
         """
         Creates a nested section tree from this section.
 
-        Args:
-            level: Level of this section in the tree; 'root' at 0.
         Returns:
             A section tree of headings, paragraphs and divs.
         """
-        if any([element.tag not in  ["p","div"] for element in self.source]):
-            elements = []
-            name = "Intro"
-            for element in self.source:
-                if element.tag in ["p","div"] + self.headings[1:]:
-                    elements.append(element)
-                elif element.tag in self.headings[:1]:
-                    self._elements_to_subsection(elements, name, level)
-                    name = "".join(element.itertext())
-                    elements = []
-            self._elements_to_subsection(elements, name, level)
-        else:
-            self.subsections = [Section(element, element.tag, self, level) for element in self.source]
-        return self._siblings()
+        html = self.html[0]
+        for element in self.html[1:]:
+            if element.tag not in self.headings[:1]:
+                if not self.subsections:
+                    html.append(element)
+                else:
+                    self.subsections[-1].append(element)
+            else:
+                if not self.subsections:
+                    self.subsections.append(element)
+                else:
+                    self.subsections.append(element)
+        self.subsections = [self._html_to_section(html) for html in self.subsections]
+        self._siblings()
+        self.html = html
+        return self
+
+    def _html_to_section(self, html):
+        """
+        Turns a list of elements into a new subsection and calls tree on it.
+
+        Args:
+            elements: A list of HTML elements.
+            name: The name of the subsection.
+            level: The level of this subsection.
+        """
+        if html is not None:
+            name = "".join(html[0].itertext())
+            subsection = Section(html, name, self, self.level + 1, self.headings[1:])
+            subsection.tree()
+            return subsection
+
+    def _siblings(self):
+        for subsection1,subsection2 in zip(self.subsections[:-1], self.subsections[1:]):
+            subsection1.next = subsection2
+            subsection2.prev = subsection1
+        for subsection in self.subsections:
+            subsection._siblings()
 
     def find(self, strings, sections = []):
         """
@@ -79,28 +108,6 @@ class Section:
             subsection.find(strings, sections)
         return sections
 
-    def _elements_to_subsection(self, elements, name, level):
-        """
-        Turns a list of elements into a new subsection and calls tree on it.
-
-        Args:
-            elements: A list of HTML elements.
-            name: The name of the subsection.
-            level: The level of this subsection.
-        """
-        if elements:
-            subsection = Section(elements, name, self, level, self.headings[1:])
-            self.subsections.append(subsection)
-            subsection.tree(level + 1)
-
-    def _siblings(self):
-        for subsection1,subsection2 in zip(self.subsections[:-1], self.subsections[1:]):
-            subsection1.next = subsection2
-            subsection2.prev = subsection1
-        for subsection in self.subsections:
-            subsection._siblings()
-        return self
-
     def _queue_subsections(self):
         """
         Helper function to queue subsections breadth-first.
@@ -115,6 +122,18 @@ class Section:
             for subsubsection in subsection.subsections:
                 queue.put(subsubsection)
         return queue
+
+    def get_paragraphs(self, paragraphs = []):
+        paragraphs += [element for element in self.html if element.tag == "p"]
+        for subsection in self.subsections:
+            subsection.get_paragraphs(paragraphs)
+        return paragraphs
+
+    def get_headings(self, headings = []):
+        headings.append(self.name)
+        for subsection in self.subsections:
+            subsection.get_headings(headings)
+        return headings
 
     def parent_path(self):
         """
@@ -144,21 +163,9 @@ class Section:
         Returns:
             This section as a dictionary.
         """
-        
-        if self.subsections:
-            json = {"level":self.level,
-                    "parent":self.parent_name(),
-                    "path":self.parent_path(),
-                    "prev":self.prev.name if self.prev else None,
-                    "next":self.next.name if self.next else None}
-            json[self.name] = {index:element.json() for index,element in enumerate(self.subsections,1)}
-        else:
-            json = {}
-            json = {"level":self.level,
-                    "parent":self.parent_name(),
-                    "path":self.parent_path(),
-                    "prev":"".join(self.prev.source.itertext()).replace("\n","").strip() if self.prev else None,
-                    "next":"".join(self.next.source.itertext()).replace("\n","").strip() if self.next else None,
-                    self.name:"".join(self.source.itertext()).replace("\n","").strip()}
-        return json
-
+        return {"name":self.name,
+                "level":self.level,
+                "parent":self.parent_name(),
+                "path":self.parent_path(),
+                "text":self.get_text(),
+                "subsections":[subsection.json() for subsection in self.subsections]}
