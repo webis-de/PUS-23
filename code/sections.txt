@@ -1,3 +1,13 @@
+Revision Index
+
+696
+====================================================================================================
+Revision URL
+
+https://en.wikipedia.org/w/index.php?title=CRISPR&oldid=701817377
+====================================================================================================
+Revision Section Tree
+
 {'name': 'root',
  'level': 0,
  'parent': None,
@@ -1098,3 +1108,144 @@
                           '\n'
                           'Lander, E. S. (2016). "The Heroes of CRISPR". Cell. 164 (1–2): 18–28. doi:10.1016/j.cell.2015.12.041. PMID\xa026771483. ',
                   'subsections': []}]}
+
+====================================================================================================
+History Section
+
+{'name': 'History',
+ 'level': 1,
+ 'parent': 'root',
+ 'path': 'root|History',
+ 'text': 'CRISPR is part of a normally occurring bacterial process. Bacteria may incorporate foreign DNA and even scavenge damaged DNA from their environment.[12]\n'
+         '\n'
+         'Clustered repeats were first described in 1987 for the bacterium Escherichia coli by Osaka University researcher Yoshizumi Ishino, but at that time their function was not known.[13] The '
+         'repeats were observed independently by Spanish researcher Francisco Mojica in 1993.[14] He would later name them short regularly spaced repeats (SRSR) after he found them in many other '
+         'microbes.[15] In 2000, similar repeats were identified in other bacteria and archaea.[15] SRSR was renamed CRISPR in 2002 after a suggestion from Mojica.[14][16] CRISPR was proposed to be '
+         'responsible for the generation of adaptive immunity in microbes.[17] The paper describing this idea was rejected by a number of high profile journals.[14] Papers proposing similar '
+         'hypotheses by Gilles Vergnaud and, independently Alexander Bolotin suffered similar fates before being published [14][18][19]\n'
+         '\n'
+         'A set of genes was found to be associated with CRISPR repeats, and was named the cas, or CRISPR-associated, genes. The cas genes encode putative nuclease or helicase proteins, which are '
+         'enzymes that can cut or unwind DNA.[16]\n'
+         '\n'
+         'In 2005, three independent research groups showed that some CRISPR spacers are derived from phage DNA and extrachromosomal DNA such as plasmids.[20][21][22] In effect, the spacers are '
+         'fragments of DNA gathered from viruses that have previously tried to attack the cell. The source of the spacers was a sign that the CRISPR/cas system could have a role in adaptive immunity '
+         'in bacteria.[1][23] Koonin and colleagues proposed that spacers serve as a template for RNA molecules, analogous to a system called RNA interference used by eukaryotic cells.[24]\n'
+         '\n'
+         "In 2007, Barrangou, Horvath (food industry scientists at Danisco) and Moineau's group at Université Laval (Canada) showed that they could use spacer DNA to alter the resistance of "
+         'Streptococcus thermophilus to phage attack.[24]\n'
+         '\n'
+         'Jennifer Doudna and Emmanuelle Charpentier had independently been exploring CRISPR-associated proteins to learn how bacteria use spacers in their immune defenses.[25] They jointly studied '
+         'a simpler CRISPR system that relies on a protein called Cas9. They found that bacteria respond to an invading phage by transcribing spacers and palindromic DNA into a long RNA molecule. '
+         'The cell then uses tracrRNA and Cas9 to cut this long RNA molecule into pieces called crRNAs.[24]\n'
+         '\n'
+         "Cas9 is a nuclease, an enzyme specialized for cutting DNA. It has two active cutting sites (HNH and RuvC), one for each strand of the DNA's double helix. The team demonstrated that they "
+         "could disable one or both sites while preserving Cas9's ability to home in on its target DNA. In 2012, a group including both Doudna and Charpentier combined tracrRNA and spacer RNA into a "
+         '"single-guide RNA" molecule that, mixed with Cas9, could find and cut the correct DNA targets. Their study proposed that such synthetic guide RNAs could be used for gene editing.[26]\n'
+         '\n'
+         "CRISPR was first shown to work as a genome engineering/editing tool in human cell culture in 2012.[26][27] It has since been used in a wide range of organisms including baker's yeast (S. "
+         'cerevisiae),[28] zebrafish (D. rerio),[29] fruit flies (D. melanogaster),[30] axolotl (A. mexicanum),[31] nematodes (C. elegans),[32] plants,[33] mice,[34] monkeys[35] and human '
+         'embryos.[36]\n'
+         '\n'
+         'CRISPR has been modified to make programmable transcription factors that allow scientists to target and activate or silence specific genes.[37]\n'
+         '\n'
+         'Libraries of tens of thousands of guide RNAs are available.[24]',
+ 'subsections': [{'name': 'Predecessors',
+                  'level': 2,
+                  'parent': 'History',
+                  'path': 'root|History|Predecessors',
+                  'text': 'In the early 2000s, researchers developed zinc finger nucleases, synthetic proteins whose DNA-binding domains enable them to create double-stranded breaks in DNA at '
+                          'specific spots. In 2010, synthetic nucleases called TALENs provided an easier way to target a double-strand break to a specific location on the DNA strand. Both '
+                          'zinc-finger nucleases and TALENs require researchers to make a custom protein for each targeted DNA sequence, which is a more difficult and time-consuming process than '
+                          'that for guide RNAs. CRISPRs are much easier to design because they make a short RNA sequence that is paired to the targeted DNA sequence, rather than engineering a custom '
+                          'protein.[38]',
+                  'subsections': []}]}
+
+Authors in History Section
+
+^ a b c .mw-parser-output cite.citation{font-style:inherit}.mw-parser-output .citation q{quotes:"\"""\"""'""'"}.mw-parser-output .id-lock-free a,.mw-parser-output .citation .cs1-lock-free a{background:linear-gradient(transparent,transparent),url("//upload.wikimedia.org/wikipedia/commons/6/65/Lock-green.svg")right 0.1em center/9px no-repeat}.mw-parser-output .id-lock-limited a,.mw-parser-output .id-lock-registration a,.mw-parser-output .citation .cs1-lock-limited a,.mw-parser-output .citation .cs1-lock-registration a{background:linear-gradient(transparent,transparent),url("//upload.wikimedia.org/wikipedia/commons/d/d6/Lock-gray-alt-2.svg")right 0.1em center/9px no-repeat}.mw-parser-output .id-lock-subscription a,.mw-parser-output .citation .cs1-lock-subscription a{background:linear-gradient(transparent,transparent),url("//upload.wikimedia.org/wikipedia/commons/a/aa/Lock-red-alt-2.svg")right 0.1em center/9px no-repeat}.mw-parser-output .cs1-subscription,.mw-parser-output .cs1-registration{color:#555}.mw-parser-output .cs1-subscription span,.mw-parser-output .cs1-registration span{border-bottom:1px dotted;cursor:help}.mw-parser-output .cs1-ws-icon a{background:linear-gradient(transparent,transparent),url("//upload.wikimedia.org/wikipedia/commons/4/4c/Wikisource-logo.svg")right 0.1em center/12px no-repeat}.mw-parser-output code.cs1-code{color:inherit;background:inherit;border:none;padding:inherit}.mw-parser-output .cs1-hidden-error{display:none;font-size:100%}.mw-parser-output .cs1-visible-error{font-size:100%}.mw-parser-output .cs1-maint{display:none;color:#33aa33;margin-left:0.3em}.mw-parser-output .cs1-format{font-size:95%}.mw-parser-output .cs1-kern-left,.mw-parser-output .cs1-kern-wl-left{padding-left:0.2em}.mw-parser-output .cs1-kern-right,.mw-parser-output .cs1-kern-wl-right{padding-right:0.2em}.mw-parser-output .citation .mw-selflink{font-weight:inherit}Horvath P, Barrangou R (2010). "CRISPR/Cas, the immune system of bacteria and archaea". Science. 327 (5962): 167–70. Bibcode:2010Sci...327..167H. doi:10.1126/science.1179555. PMID 20056882.
+[('^ a b c mw-parser-output citecitation{font-style:inherit}mw-parser-output citation q{quotes:"\\"""\\"""\'""\'"}mw-parser-output id-lock-free', 'a'), ('mw-parser-output citation cs1-lock-free', 'a{background:linear-gradient')]
+
+^ a b c Marraffini LA, Sontheimer EJ (March 2010). "CRISPR interference: RNA-directed adaptive immunity in bacteria and archaea". Nature Reviews Genetics. 11 (3): 181–190. doi:10.1038/nrg2749. PMC 2928866. PMID 20125085. 
+[('^ a b c Marraffini', 'LA'), ('Sontheimer', 'EJ')]
+
+^ a b Grissa I, Vergnaud G, Pourcel C (2007). "The CRISPRdb database and tools to display CRISPRs and to generate dictionaries of spacers and repeats". BMC Bioinformatics. 8: 172. doi:10.1186/1471-2105-8-172. PMC 1892036. PMID 17521438.
+[('^ a b Grissa', 'I'), ('Vergnaud', 'G'), ('Pourcel', 'C')]
+
+^ Overballe-Petersen S, Harms K, Orlando LA, Mayar JV, Rasmussen S, Dahl TW, Rosing MT, Poole AM, Sicheritz-Ponten T, Brunak S, Inselmann S, de Vries J, Wackernagel W, Pybus OG, Nielsen R, Johnsen PJ, Nielsen KM, Willerslev E (December 2013). "Bacterial natural transformation by highly fragmented and damaged DNA". Proceedings of the National Academy of Sciences of the United States of America. 110 (49): 19860–5. Bibcode:2013PNAS..11019860O. doi:10.1073/pnas.1315278110. PMID 24248361. Lay summary – Kurzweil (19 November 2013).
+[('^ Overballe-Petersen', 'S'), ('Harms', 'K'), ('Orlando', 'LA'), ('Mayar', 'JV'), ('Rasmussen', 'S'), ('Dahl', 'TW'), ('Rosing', 'MT'), ('Poole', 'AM'), ('Sicheritz-Ponten', 'T'), ('Brunak', 'S'), ('Inselmann', 'S'), ('de Vries', 'J'), ('Wackernagel', 'W'), ('Pybus', 'OG'), ('Nielsen', 'R'), ('Johnsen', 'PJ'), ('Nielsen', 'KM'), ('Willerslev', 'E')]
+
+^ Ishino Y, Shinagawa H, Makino K, Amemura M, Nakata A (Dec 1987). "Nucleotide sequence of the iap gene, responsible for alkaline phosphatase isozyme conversion in Escherichia coli, and identification of the gene product". Journal of Bacteriology. 169 (12): 5429–33. PMC 213968. PMID 3316184.
+[('^ Ishino', 'Y'), ('Shinagawa', 'H'), ('Makino', 'K'), ('Amemura', 'M'), ('Nakata', 'A')]
+
+^ a b c d Lander ES (Jan 2016). "The Heroes of CRISPR". Cell. 164 (1–2): 18–28. doi:10.1016/j.cell.2015.12.041. PMID 26771483.
+[('^ a b c d Lander', 'ES')]
+
+^ a b Mojica FJ, Díez-Villaseñor C, Soria E, Juez G (Apr 2000). "Biological significance of a family of regularly spaced repeats in the genomes of Archaea, Bacteria and mitochondria". Molecular Microbiology. 36 (1): 244–6. doi:10.1046/j.1365-2958.2000.01838.x. PMID 10760181.
+[('^ a b Mojica', 'FJ'), ('Díez-Villaseñor', 'C'), ('Soria', 'E'), ('Juez', 'G')]
+
+^ a b Jansen R, Embden JD, Gaastra W, Schouls LM (Mar 2002). "Identification of genes that are associated with DNA repeats in prokaryotes". Molecular Microbiology. 43 (6): 1565–75. doi:10.1046/j.1365-2958.2002.02839.x. PMID 11952905.
+[('^ a b Jansen', 'R'), ('Embden', 'JD'), ('Gaastra', 'W'), ('Schouls', 'LM')]
+
+^ Mojica FJ, Díez-Villaseñor C, García-Martínez J, Soria E (Feb 2005). "Intervening sequences of regularly spaced prokaryotic repeats derive from foreign genetic elements". Journal of Molecular Evolution. 60 (2): 174–82. doi:10.1007/s00239-004-0046-3. PMID 15791728.
+[('^ Mojica', 'FJ'), ('Díez-Villaseñor', 'C'), ('García-Martínez', 'J'), ('Soria', 'E')]
+
+^ Pourcel C, Salvignol G, Vergnaud G (Mar 2005). "CRISPR elements in Yersinia pestis acquire new repeats by preferential uptake of bacteriophage DNA, and provide additional tools for evolutionary studies". Microbiology. 151 (Pt 3): 653–63. doi:10.1099/mic.0.27437-0. PMID 15758212.
+[('^ Pourcel', 'C'), ('Salvignol', 'G'), ('Vergnaud', 'G')]
+
+^ Bolotin A, Quinquis B, Sorokin A, Ehrlich SD (Aug 2005). "Clustered regularly interspaced short palindrome repeats (CRISPRs) have spacers of extrachromosomal origin". Microbiology. 151 (Pt 8): 2551–61. doi:10.1099/mic.0.28048-0. PMID 16079334.
+[('^ Bolotin', 'A'), ('Quinquis', 'B'), ('Sorokin', 'A'), ('Ehrlich', 'SD')]
+
+^ a b c d Pourcel C, Salvignol G, Vergnaud G (March 2005). "CRISPR elements in Yersinia pestis acquire new repeats by preferential uptake of bacteriophage DNA, and provide additional tools for evolutionary studies". Microbiology. 151 (Pt 3): 653–663. doi:10.1099/mic.0.27437-0. PMID 15758212.
+[('^ a b c d Pourcel', 'C'), ('Salvignol', 'G'), ('Vergnaud', 'G')]
+
+^ a b Mojica FJ, Díez-Villaseñor C, García-Martínez J, Soria E (February 2005). "Intervening sequences of regularly spaced prokaryotic repeats derive from foreign genetic elements". Journal of Molecular Evolution. 60 (2): 174–182. doi:10.1007/s00239-004-0046-3. PMID 15791728.
+[('^ a b Mojica', 'FJ'), ('Díez-Villaseñor', 'C'), ('García-Martínez', 'J'), ('Soria', 'E')]
+
+^ a b c Bolotin A, Quinquis B, Sorokin A, Ehrlich SD (August 2005). "Clustered regularly interspaced short palindrome repeats (CRISPRs) have spacers of extrachromosomal origin". Microbiology. 151 (Pt 8): 2551–2561. doi:10.1099/mic.0.28048-0. PMID 16079334.
+[('^ a b c Bolotin', 'A'), ('Quinquis', 'B'), ('Sorokin', 'A'), ('Ehrlich', 'SD')]
+
+^ Morange, M (June 2015). "What history tells us XXXVII. CRISPR-Cas: The discovery of an immune system in prokaryotes". Journal of Biosciences. 2 (2): 221–223. doi:10.1007/s12038-015-9532-6. PMID 25963251.
+[('^', 'Morange')]
+
+^ a b c d e f g h Pennisi E (August 2013). "The CRISPR craze". News Focus. Science. 341 (6148): 833–836. doi:10.1126/science.341.6148.833. PMID 23970676.
+[('^ a b c d e f g h Pennisi', 'E')]
+
+^ Pollack A (11 May 2015). "Jennifer Doudna, a Pioneer Who Helped Simplify Genome Editing". The New York Times. Retrieved 12 May 2015.
+[('^ Pollack', 'A')]
+
+^ a b c Jinek M, Chylinski K, Fonfara I, Hauer M, Doudna JA, Charpentier E (August 2012). "A programmable dual-RNA-guided DNA endonuclease in adaptive bacterial immunity". Science. 337 (6096): 816–821. Bibcode:2012Sci...337..816J. doi:10.1126/science.1225829. PMID 22745249.
+[('^ a b c Jinek', 'M'), ('Chylinski', 'K'), ('Fonfara', 'I'), ('Hauer', 'M'), ('Doudna', 'JA'), ('Charpentier', 'E')]
+
+^ Connor S (7 November 2013). "CRISPR gene therapy: Scientists call for more public debate around breakthrough technique". Science. London: The Independent. Retrieved 2013-11-25.
+[('^ Connor', 'S')]
+
+^ DiCarlo JE, Norville JE, Mali P, Rios X, Aach J, Church GM (Apr 2013). "Genome engineering in Saccharomyces cerevisiae using CRISPR-Cas systems". Nucleic Acids Research. 41 (7): 4336–43. doi:10.1093/nar/gkt135. PMC 3627607. PMID 23460208.
+[('^ DiCarlo', 'JE'), ('Norville', 'JE'), ('Mali', 'P'), ('Rios', 'X'), ('Aach', 'J'), ('Church', 'GM')]
+
+^ Hwang WY, Fu Y, Reyon D, Maeder ML, Tsai SQ, Sander JD, Peterson RT, Yeh JR, Joung JK (Mar 2013). "Efficient genome editing in zebrafish using a CRISPR-Cas system". Nature Biotechnology. 31 (3): 227–9. doi:10.1038/nbt.2501. PMC 3686313. PMID 23360964.
+[('^ Hwang', 'WY'), ('Fu', 'Y'), ('Reyon', 'D'), ('Maeder', 'ML'), ('Tsai', 'SQ'), ('Sander', 'JD'), ('Peterson', 'RT'), ('Yeh', 'JR'), ('Joung', 'JK')]
+
+^ Gratz SJ, Cummings AM, Nguyen JN, Hamm DC, Donohue LK, Harrison MM, Wildonger J, O'Connor-Giles KM (Aug 2013). "Genome engineering of Drosophila with the CRISPR RNA-guided Cas9 nuclease". Genetics. 194 (4): 1029–35. doi:10.1534/genetics.113.152710. PMC 3730909. PMID 23709638.
+[('^ Gratz', 'SJ'), ('Cummings', 'AM'), ('Nguyen', 'JN'), ('Hamm', 'DC'), ('Donohue', 'LK'), ('Harrison', 'MM'), ('Wildonger', 'J'), ("O'Connor-Giles", 'KM')]
+
+^ Flowers GP, Timberlake AT, McLean KC, Monaghan JR, Crews CM (May 2014). "Highly efficient targeted mutagenesis in axolotl using Cas9 RNA-guided nuclease". Development. 141 (10): 2165–71. doi:10.1242/dev.105072. PMC 4011087. PMID 24764077.
+[('^ Flowers', 'GP'), ('Timberlake', 'AT'), ('McLean', 'KC'), ('Monaghan', 'JR'), ('Crews', 'CM')]
+
+^ Friedland AE, Tzur YB, Esvelt KM, Colaiácovo MP, Church GM, Calarco JA (Aug 2013). "Heritable genome editing in C. elegans via a CRISPR-Cas9 system". Nature Methods. 10 (8): 741–3. doi:10.1038/nmeth.2532. PMC 3822328. PMID 23817069.
+[('^ Friedland', 'AE'), ('Tzur', 'YB'), ('Esvelt', 'KM'), ('Colaiácovo', 'MP'), ('Church', 'GM'), ('Calarco', 'JA')]
+
+^ Jiang W, Zhou H, Bi H, Fromm M, Yang B, Weeks DP (Nov 2013). "Demonstration of CRISPR/Cas9/sgRNA-mediated targeted gene modification in Arabidopsis, tobacco, sorghum and rice". Nucleic Acids Research. 41 (20): e188. doi:10.1093/nar/gkt780. PMC 3814374. PMID 23999092.
+[('^ Jiang', 'W'), ('Zhou', 'H'), ('Bi', 'H'), ('Fromm', 'M'), ('Yang', 'B'), ('Weeks', 'DP')]
+
+^ a b Wang H, Yang H, Shivalila CS, Dawlaty MM, Cheng AW, Zhang F, Jaenisch R (May 2013). "One-step generation of mice carrying mutations in multiple genes by CRISPR/Cas-mediated genome engineering". Cell. 153 (4): 910–8. doi:10.1016/j.cell.2013.04.025. PMID 23643243.
+[('^ a b Wang', 'H'), ('Yang', 'H'), ('Shivalila', 'CS'), ('Dawlaty', 'MM'), ('Cheng', 'AW'), ('Zhang', 'F'), ('Jaenisch', 'R')]
+
+^ Guo X, Li XJ (Jul 2015). "Targeted genome editing in primate embryos". Cell Research. 25 (7): 767–8. doi:10.1038/cr.2015.64. PMID 26032266.
+[('^ Guo', 'X'), ('Li', 'XJ')]
+
+^ a b Baltimore D, Berg P, Botchan M, Carroll D, Charo RA, Church G, Corn JE, Daley GQ, Doudna JA, Fenner M, Greely HT, Jinek M, Martin GS, Penhoet E, Puck J, Sternberg SH, Weissman JS, Yamamoto KR (2015). "Biotechnology. A prudent path forward for genomic engineering and germline gene modification". Science. 348 (6230): 36–8. Bibcode:2015Sci...348...36B. doi:10.1126/science.aab1028. PMID 25791083.
+[('^ a b Baltimore', 'D'), ('Berg', 'P'), ('Botchan', 'M'), ('Carroll', 'D'), ('Charo', 'RA'), ('Church', 'G'), ('Corn', 'JE'), ('Daley', 'GQ'), ('Doudna', 'JA'), ('Fenner', 'M'), ('Greely', 'HT'), ('Jinek', 'M'), ('Martin', 'GS'), ('Penhoet', 'E'), ('Puck', 'J'), ('Sternberg', 'SH'), ('Weissman', 'JS'), ('Yamamoto', 'KR')]
+
+^ Larson MH, Gilbert LA, Wang X, Lim WA, Weissman JS, Qi LS (November 2013). "CRISPR interference (CRISPRi) for sequence-specific control of gene expression". Nature Protocols. 8 (11): 2180–96. doi:10.1038/nprot.2013.132. PMID 24136345.
+[('^ Larson', 'MH'), ('Gilbert', 'LA'), ('Wang', 'X'), ('Lim', 'WA'), ('Weissman', 'JS'), ('Qi', 'LS')]
+

@@ -96,6 +96,12 @@ if __name__ == "__main__":
             heading("\nCATEGORIES", file)
             for category in revision.get_categories():
                 file.write(str(category) + "\n")
+
+            #Print all references in History section.
+            heading("\nREFERECES IN HISTORY SECTION", file)
+            history_section_tree = section_tree.find("History")[0]
+            for source in history_section_tree.get_sources(revision.get_references()):
+                file.write(source.get_text() + "\n")
             
             #Print references and further reading from html.
             CITATION_STYLE = LANGUAGE #citation style different for German (de) and English (en)
@@ -105,6 +111,7 @@ if __name__ == "__main__":
                 for reference in source[1]:
                     #file.write("HTML: " + html.tostring(reference.source).decode("utf-8") + "\n")
                     file.write("REFERENCE TEXT: " + reference.get_text().strip() + "\n")
+                    file.write("ID: " + str(reference.get_reference_ids()) + "\n")
                     #file.write("REFERENCE TEXT TOKENISED: " + "|".join(preprocessor.preprocess(reference.get_text().strip(), lower=False, stopping=False, sentenize=False, tokenize=True)[0]) + "\n")
                     file.write("\n")
                     file.write("AUTHORS: " + str(reference.get_authors(LANGUAGE)) + "\n")
@@ -113,12 +120,12 @@ if __name__ == "__main__":
                     file.write("PMIDs: " + str(reference.get_pmids()) + "\n")
                     file.write("PMCs: " + str(reference.get_pmcs()) + "\n")
                     file.write("IDENTIFIERS: " + str(reference.get_identifiers()) + "\n")
-                    file.write("\nLINKED SECTIONS:" + "\n")
-                    linked_sections = reference.linked_sections(sections)
-                    if linked_sections:
-                        file.write("\n---\n".join([linked_section.get_text().strip() for linked_section in linked_sections]) + "\n")
-                    else:
-                        file.write("-" + "\n")
+##                    file.write("\nLINKED SECTIONS:" + "\n")
+##                    linked_sections = reference.linked_sections(sections)
+##                    if linked_sections:
+##                        file.write("\n---\n".join([linked_section.get_text().strip() for linked_section in linked_sections]) + "\n")
+##                    else:
+##                        file.write("-" + "\n")
                     file.write("-"*50 + "\n")
     extraction_end = datetime.now()
     print("Extraction: ", extraction_end - extraction_start)

@@ -8,13 +8,13 @@ class Source:
         source: The source of the reference as HTML/XML.
     """
 
-    def __init__(self, source):
+    def __init__(self, html):
         """
         Initialise the reference using its source code and running index.
         
-        source: The source of the reference as HTML/XML.
+        source: The html of the reference.
         """
-        self.source = source
+        self.html = html
 
     def get_text(self):
         """
@@ -23,19 +23,16 @@ class Source:
         Returns:
             The full reference as a string.
         """
-        try:
-            return "".join(self.source.xpath(".//cite")[0].itertext())
-        except IndexError:
-            return  "".join(self.source.itertext())
+        return self.html.xpath("string()")
 
-    def get_id(self):
+    def get_reference_ids(self):
         """
         Get HTML id of source.
 
         Returns:
             A string id.
         """
-        return self.source.get("id", "")
+        return [sub("^#cite","cite", element.get("href")) for element in self.html.iter("a")]
 
     def get_superscript(self, revision): # unreliable!
         """
@@ -158,7 +155,7 @@ class Source:
         """
         DOIs = set()
         #dois from hrefs
-        for element in self.source.xpath(".//a[contains(@href, 'doi.org/')]"):
+        for element in self.html.xpath(".//a[contains(@href, 'doi.org/')]"):
             #dois from links
             DOIs.add(element.get("href").split("doi.org/")[-1].replace("%2F","/"))
             #dois from element text
@@ -178,7 +175,7 @@ class Source:
         """
         PMIDs = set()
         #pmids from hrefs
-        for element in self.source.xpath(".//a[contains(@href, 'pubmed')]"):
+        for element in self.html.xpath(".//a[contains(@href, 'pubmed')]"):
             pmid = search("\d+", element.get("href").split("/")[-1])
             if pmid:
                 PMIDs.add(pmid.group(0))
@@ -198,7 +195,7 @@ class Source:
         """
         PMCs = set()
         #pmids from hrefs
-        for element in self.source.xpath(".//a[contains(@href, 'pmc/')]"):
+        for element in self.html.xpath(".//a[contains(@href, 'pmc/')]"):
             pmc = search("\d+", element.get("href").split("/")[-1])
             if pmc:
                 PMCs.add(pmc.group(0))
@@ -226,7 +223,7 @@ class Source:
         }
         # OLD VERSION, but please don't delete
         # d = {k:'' for k in ['DOI','PMC','PMID']}
-        # tags = self.source.xpath(".//a[@rel='nofollow']")
+        # tags = self.html.xpath(".//a[@rel='nofollow']")
         # d.update({'DOI' if 'doi.org' in tag.get('href') 
         #     else 'PMC' if 'pmc' in tag.get('href') 
         #     else 'PMID':

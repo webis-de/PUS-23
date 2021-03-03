@@ -22,7 +22,9 @@ class Section:
 
         Args:
             level: The depth to which text from subsections will be retrieved.
-            exclude: List of HTML elements to exclude.
+            include: List of HTML element tags to include.
+            exclude: List of HTML element tags to exclude.
+            include_heading: Append heading of section to start of string.
         Returns:
             The text of the section a string cleaned of superflous spaces and line breaks.
         """
@@ -34,16 +36,34 @@ class Section:
         else:
             return heading + text
 
-    def get_hrefs(self, level = 0):
+    def get_reference_ids(self, level = 0, reference_ids = []):
         """
-        Return all hrefs in the section.
+        Get reference ids in the section.
 
         Args:
-            level: The depth to which hrefs from subsections will be retrieved.
+            level: The depth to which reference ids from subsections will be retrieved.
         Returns:
-            A list of hrefs as strings.
+            A list of reference ids as strings.
         """
-        return [element.get("href") for element in self.html.xpath(".//a")]
+        reference_ids += [element.get("id") for element in self.html.iter() if element.get("class") == "reference"]
+        if level != 0:
+            for subsection in self.subsections:
+                subsection.get_reference_ids(level - 1, reference_ids)
+        return reference_ids
+
+    def get_sources(self, sources, level = 0):
+        """
+        Get all sources referenced in this section.
+
+        Args:
+            sources: The sources which will be matched against this section.
+            level: The depth to which sources from subsections will be retrieved.
+        Returns:
+            A list of sources.
+        """
+        referenced_ids_in_section = set(self.get_reference_ids(level))
+        return [source for source in sources
+                if not set(source.get_reference_ids()).isdisjoint(referenced_ids_in_section)]     
 
     def tree(self):
         """
@@ -107,21 +127,6 @@ class Section:
             subsection.find(strings, sections)
         return sections
 
-    def _queue_subsections(self):
-        """
-        Helper function to queue subsections breadth-first.
-
-        Returns:
-            A Queue of subsections, breadth-first.
-        """
-        queue = Queue()
-        for subsection in self.subsections:
-            queue.put(subsection)
-        for subsection in self.subsections:
-            for subsubsection in subsection.subsections:
-                queue.put(subsubsection)
-        return queue
-
     def get_paragraphs(self, paragraphs = []):
         paragraphs += [element for element in self.html.iter(["p"])]
         for subsection in self.subsections:
@@ -147,7 +152,7 @@ class Section:
         return tables
 
     def get_captions(self, captions = []):
-        captions += [element for element in self.html.iter() if "thumbcaption" in element.classes]
+        captions += [element for element in self.html.iter() if element.get("class") == "thumbcaption"]
         for subsection in self.subsections:
             subsection.get_captions(captions)
         return captions
