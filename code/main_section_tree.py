@@ -3,7 +3,7 @@ from pprint import pprint, pformat
 
 article = Article("../articles/2021-02-14/CRISPR_en")
 
-revision = article.get_revision(revid=701817377)
+revision = article.get_revision(revid=723879518)
 
 with open("sections.txt", "w") as file:
     file.write("Revision Index\n\n")

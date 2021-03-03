@@ -60,7 +60,7 @@ class Revision:
         try:
             return html.fromstring(self.html)
         except etree.ParserError:
-            return html.fromstring("<html></html>")
+            return html.fromstring("<html><div></div></html>")
     
     def section_tree(self):
         return Section(self.etree_from_html()[0]).tree()

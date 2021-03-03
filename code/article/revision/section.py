@@ -16,7 +16,7 @@ class Section:
         self.subsections = []
         self.headings = headings
 
-    def get_text(self, level = 0, include = ["p","li"], exclude = ["style"], include_heading = False):
+    def get_text(self, level = 0, include = ["p","li"], exclude = ["style"], with_headings = False):
         """
         Get the text of this section.
 
@@ -24,19 +24,19 @@ class Section:
             level: The depth to which text from subsections will be retrieved.
             include: List of HTML element tags to include.
             exclude: List of HTML element tags to exclude.
-            include_heading: Append heading of section to start of string.
+            with_headings: Append heading of section to start of string.
         Returns:
             The text of the section a string cleaned of superflous spaces and line breaks.
         """
-        heading = (self.name + "\n\n") * include_heading
+        heading = (self.name + "\n\n") * with_headings
         text = "\n\n".join([sub(r" +", " ", element.xpath("string()").replace("\n", ""))
                             for element in self.html.iter(include)])
         if level != 0:
-            return heading + text + "\n" + "\n".join([subsection.get_text(level - 1, exclude) for subsection in self.subsections])
+            return heading + text + "\n" + "\n".join([subsection.get_text(level - 1, include, exclude, with_headings) for subsection in self.subsections])
         else:
             return heading + text
 
-    def get_reference_ids(self, level = 0, reference_ids = []):
+    def get_reference_ids(self, level = 0):
         """
         Get reference ids in the section.
 
@@ -45,11 +45,13 @@ class Section:
         Returns:
             A list of reference ids as strings.
         """
-        reference_ids += [element.get("id") for element in self.html.iter() if element.get("class") == "reference"]
-        if level != 0:
-            for subsection in self.subsections:
-                subsection.get_reference_ids(level - 1, reference_ids)
-        return reference_ids
+        def recursive_get_reference_ids(section, level, reference_ids):
+            reference_ids += [element.get("id") for element in section.html.iter() if element.get("class") == "reference"]
+            if level != 0:
+                for subsection in section.subsections:
+                    recursive_get_reference_ids(subsection, level - 1, reference_ids)
+            return reference_ids
+        return recursive_get_reference_ids(self, level, [])
 
     def get_sources(self, sources, level = 0):
         """
@@ -109,53 +111,64 @@ class Section:
         for subsection in self.subsections:
             subsection._siblings()
 
-    def find(self, strings, sections = []):
+    def find(self, strings):
         """
         Recursively finds all subsections in the section tree with any of the given strings in the title.
 
         Args:
-            string: A list of strings to search in the title.
-            sections: Sections that will be returned.
+            strings: A list of strings to search in the title.
         Returns:
             A list of sections.
         """
-        for subsection in self.subsections:
-            for string in strings:
-                if string in subsection.name:
-                    sections.append(subsection)
-                    break
-            subsection.find(strings, sections)
-        return sections
+        def recursive_find(section, strings, sections):
+            for subsection in section.subsections:
+                for string in strings:
+                    if string in subsection.name:
+                        sections.append(subsection)
+                        break
+                recursive_find(subsection, strings, sections)
+            return sections
+        return recursive_find(self, strings, [])
 
-    def get_paragraphs(self, paragraphs = []):
-        paragraphs += [element for element in self.html.iter(["p"])]
-        for subsection in self.subsections:
-            subsection.get_paragraphs(paragraphs)
-        return paragraphs
+    def get_paragraphs(self):
+        def recursive_get_paragraphs(section, paragraphs):
+            paragraphs += [element for element in section.html.iter(["p"])]
+            for subsection in section.subsections:
+                recursive_get_paragraphs(subsection, paragraphs)
+            return paragraphs
+        return recursive_get_paragraphs(self, [])
 
-    def get_headings(self, headings = []):
-        headings += [element for element in self.html.iter(["h2","h3","h4","h5","h6"])]
-        for subsection in self.subsections:
-            subsection.get_headings(headings)
-        return headings
+    def get_headings(self):
+        def recursive_get_paragraphs(section, headings):
+            headings += [element for element in section.html.iter(["h2","h3","h4","h5","h6"])]
+            for subsection in section.subsections:
+                recursive_get_paragraphs(subsection, headings)
+            return headings
+        return recursive_get_paragraphs(self, [])
 
-    def get_lists(self, lists = []):
-        lists += [element for element in self.html.iter(["ol","ul"])]
-        for subsection in self.subsections:
-            subsection.get_lists(lists)
-        return lists
+    def get_lists(self):
+        def recursive_get_lists(section, lists):
+            lists += [element for element in section.html.iter(["ol","ul"])]
+            for subsection in section.subsections:
+                recursive_get_lists(subsection, lists)
+            return lists
+        return recursive_get_lists(self, [])
 
-    def get_tables(self, tables = []):
-        tables += [element for element in self.html.iter(["table"])]
-        for subsection in self.subsections:
-            subsection.get_tables(tables)
-        return tables
+    def get_tables(self):
+        def recursive_get_tables(section, tables):
+            tables += [element for element in section.html.iter(["table"])]
+            for subsection in section.subsections:
+                recursive_get_tables(subsection, tables)
+            return tables
+        return recursive_get_tables(self, [])
 
-    def get_captions(self, captions = []):
-        captions += [element for element in self.html.iter() if element.get("class") == "thumbcaption"]
-        for subsection in self.subsections:
-            subsection.get_captions(captions)
-        return captions
+    def get_captions(self):
+        def recursive_get_captions(section, captions):
+            captions += [element for element in section.html.iter() if element.get("class") == "thumbcaption"]
+            for subsection in section.subsections:
+                recursive_get_captions(subsection, captions)
+            return captions
+        return recursive_get_captions(self, [])
 
     def parent_path(self):
         """
