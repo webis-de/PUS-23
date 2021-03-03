@@ -1,6 +1,7 @@
 from re import sub
 from lxml import etree
 from queue import Queue
+from copy import deepcopy
 
 class Section:
 
@@ -15,7 +16,7 @@ class Section:
         self.subsections = []
         self.headings = headings
 
-    def get_text(self, level = 0, exclude = ["div", "table", "style"], include_heading = False):
+    def get_text(self, level = 0, include = ["p","li"], exclude = ["style"], include_heading = False):
         """
         Get the text of this section.
 
@@ -26,8 +27,8 @@ class Section:
             The text of the section a string cleaned of superflous spaces and line breaks.
         """
         heading = (self.name + "\n\n") * include_heading
-        text = "\n\n".join([sub(r" +", " ", "".join(element.xpath(".//text()")).replace("\n", ""))
-                          for element in self.html if element.tag not in exclude])
+        text = "\n\n".join([sub(r" +", " ", element.xpath("string()").replace("\n", ""))
+                            for element in self.html.iter(include)])
         if level != 0:
             return heading + text + "\n" + "\n".join([subsection.get_text(level - 1, exclude) for subsection in self.subsections])
         else:
@@ -51,21 +52,19 @@ class Section:
         Returns:
             A section tree of headings, paragraphs and divs.
         """
-        html = self.html[0]
-        for element in self.html[1:]:
+        html = deepcopy(self.html)
+        self.html.clear()
+        for element in html:
             if element.tag not in self.headings[:1]:
                 if not self.subsections:
-                    html.append(element)
+                    self.html.append(element)
                 else:
                     self.subsections[-1].append(element)
             else:
-                if not self.subsections:
-                    self.subsections.append(element)
-                else:
-                    self.subsections.append(element)
+                self.subsections.append(etree.ElementBase())
+                self.subsections[-1].append(element)
         self.subsections = [self._html_to_section(html) for html in self.subsections]
         self._siblings()
-        self.html = html
         return self
 
     def _html_to_section(self, html):
@@ -78,7 +77,7 @@ class Section:
             level: The level of this subsection.
         """
         if html is not None:
-            name = "".join(html[0].itertext())
+            name = html[0].xpath("string()")
             subsection = Section(html, name, self, self.level + 1, self.headings[1:])
             subsection.tree()
             return subsection
@@ -124,13 +123,13 @@ class Section:
         return queue
 
     def get_paragraphs(self, paragraphs = []):
-        paragraphs += [element for element in self.html if element.tag == "p"]
+        paragraphs += [element for element in self.html.iter(["p"])]
         for subsection in self.subsections:
             subsection.get_paragraphs(paragraphs)
         return paragraphs
 
     def get_headings(self, headings = []):
-        headings.append(self.name)
+        headings += [element for element in self.html.iter("h2","h3","h4","h5","h6")]
         for subsection in self.subsections:
             subsection.get_headings(headings)
         return headings
@@ -140,12 +139,12 @@ class Section:
         Get the path of parent names.
 
         Returns:
-            The /-separated path to this section.
+            The pipe-separated path to this section.
         """
         if not self.parent:
-            return ""
+            return "root"
         else:
-            return self.parent.parent_path() + "/" + self.name
+            return self.parent.parent_path() + "|" + self.name
 
     def parent_name(self):
         """

@@ -80,6 +80,7 @@ class Revision:
 
     def get_paragraphs(self):
         #get all unclassified paragraphs
+        return self.section_tree().get_paragraphs()
         xpath_expression = "./p[not(@class)]"
         try:
             return [Section(section) for section in self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].xpath(xpath_expression)]
@@ -96,6 +97,7 @@ class Revision:
 
     def get_headings(self):
         #get all headlines
+        return self.section_tree().get_headings()
         xpath_expression = "|".join(["./" + tag + "[not(@class)]" for tag in ["h1","h2","h3","h4","h5","h6"]])
         try:
             return [Section(section) for section in self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].xpath(xpath_expression)]

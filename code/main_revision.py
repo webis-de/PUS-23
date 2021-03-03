@@ -79,7 +79,7 @@ if __name__ == "__main__":
         extraction_start = datetime.now()
 
         file.write("You are looking at revision number " + str(index) + " from " + revision.timestamp.string + "." + "\n")
-        #URL of revsions
+        #URL of revisions
         heading("\nURL OF REVISION", file)
         file.write(revision.url + "\n")
 
@@ -97,12 +97,12 @@ if __name__ == "__main__":
             #Print paragraphs from html
             heading("\nPARAGRAPHS", file)
             paragraphs = revision.get_paragraphs()
-            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([section.get_text() for section in paragraphs])) + "\n")
+            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([paragraph.xpath("string()") for paragraph in paragraphs])) + "\n")
 
             #Print headings from html
             heading("\nHEADINGS", file)
             headings = revision.get_headings()
-            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([section.get_text() for section in headings])) + "\n")
+            file.write(sub(r"\n\n+", "\n\n", "\n\n".join([heading.xpath("string()") for heading in headings])) + "\n")
 
             #Print lists from html
             heading("\nLISTS", file)
