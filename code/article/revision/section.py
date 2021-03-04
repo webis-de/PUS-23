@@ -99,7 +99,7 @@ class Section:
             level: The level of this subsection.
         """
         if html is not None:
-            name = html[0].xpath("string()")
+            name = html[0].xpath("string()").split('[edit]')[0].strip()
             subsection = Section(html, name, self, self.level + 1, self.headings[1:])
             subsection.tree()
             return subsection
