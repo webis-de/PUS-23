@@ -1,11 +1,11 @@
 from article.article import Article
 from pprint import pprint, pformat
 
-article = Article("../articles/2021-02-14/CRISPR_gene_editing_en")
+article = Article("../articles/2021-03-01/CRISPR_gene_editing_en")
 
 revision = article.get_revision(index=0,revid=723879518)
 
-with open("section_tree.txt", "w") as file:
+with open("sections.txt", "w") as file:
     file.write("Revision Index\n\n")
     file.write(str(revision.index))
     file.write("\n" + ("="*100) + "\n")

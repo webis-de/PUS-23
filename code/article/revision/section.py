@@ -83,7 +83,7 @@ class Section:
                 else:
                     self.subsections[-1].append(element)
             else:
-                self.subsections.append(HTML.fromstring('<div> class="section" </div>'))
+                self.subsections.append(HTML.fromstring('<div class="section"></div>'))
                 self.subsections[-1].append(element)
         self.subsections = [self._html_to_section(html) for html in self.subsections]
         self._siblings()
@@ -111,7 +111,7 @@ class Section:
         for subsection in self.subsections:
             subsection._siblings()
 
-    def find(self, strings):
+    def find(self, strings, lower = false):
         """
         Recursively finds all subsections in the section tree with any of the given strings in the title.
 
@@ -120,15 +120,15 @@ class Section:
         Returns:
             A list of sections.
         """
-        def recursive_find(section, strings, sections):
+        def recursive_find(section, strings, lower, sections):
             for subsection in section.subsections:
-                for string in strings:
-                    if string in subsection.name:
+                for string in [(string.lower() if lower else string) for string in strings]:
+                    if string in (subsection.name.lower() if lower else subsection.name):
                         sections.append(subsection)
                         break
-                recursive_find(subsection, strings, sections)
+                recursive_find(subsection, strings, lower, sections)
             return sections
-        return recursive_find(self, strings, [])
+        return recursive_find(self, strings, lower, [])
 
     def get_paragraphs(self):
         def recursive_get_paragraphs(section, paragraphs):
