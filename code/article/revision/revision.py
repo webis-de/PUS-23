@@ -60,13 +60,13 @@ class Revision:
         try:
             return html.fromstring(self.html)
         except etree.ParserError:
-            return html.fromstring("<html><div>class='mw-parser-output'</div></html>")
+            return html.fromstring("<div class='mw-parser-output'></div>")
     
     def section_tree(self):
         try:
             return Section(self.etree_from_html().find_class('mw-parser-output')[0]).tree()
         except IndexError:
-            return Section(html.fromstring("<html><div>class='mw-parser-output'</div></html>").find_class('mw-parser-output')[0]).tree()
+            return Section(html.fromstring("<div class='mw-parser-output'></div>").find_class('mw-parser-output')[0]).tree()
 
     def get_wikitext(self):
         return self.wikitext
