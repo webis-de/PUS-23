@@ -63,7 +63,10 @@ class Revision:
             return html.fromstring("<html><div>class='mw-parser-output'</div></html>")
     
     def section_tree(self):
-        return Section(self.etree_from_html().find_class('mw-parser-output')[0]).tree()
+        try:
+            return Section(self.etree_from_html().find_class('mw-parser-output')[0]).tree()
+        except IndexError:
+            return Section(html.fromstring("<html><div>class='mw-parser-output'</div></html>").find_class('mw-parser-output')[0]).tree()
 
     def get_wikitext(self):
         return self.wikitext
