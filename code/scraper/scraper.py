@@ -248,15 +248,15 @@ class Scraper:
             mediawiki_parser_output = html.tostring(mediawiki_parser_output).decode("utf-8")
             mediawiki_parser_output = sub(r"<!--.*?-->", "", mediawiki_parser_output, flags=S)
         except IndexError:
-            mediawiki_parser_output = ""
+            mediawiki_parser_output = "<div class='mw-parser-output'></div>"
         #get categories from MediaWiki
         try:
             mediawiki_normal_catlinks = tree.xpath(".//div[@id='mw-normal-catlinks']")[0]
             mediawiki_normal_catlinks = html.tostring(mediawiki_normal_catlinks).decode("utf-8")
             mediawiki_normal_catlinks = sub(r"<!--.*?-->", "", mediawiki_normal_catlinks, flags=S)
         except IndexError:
-            mediawiki_normal_catlinks = ""
-        HTML = mediawiki_parser_output + "\n" + mediawiki_normal_catlinks
+            mediawiki_normal_catlinks = "<div id='mw-normal-catlinks' class='mw-normal-catlinks'></div>"
+        HTML = mediawiki_parser_output + mediawiki_normal_catlinks
         if not HTML:
             self.logger.log("Issue encountered with revid: " + str(revision["revid"]))        
         sleep(self._delay())
