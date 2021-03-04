@@ -16,7 +16,7 @@ class MockedBibliography:
         self.bibentries = {}
 
     def get_bibentries(self, bib_keys):
-        return [self.bibentries.get(bib_key) for bib_key in bib_keys if self.bibentries.get(bib_key)]
+        return {bib_key:self.bibentries.get(bib_key) for bib_key in bib_keys if self.bibentries.get(bib_key)}
     
 class TestEvent(unittest.TestCase):
 
