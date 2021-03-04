@@ -111,7 +111,7 @@ class Section:
         for subsection in self.subsections:
             subsection._siblings()
 
-    def find(self, strings, lower = false):
+    def find(self, strings, lower = False):
         """
         Recursively finds all subsections in the section tree with any of the given strings in the title.
 
@@ -178,7 +178,7 @@ class Section:
             The pipe-separated path to this section.
         """
         if not self.parent:
-            return "root"
+            return self.name
         else:
             return self.parent.parent_path() + "|" + self.name
 

@@ -8,10 +8,10 @@ https://en.wikipedia.org/w/index.php?title=CRISPR gene editing&oldid=883727671
 ====================================================================================================
 Revision Section Tree
 
-{'name': 'root',
+{'name': 'CRISPR_gene_editing_en',
  'level': 0,
  'parent': None,
- 'path': 'root',
+ 'path': 'CRISPR_gene_editing_en',
  'text': 'A simple version of the CRISPR/Cas system, CRISPR/Cas9, has been modified to edit genomes. By delivering the Cas9 nuclease complexed with a synthetic guide RNA (gRNA) into a cell, the '
          "cell's genome can be cut at a desired location, allowing existing genes to be removed and/or new ones added.[2][3][4] The Cas9-gRNA complex corresponds with the CAS III CRISPR-RNA complex "
          'in the accompanying diagram.\n'
@@ -67,8 +67,8 @@ Revision Section Tree
          '6 References',
  'subsections': [{'name': 'Predecessors',
                   'level': 1,
-                  'parent': 'root',
-                  'path': 'root|Predecessors',
+                  'parent': 'CRISPR_gene_editing_en',
+                  'path': 'CRISPR_gene_editing_en|Predecessors',
                   'text': 'In the early 2000s, researchers developed zinc finger nucleases (ZFNs), synthetic proteins whose DNA-binding domains enable them to create double-stranded breaks in DNA at '
                           'specific points. In 2010, synthetic nucleases called transcription activator-like effector nucleases (TALENs) provided an easier way to target a double-stranded break to a '
                           'specific location on the DNA strand. Both zinc finger nucleases and TALENs require the creation of a custom protein for each targeted DNA sequence, which is a more '
@@ -79,14 +79,14 @@ Revision Section Tree
                   'subsections': []},
                  {'name': 'Genome engineering',
                   'level': 1,
-                  'parent': 'root',
-                  'path': 'root|Genome engineering',
+                  'parent': 'CRISPR_gene_editing_en',
+                  'path': 'CRISPR_gene_editing_en|Genome engineering',
                   'text': 'CRISPR/Cas9 genome editing is carried out with a Type II CRISPR system. When utilized for genome editing, this system includes Cas9, crRNA, tracrRNA along with an optional '
                           'section of DNA repair template that is utilized in either non-homologous end joining (NHEJ) or homology directed repair (HDR).',
                   'subsections': [{'name': 'Major components',
                                    'level': 2,
                                    'parent': 'Genome engineering',
-                                   'path': 'root|Genome engineering|Major components',
+                                   'path': 'CRISPR_gene_editing_en|Genome engineering|Major components',
                                    'text': 'CRISPR/Cas9 often employs a plasmid to transfect the target cells.[15] The main components of this plasmid are displayed in the image and listed in the '
                                            "table. The crRNA needs to be designed for each application as this is the sequence that Cas9 uses to identify and directly bind to the cell's DNA. The "
                                            'crRNA must bind only where editing is desired. The repair template is designed for each application, as it must overlap with the sequences on either side '
@@ -98,7 +98,7 @@ Revision Section Tree
                                   {'name': 'Structure',
                                    'level': 2,
                                    'parent': 'Genome engineering',
-                                   'path': 'root|Genome engineering|Structure',
+                                   'path': 'CRISPR_gene_editing_en|Genome engineering|Structure',
                                    'text': 'CRISPR/Cas9 offers a high degree of fidelity and relatively simple construction. It depends on two factors for its specificity: the target sequence and '
                                            'the PAM. The target sequence is 20 bases long as part of each CRISPR locus in the crRNA array.[15] A typical crRNA array has multiple unique target '
                                            "sequences. Cas9 proteins select the correct location on the host's genome by utilizing the sequence to bond with base pairs on the host DNA. The sequence "
@@ -122,7 +122,7 @@ Revision Section Tree
                                   {'name': 'Delivery',
                                    'level': 2,
                                    'parent': 'Genome engineering',
-                                   'path': 'root|Genome engineering|Delivery',
+                                   'path': 'CRISPR_gene_editing_en|Genome engineering|Delivery',
                                    'text': 'Delivery of Cas9, sgRNA, and associated complexes into cells can occur via viral and non-viral systems. Electroporation of DNA, RNA, or '
                                            'ribonucleocomplexes is a common technique, though it can result in harmful effects on the target cells.[21] Chemical transfection techniques utilizing '
                                            'lipids have also been used to introduce sgRNA in complex with Cas9 into cells.[22] Hard-to-transfect cells (e.g. stem cells, neurons, and hematopoietic '
@@ -131,7 +131,7 @@ Revision Section Tree
                                   {'name': 'Editing',
                                    'level': 2,
                                    'parent': 'Genome engineering',
-                                   'path': 'root|Genome engineering|Editing',
+                                   'path': 'CRISPR_gene_editing_en|Genome engineering|Editing',
                                    'text': 'CRISPRs have been used to cut five[25] to 62 genes at once: pig cells have been engineered to inactivate all 62 Porcine Endogenous Retroviruses in the pig '
                                            "genome, which eliminated transinfection from the pig to human cells in culture.[26] CRISPR's low cost compared to alternatives is widely seen as "
                                            'revolutionary.[2][3]\n'
@@ -145,7 +145,7 @@ Revision Section Tree
                                   {'name': 'Controlled genome editing',
                                    'level': 2,
                                    'parent': 'Genome engineering',
-                                   'path': 'root|Genome engineering|Controlled genome editing',
+                                   'path': 'CRISPR_gene_editing_en|Genome engineering|Controlled genome editing',
                                    'text': 'Several variants of CRISPR/Cas9 allow gene activation or genome editing with an external trigger such as light or small molecules.[34][35][36] These '
                                            'include photoactivatable CRISPR systems developed by fusing light-responsive protein partners with an activator domain and a dCas9 for gene '
                                            'activation,[37][38] or fusing similar light responsive domains with two constructs of split-Cas9,[39][40] or by incorporating caged unnatural amino acids '
@@ -160,13 +160,13 @@ Revision Section Tree
                                    'subsections': []}]},
                  {'name': 'Other applications',
                   'level': 1,
-                  'parent': 'root',
-                  'path': 'root|Other applications',
+                  'parent': 'CRISPR_gene_editing_en',
+                  'path': 'CRISPR_gene_editing_en|Other applications',
                   'text': '',
                   'subsections': [{'name': 'Knockdown/activation',
                                    'level': 2,
                                    'parent': 'Other applications',
-                                   'path': 'root|Other applications|Knockdown/activation',
+                                   'path': 'CRISPR_gene_editing_en|Other applications|Knockdown/activation',
                                    'text': 'Using "dead" versions of Cas9 (dCas9) eliminates CRISPR\'s DNA-cutting ability, while preserving its ability to target desirable sequences. Multiple '
                                            'groups added various regulatory factors to dCas9s, enabling them to turn almost any gene on or off or adjust its level of activity.[52] Like RNAi, CRISPR '
                                            'interference (CRISPRi) turns off genes in a reversible fashion by targeting, but not cutting a site. The targeted site is methylated, epigenetically '
@@ -183,7 +183,7 @@ Revision Section Tree
                                   {'name': 'RNA editing',
                                    'level': 2,
                                    'parent': 'Other applications',
-                                   'path': 'root|Other applications|RNA editing',
+                                   'path': 'CRISPR_gene_editing_en|Other applications|RNA editing',
                                    'text': 'In 2016, researchers demonstrated that CRISPR from an ordinary mouth bacterium could be used to edit RNA. The researchers searched databases containing '
                                            'hundreds of millions of genetic sequences for those that resembled Crispr genes. They considered the fusobacteria Leptotrichia shahii. It had a group of '
                                            'genes that resembled CRISPR genes, but with important differences. When the researchers equipped other bacteria with these genes, which they called C2c2, '
@@ -197,7 +197,7 @@ Revision Section Tree
                                   {'name': 'Disease models',
                                    'level': 2,
                                    'parent': 'Other applications',
-                                   'path': 'root|Other applications|Disease models',
+                                   'path': 'CRISPR_gene_editing_en|Other applications|Disease models',
                                    'text': 'CRISPR simplifies creation of animals for research that mimic disease or show what happens when a gene is knocked down or mutated. CRISPR may be used at '
                                            'the germline level to create animals where the gene is changed everywhere, or it may be targeted at non-germline cells.[58][59][60]\n'
                                            '\n'
@@ -215,7 +215,7 @@ Revision Section Tree
                                   {'name': 'Gene drive',
                                    'level': 2,
                                    'parent': 'Other applications',
-                                   'path': 'root|Other applications|Gene drive',
+                                   'path': 'CRISPR_gene_editing_en|Other applications|Gene drive',
                                    'text': 'Gene drives may provide a powerful tool to restore balance of ecosystems by eliminating invasive species. Concerns regarding efficacy, unintended '
                                            'consequences in the target species as well as non-target species have been raised particularly in the potential for accidental release from laboratories '
                                            'into the wild. Scientists have proposed several safeguards for ensuring the containment of experimental gene drives including molecular, reproductive, and '
@@ -226,7 +226,7 @@ Revision Section Tree
                                   {'name': 'Biomedicine',
                                    'level': 2,
                                    'parent': 'Other applications',
-                                   'path': 'root|Other applications|Biomedicine',
+                                   'path': 'CRISPR_gene_editing_en|Other applications|Biomedicine',
                                    'text': 'CRISPR/Cas technology has been proposed as a treatment for multiple human diseases, especially those with a genetic cause.[68] Its ability to modify '
                                            'specific DNA sequences makes it a tool with potential to fix disease-causing mutations. Early research in animal models suggest that therapies based on '
                                            'CRISPR technology have potential to treat a wide range of diseases,[69] including cancer,[70][71] beta-thalassemia,[72] sickle cell disease,[73] '
@@ -254,7 +254,7 @@ Revision Section Tree
                                    'subsections': [{'name': 'CRISPR in cancer',
                                                     'level': 3,
                                                     'parent': 'Biomedicine',
-                                                    'path': 'root|Other applications|Biomedicine|CRISPR in cancer',
+                                                    'path': 'CRISPR_gene_editing_en|Other applications|Biomedicine|CRISPR in cancer',
                                                     'text': 'As of 2016[update] CRISPR had been studied in animal models and cancer cell lines, to learn if it can be used to repair or thwart mutated '
                                                             'genes that cause cancer.[87]\n'
                                                             '\n'
@@ -271,7 +271,7 @@ Revision Section Tree
                                   {'name': 'Gene function',
                                    'level': 2,
                                    'parent': 'Other applications',
-                                   'path': 'root|Other applications|Gene function',
+                                   'path': 'CRISPR_gene_editing_en|Other applications|Gene function',
                                    'text': 'In 2015, multiple studies attempted to systematically disable each individual human gene, in an attempt to identify which genes were essential to human '
                                            'biology. Between 1,600 and 1,800 genes passed this test—of the 20,000 or so known human genes. Such genes are more strongly activated, and unlikely to '
                                            'carry disabling mutations. They are more likely to have indispensable counterparts in other species. They build proteins that unite to form larger '
@@ -285,7 +285,7 @@ Revision Section Tree
                                   {'name': 'In vitro genetic depletion',
                                    'level': 2,
                                    'parent': 'Other applications',
-                                   'path': 'root|Other applications|In vitro genetic depletion',
+                                   'path': 'CRISPR_gene_editing_en|Other applications|In vitro genetic depletion',
                                    'text': 'Unenriched sequencing libraries often have abundant undesired sequences. Cas9 can specifically deplete the undesired sequences with double strand breakage '
                                            'with up to 99% efficiency and without significant off-target effects as seen with restriction enzymes. Treatment with Cas9 can deplete abundant rRNA while '
                                            'increasing pathogen sensitivity in RNA-seq libraries.[93]',
@@ -293,7 +293,7 @@ Revision Section Tree
                                   {'name': 'In vivo applications',
                                    'level': 2,
                                    'parent': 'Other applications',
-                                   'path': 'root|Other applications|In vivo applications',
+                                   'path': 'CRISPR_gene_editing_en|Other applications|In vivo applications',
                                    'text': 'CRISPR/Cas-9 can be used to edit the DNA of organisms in vivo and entire chromosomes can be eliminated from an organism at any point in its development. '
                                            'Chromosomes that have been deleted in vivo are the Y chromosomes and X chromosomes of adult lab mice and human chromosomes 14 and 21, in embryonic stem '
                                            'cell lines and aneuploid mice respectively. This method might be useful for treating genetic aneuploid diseases such as Down Syndrome and intersex '
@@ -310,8 +310,8 @@ Revision Section Tree
                                    'subsections': []}]},
                  {'name': 'Patents and commercialization',
                   'level': 1,
-                  'parent': 'root',
-                  'path': 'root|Patents and commercialization',
+                  'parent': 'CRISPR_gene_editing_en',
+                  'path': 'CRISPR_gene_editing_en|Patents and commercialization',
                   'text': 'As of December\xa02014[update], patent rights to CRISPR were contested. Several companies formed to develop related drugs and research tools.[106] As companies ramp up '
                           'financing, doubts as to whether CRISPR can be quickly monetized were raised.[107] In February 2017 the US Patent Office ruled on a patent interference case brought by '
                           'University of California with respect to patents issued to the Broad Institute, and found that the Broad patents, with claims covering the application of CRISPR/cas9 in '
@@ -335,13 +335,13 @@ Revision Section Tree
                   'subsections': []},
                  {'name': 'Society and culture',
                   'level': 1,
-                  'parent': 'root',
-                  'path': 'root|Society and culture',
+                  'parent': 'CRISPR_gene_editing_en',
+                  'path': 'CRISPR_gene_editing_en|Society and culture',
                   'text': '',
                   'subsections': [{'name': 'Human germline modification',
                                    'level': 2,
                                    'parent': 'Society and culture',
-                                   'path': 'root|Society and culture|Human germline modification',
+                                   'path': 'CRISPR_gene_editing_en|Society and culture|Human germline modification',
                                    'text': 'As of March 2015, multiple groups had announced ongoing research to learn how they one day might apply CRISPR to human embryos, including labs in the US, '
                                            'China, and the UK, as well as US biotechnology company OvaScience.[119] Scientists, including a CRISPR co-discoverer, urged a worldwide moratorium on '
                                            'applying CRISPR to the human germline, especially for clinical use. They said "scientists should avoid even attempting, in lax jurisdictions, germline '
@@ -371,7 +371,7 @@ Revision Section Tree
                                   {'name': 'Policy barriers to genetic engineering',
                                    'level': 2,
                                    'parent': 'Society and culture',
-                                   'path': 'root|Society and culture|Policy barriers to genetic engineering',
+                                   'path': 'CRISPR_gene_editing_en|Society and culture|Policy barriers to genetic engineering',
                                    'text': 'Policy regulations for the CRISPR/cas9 system vary around the globe. In February 2016, British scientists were given permission by regulators to '
                                            'genetically modify human embryos by using CRISPR-Cas9 and related techniques. However, researchers were forbidden from implanting the embryos and the '
                                            'embryos were to be destroyed after seven days.[129]\n'
@@ -394,7 +394,7 @@ Revision Section Tree
                                   {'name': 'Recognition',
                                    'level': 2,
                                    'parent': 'Society and culture',
-                                   'path': 'root|Society and culture|Recognition',
+                                   'path': 'CRISPR_gene_editing_en|Society and culture|Recognition',
                                    'text': "In 2012, and 2013, CRISPR was a runner-up in Science Magazine's Breakthrough of the Year award. In 2015, it was the winner of that award.[52] CRISPR was "
                                            "named as one of MIT Technology Review's 10 breakthrough technologies in 2014 and 2016.[139][140] In 2016, Jennifer Doudna, Emmanuelle Charpentier, along "
                                            'with Rudolph Barrangou, Philippe Horvath, and Feng Zhang won the Gairdner International award. In 2017, Jennifer Doudna and Emmanuelle Charpentier were '
@@ -403,8 +403,8 @@ Revision Section Tree
                                    'subsections': []}]},
                  {'name': 'References',
                   'level': 1,
-                  'parent': 'root',
-                  'path': 'root|References',
+                  'parent': 'CRISPR_gene_editing_en',
+                  'path': 'CRISPR_gene_editing_en|References',
                   'text': '^ Cite error: The named reference pmid20056882 was invoked but never defined (see the help page).\n'
                           '\n'
                           '^ a b .mw-parser-output cite.citation{font-style:inherit}.mw-parser-output .citation q{quotes:"\\"""\\"""\'""\'"}.mw-parser-output .id-lock-free a,.mw-parser-output '

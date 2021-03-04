@@ -15,7 +15,7 @@ with open("sections.txt", "w") as file:
     file.write("\n" + ("="*100) + "\n")
     
     file.write("Revision Section Tree\n\n")
-    section_tree = revision.section_tree()
+    section_tree = revision.section_tree(article.name)
     file.write(pformat(section_tree.json(), width=200, sort_dicts=False))
     file.write("\n\n" + ("="*100) + "\n")
     
