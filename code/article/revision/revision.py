@@ -7,6 +7,9 @@ from requests import get
 from lxml import html, etree
 from re import findall, finditer, search, split, sub, S
 
+DEFAULT_HTML = ("<div class='mw-parser-output'></div>"
+                "<div id='mw-normal-catlinks' class='mw-normal-catlinks'></div>")
+
 class Revision:
     """
     Wrapper class for revision
@@ -60,13 +63,13 @@ class Revision:
         try:
             return html.fromstring(self.html)
         except etree.ParserError:
-            return html.fromstring("<div class='mw-parser-output'></div>")
+            return html.fromstring(DEFAULT_HTML)
     
     def section_tree(self):
         try:
             return Section(self.etree_from_html().find_class('mw-parser-output')[0]).tree()
         except IndexError:
-            return Section(html.fromstring("<div class='mw-parser-output'></div>").find_class('mw-parser-output')[0]).tree()
+            return Section(html.fromstring(DEFAULT_HTML).find_class('mw-parser-output')[0]).tree()
 
     def get_wikitext(self):
         return self.wikitext
