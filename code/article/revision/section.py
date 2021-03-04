@@ -28,11 +28,11 @@ class Section:
         Returns:
             The text of the section a string cleaned of superflous spaces and line breaks.
         """
-        heading = (self.name + "\n\n") * with_headings
         text = "\n\n".join([sub(r" +", " ", element.xpath("string()").replace("\n", ""))
                             for element in self.html.iter(include)])
+        heading = (self.name + ("\n\n" if text else "")) * with_headings
         if level != 0:
-            return heading + text + "\n" + "\n".join([subsection.get_text(level - 1, include, exclude, with_headings) for subsection in self.subsections])
+            return heading + text + "\n\n" + "".join([subsection.get_text(level - 1, include, exclude, with_headings) for subsection in self.subsections])
         else:
             return heading + text
 
