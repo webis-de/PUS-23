@@ -6,6 +6,7 @@ class TestSource(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.maxDiff = None
         #Reference with title in quotation marks.
         cls.html1 = ('<li id="cite_note-Groenen1993-24"><span class="mw-cite-backlink"><b><a href="#cite_ref-Groenen1993_24-0">^</a></b></span> '
                      '<span class="reference-text"><cite id="CITEREFGroenenBunschotenvan_Soolingenvan_Embden1993" '
@@ -70,7 +71,8 @@ class TestSource(unittest.TestCase):
         text = self.source3.get_text()
         self.assertEqual(text, ('Tang TH, Bachellerie JP, Rozhdestvensky T, Bortolin ML, Huber H, Drungowski M;  et al. (2002). '
                                 '"Identification of 86 candidates for small non-messenger RNAs from the archaeon Archaeoglobus fulgidus". '
-                                'Proc Natl Acad Sci U S A. 99 (11): 7536–41. Bibcode:2002PNAS...99.7536T. doi:10.1073/pnas.112047299. PMC 124276. PMID 12032318.'))
+                                'Proc Natl Acad Sci U S A. 99 (11): 7536–41. Bibcode:2002PNAS...99.7536T. doi:10.1073/pnas.112047299. PMC 124276. PMID 12032318.'
+                                'CS1 maint: multiple names: authors list (link) '))
         
     def test_get_title(self):
         self.assertEqual(self.source1.get_title("en"), ("Nature of DNA polymorphism in the direct repeat cluster of Mycobacterium tuberculosis; "
