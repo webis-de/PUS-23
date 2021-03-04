@@ -36,7 +36,7 @@ class Differ:
         pre = 0
         while s1 and s2 and s1[0] == s2[0]:
             s1 = s1[1:]
-            s2 = s2[2:]
+            s2 = s2[1:]
             pre += 1
         while s1 and s2 and s1[-1] == s2[-1]:
             s1 = s1[:-1]
@@ -61,7 +61,7 @@ class Differ:
         while s1 and s2 and s1[0] == s2[0]:
             diff.append("  " + s1[0])
             s1 = s1[1:]
-            s2 = s2[2:]
+            s2 = s2[1:]
         while s1 and s2 and s1[-1] == s2[-1]:
             diff.append("  " + s1[-1])
             s1 = s1[:-1]
