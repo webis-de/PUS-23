@@ -60,10 +60,10 @@ class Revision:
         try:
             return html.fromstring(self.html)
         except etree.ParserError:
-            return html.fromstring("<html><div></div></html>")
+            return html.fromstring("<html><div>class='mw-parser-output'</div></html>")
     
     def section_tree(self):
-        return Section(self.etree_from_html()[0]).tree()
+        return Section(self.etree_from_html().find_class('mw-parser-output')[0]).tree()
 
     def get_wikitext(self):
         return self.wikitext
