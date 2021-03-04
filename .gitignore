@@ -9,6 +9,7 @@ extractions
 /**/logs
 
 /code/revision_extraction*.txt
+/code/section_tree*.txt
 /code/article_extraction.txt
 /code/nohup.out
 .DS_Store
