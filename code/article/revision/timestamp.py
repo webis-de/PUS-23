@@ -33,6 +33,15 @@ class Timestamp:
         self.second = self.datetime.second
         self.string = str(self.datetime)
 
+    def timestamp_string(self):
+        """
+        Returns timestamp string used to generate this instance.
+
+        Returns:
+            A string of the format YYYY-MM-DDTHH:MM:SSZ.
+        """
+        return self.datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
+
     def __str__(self):
         return pformat(self.__dict__)
 
