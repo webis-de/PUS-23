@@ -46,9 +46,19 @@ def timeslice_data(data, FINAL_YEAR, FINAL_MONTH):
 
     return timesliced_data
 
+def generate_annual_timeslice_ticks(timeslices):
+    timeslice_ticks = []
+    for timeslice in timeslices:
+        year = timeslice.split("/")[-1]
+        timeslice_ticks.append(year if year not in timeslice_ticks else "")
+    return timeslice_ticks
+
+def generate_articlename(filepath):
+    return "'" + unquote(basename(filepath)).replace("_", " ")[:-3] + "'"
+
 def calculate_data(filepath, section_name, sections, differs):
 
-    articletitle = "'" + unquote(basename(filepath)).replace("_", " ")[:-3] + "'"
+    articletitle = generate_articlename(filepath)
 
     print("Calculating diffs for " + articletitle)
 
@@ -74,7 +84,7 @@ def calculate_data(filepath, section_name, sections, differs):
                  for differ_name, differ in differs.items()} if section_name else {}
         
         data.append(
-            {"timestamp":revision.timestamp.string.replace(" ","T") + "Z",
+            {"timestamp":revision.timestamp_string(),
              "revision_url":revision.url,
              "revision_index":revision.index,
              "revision_revid":revision.revid,
@@ -93,19 +103,12 @@ def calculate_data(filepath, section_name, sections, differs):
 
     return data
 
-def generate_timeslice_ticks(timeslices):
-    timeslice_ticks = []
-    for timeslice in timeslices:
-        year = timeslice.split("/")[-1]
-        timeslice_ticks.append(year if year not in timeslice_ticks else "")
-    return timeslice_ticks
-
 def plot_size_and_reference_count(timesliced_data, filepath):
-    articletitle = "'" + unquote(basename(filepath)).replace("_", " ")[:-3] + "'"
+    articletitle = generate_articlename(filepath)
     
     sizes = []
     reference_counts = []
-    timeslice_ticks = generate_timeslice_ticks(timesliced_data)
+    timeslice_ticks = generate_annual_timeslice_ticks(timesliced_data)
 
     prev_size = 0
     prev_reference_count = 0
@@ -157,7 +160,7 @@ def plot_size_and_reference_count(timesliced_data, filepath):
     return sizes, reference_counts
 
 def plot_diffs(data, filepath):
-    articletitle = "'" + unquote(basename(filepath)).replace("_", " ")[:-3] + "'"
+    articletitle = generate_articlename(filepath)
 
     differ_names = list(data)[0]["diffs"].keys()
     ticks = []
