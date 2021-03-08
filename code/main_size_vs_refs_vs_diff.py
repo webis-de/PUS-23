@@ -26,7 +26,7 @@ def corr_coef(X,Y):
     return Sxy / sqrt(Sxx * Syy)
 
 def timeslice_data(data, FINAL_YEAR, FINAL_MONTH):
-    first_timestamp = Timestamp(data[0]["timestamp"])
+    first_timestamp = Timestamp(data[0]["revision_timestamp"])
     FIRST_YEAR, FIRST_MONTH = first_timestamp.year, first_timestamp.month
     timeslices = []
     for year in range(FIRST_YEAR, FINAL_YEAR + 1):
@@ -37,10 +37,9 @@ def timeslice_data(data, FINAL_YEAR, FINAL_MONTH):
     timesliced_data = {timeslice:[] for timeslice in timeslices}
 
     for index,item in enumerate(data, 1):
-        timestamp = Timestamp(item["timestamp"])
+        timestamp = Timestamp(item["revision_timestamp"])
         timeslice = str(timestamp.month) + "/" + str(timestamp.year)
         
-        if index % 100 == 0: print(index)
         if timeslice in timesliced_data:
             timesliced_data[timeslice].append(item)
 
@@ -54,13 +53,13 @@ def generate_annual_timeslice_ticks(timeslices):
     return timeslice_ticks
 
 def generate_articlename(filepath):
-    return "'" + unquote(basename(filepath)).replace("_", " ")[:-3] + "'"
+    return unquote(basename(filepath).split("_en")[0]).replace("_", " ")
 
-def calculate_data(filepath, section_name, sections, differs):
+def calculate_data(filepath, strings, level, differs):
 
     articletitle = generate_articlename(filepath)
 
-    print("Calculating diffs for " + articletitle)
+    print("Calculating diffs for " + articletitle + " and sections " + ", ".join(strings))
 
     data = []
     
@@ -74,22 +73,20 @@ def calculate_data(filepath, section_name, sections, differs):
 
         section_tree = revision.section_tree()
 
-        if section_name:
-            section = section_tree.find(sections[section_name] if section_name else [""], True)
-            text = section[0].get_text(10) if section else ""
-        else:
-            text = revision.get_text()
+        section = section_tree.find(strings, True)
+        text = section[0].get_text(level, include = ["p","li"], with_headings=True) if section else ""
+        references = section[0].get_sources(revision.get_references(), level) if section else []
 
         diffs = {differ_name:list(differ.compare(prev_text, text))
-                 for differ_name, differ in differs.items()} if section_name else {}
+                 for differ_name, differ in differs.items()}
         
         data.append(
-            {"timestamp":revision.timestamp_string(),
+            {"revision_timestamp":revision.timestamp.timestamp_string(),
              "revision_url":revision.url,
              "revision_index":revision.index,
              "revision_revid":revision.revid,
-             "size":len(text) if section_name else revision.size,
-             "refcount":len(revision.get_references() + revision.get_further_reading()),
+             "size":len(text),
+             "refcount":len(references),
              "diffs":{
                  differ_name:{
                      "added_characters":len([item for item in diff if item[0] == "+"]),
@@ -135,10 +132,10 @@ def plot_size_and_reference_count(timesliced_data, filepath):
     print("Plotting " + articletitle)
 
     reference_counts_color = "y"
-    reference_counts_label = f"References in {articletitle}"
+    reference_counts_label = f"References in Section {section_name} in {articletitle}"
 
     sizes_color = "b"
-    sizes_label = f"Size of {articletitle}"
+    sizes_label = f"Size of Section {section_name} in {articletitle}"
 
     fig, ax1 = plt.subplots()
     plt.xticks(list(range(len(timeslice_ticks))), timeslice_ticks, rotation=90)
@@ -154,18 +151,18 @@ def plot_size_and_reference_count(timesliced_data, filepath):
     #plt.subplots_adjust(bottom=0.12, top=0.98, left=0.12, right=0.88)
     plt.title("PCC: " + str(pcc))
     fig.tight_layout()
-    plt.savefig(filepath + "_revision_size_vs_reference_length.png")
+    plt.savefig(filepath + "_section_revision_size_vs_reference_length.png")
     plt.close('all')
 
     return sizes, reference_counts
 
-def plot_diffs(data, filepath):
+def plot_diffs(data, filepath, section_name):
     articletitle = generate_articlename(filepath)
 
     differ_names = list(data)[0]["diffs"].keys()
     ticks = []
     for item in data:
-        timestamp = Timestamp(item["timestamp"])
+        timestamp = Timestamp(item["revision_timestamp"])
         timestamp = str(timestamp.month).rjust(2,"0") + "/" + str(timestamp.year)
         ticks.append(timestamp if timestamp not in ticks else "")
 
@@ -182,29 +179,35 @@ def plot_diffs(data, filepath):
         plt.bar(np.arange(len(removed_characters)) + 0.15, removed_characters, width=0.3, label="removed characters")
         plt.plot(list(range(len(sizes))), sizes, label="section size", color="green")
         plt.xticks(list(range(len(ticks))), ticks, rotation = 90)
-        plt.title("Length of Sections " + "/".join(sections) + " in " + articletitle)
+        plt.title(f"Development of {section_name} Section in {articletitle}")
         plt.legend()
-        plt.savefig(filepath + "_history_section_analysis_" + differ_name + ".png")    
+        plt.savefig(filepath + "_section_analysis_" + differ_name + ".png")    
     
 if __name__ == "__main__":
 
-    filepath = "../articles/TEST/Zinc_finger_nuclease_en"
+    filepath = "../articles/TEST/CRISPR_gene_editing_en"
 
-    FINAL_YEAR, FINAL_MONTH = 2021, 2
-    sections = {"history":["History",
-                           "Discovery and properties",
-                           "Discovery of CRISPR"],
-                "application":["The significance for evolution and possible applications",
-                               "Possible applications",
-                               "Applications"]
+    sections = {"Intro":([""],0),
+                "History":(["History",
+                            "Discovery and properties",
+                            "Discovery of CRISPR"],
+                           10),
+                "Application":(["The significance for evolution and possible applications",
+                                "Possible applications",
+                                "Applications"],
+                                10)
                 }
 
     differs = {"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
-    section_name = "history"
+    section_name = "History"
+    strings,level = sections[section_name]
 
-    data = calculate_data(filepath, "", sections, differs)
-    plot_diffs(data, filepath)
+    data = calculate_data(filepath, strings, level, differs)
+
+    filepath += "_" + section_name.lower()
+    
     dump(data, open(filepath + "_diff_data.json", "w"))
-    timesliced_data = timeslice_data(data, FINAL_YEAR, FINAL_MONTH)
+    plot_diffs(data, filepath, section_name)
+    timesliced_data = timeslice_data(data, 2021, 2)
     sizes, reference_counts = plot_size_and_reference_count(timesliced_data, filepath)

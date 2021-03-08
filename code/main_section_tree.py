@@ -3,7 +3,7 @@ from pprint import pprint, pformat
 
 article = Article("../articles/2021-03-01/CRISPR_gene_editing_en")
 
-revision = article.get_revision(index=0,revid=723879518)
+revision = article.get_revision(index=200,revid=723879518)
 
 with open("section_tree.txt", "w") as file:
     file.write("Revision Index\n\n")
@@ -28,8 +28,10 @@ with open("section_tree.txt", "w") as file:
         file.write(pformat(history_section_tree.json(), width=200, sort_dicts=False) + "\n\n")
 
         file.write("Titles and Authors in History Section\n\n")
-        for source in history_section_tree.get_sources(revision.get_references()):
+        for source in history_section_tree.get_sources(revision.get_references(), 1):
             file.write(source.get_title("en") + "\n")
             file.write(str(source.get_authors("en")) + "\n\n")
     else:
         file.write("NO HISTORY SECTION")
+
+    print(section_tree.find([""])[0].get_text(10, with_headings=True))

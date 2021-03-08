@@ -16,7 +16,7 @@ class Section:
         self.subsections = []
         self.headings = headings
 
-    def get_text(self, level = 0, include = ["p","li"], exclude = ["style"], with_headings = False):
+    def get_text(self, level = 0, include = ["p","li"], with_headings = False):
         """
         Get the text of this section.
 
@@ -32,7 +32,7 @@ class Section:
                             for element in self.html.iter(include)])
         heading = (self.name + ("\n\n" if text else "")) * with_headings
         if level != 0:
-            return heading + text + "\n\n" + "".join([subsection.get_text(level - 1, include, exclude, with_headings) for subsection in self.subsections])
+            return heading + text + "\n\n" + "".join([subsection.get_text(level - 1, include, with_headings) for subsection in self.subsections])
         else:
             return heading + text
 
