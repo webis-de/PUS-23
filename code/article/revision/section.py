@@ -121,6 +121,10 @@ class Section:
             A list of sections.
         """
         def recursive_find(section, strings, lower, sections):
+            for string in [(string.lower() if lower else string) for string in strings]:
+                if string in (self.name.lower() if lower else self.name):
+                    sections.append(self)
+                    break
             for subsection in section.subsections:
                 for string in [(string.lower() if lower else string) for string in strings]:
                     if string in (subsection.name.lower() if lower else subsection.name):
