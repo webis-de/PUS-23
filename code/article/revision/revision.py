@@ -72,6 +72,7 @@ class Revision:
         return self.wikitext
 
     def get_text(self):
+        return self.etree_from_html()[0].xpath("string()").strip()
         try:
             return "".join(self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].xpath("//text()")).strip()
         except IndexError:
