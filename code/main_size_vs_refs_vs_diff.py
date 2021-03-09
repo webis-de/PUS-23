@@ -200,7 +200,7 @@ if __name__ == "__main__":
 
     differs = {"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
-    section_name = "History"
+    section_name = "Intro"
     strings,level = sections[section_name]
 
     data = calculate_data(filepath, strings, level, differs)

@@ -308,7 +308,7 @@ class Scraper:
 if __name__ == "__main__":
 
     wikipedia_api_url = ("https://en.wikipedia.org/w/api.php?format=json&action=query&titles=CRISPR"
-                         "&prop=revisions&rvlimit=50&rvdir=newer&rvslots=*"
+                         "&prop=revisions&rvlimit=1&rvdir=newer&rvslots=*&rvstartid=1009355338"
                          "&rvprop=comment|content|contentmodel|flagged|flags|ids|oresscores|parsedcomment|roles|sha1|size|slotsha1|slotsize|tags|timestamp|user|userid")
 
     from os import popen
