@@ -5,7 +5,7 @@ from copy import deepcopy
 
 class Section:
 
-    def __init__(self, html, name = "root", parent = None, level = 0, headings = ["h2","h3","h4","h5","h6"]):
+    def __init__(self, html, name = "root", parent = None, level = 0):
 
         self.html = html
         self.name = name
@@ -14,7 +14,6 @@ class Section:
         self.next = None
         self.level = level
         self.subsections = []
-        self.headings = headings
 
     def get_text(self, level = 0, include = ["p","li"], with_headings = False):
         """
@@ -67,7 +66,7 @@ class Section:
         return [source for source in sources
                 if not set(source.get_reference_ids()).isdisjoint(referenced_ids_in_section)]     
 
-    def tree(self):
+    def tree(self, headings = ["h1","h2","h3","h4","h5","h6"]):
         """
         Creates a nested section tree from this section.
 
@@ -76,8 +75,11 @@ class Section:
         """
         html = deepcopy(self.html)
         self.html.clear()
+        heading_level = 0
         for element in html:
-            if element.tag not in self.headings[:1]:
+            if not heading_level and element.tag in headings:
+                heading_level = headings.index(element.tag) + 1
+            if element.tag not in headings[:max(heading_level,0)]:
                 if not self.subsections:
                     self.html.append(element)
                 else:
@@ -85,11 +87,11 @@ class Section:
             else:
                 self.subsections.append(HTML.fromstring('<div class="section"></div>'))
                 self.subsections[-1].append(element)
-        self.subsections = [self._html_to_section(html) for html in self.subsections]
+        self.subsections = [self._html_to_section(html, headings[max(heading_level,0):]) for html in self.subsections]
         self._siblings()
         return self
 
-    def _html_to_section(self, html):
+    def _html_to_section(self, html, headings):
         """
         Turns a list of elements into a new subsection and calls tree on it.
 
@@ -100,8 +102,8 @@ class Section:
         """
         if html is not None:
             name = html[0].xpath("string()").split('[edit]')[0].strip()
-            subsection = Section(html, name, self, self.level + 1, self.headings[1:])
-            subsection.tree()
+            subsection = Section(html, name, self, self.level + 1)
+            subsection.tree(headings)
             return subsection
 
     def _siblings(self):
