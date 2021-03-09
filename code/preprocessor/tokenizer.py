@@ -29,7 +29,7 @@ class Tokenizer:
         for mark in [".","!","?",", ",": ",";", "(", ")","[","]","{","}","/","\\","'","\""]:
             string = string.replace(mark, " " + mark + " ")
 
-        split_string = re.split(" +", string.strip())
+        split_string = re.split("[ \n]+", string.strip(), flags=re.M)
 
         for i in range(len(split_string)):
             for string_to_escape in strings_to_escape:

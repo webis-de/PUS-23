@@ -1,9 +1,11 @@
 from article.article import Article
+from preprocessor.preprocessor import Preprocessor
 from pprint import pprint, pformat
 
 article = Article("../articles/2021-03-01/CRISPR_en")
 
-revision = article.get_revision(revid=1009355338)
+revision = article.get_revision(revid=369962884)
+preprocessor = Preprocessor("en")
 
 with open("section_tree.txt", "w") as file:
     file.write("Revision Index\n\n")
@@ -34,4 +36,6 @@ with open("section_tree.txt", "w") as file:
     else:
         file.write("NO HISTORY SECTION")
 
-    print(section_tree.find([""])[0].get_text(10, with_headings=True))
+    text = section_tree.find([""])[0].get_text(10, with_headings=True)
+    print(text)
+    print(preprocessor.preprocess(text, False, False, False, True))
