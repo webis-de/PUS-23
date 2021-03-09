@@ -61,15 +61,12 @@ class Revision:
 
     def etree_from_html(self):
         try:
-            return html.fromstring(self.html)
+            return html.fromstring(sub(r"<style.*?</style>", "", self.html, flags=S))
         except etree.ParserError:
             return html.fromstring(DEFAULT_HTML)
 
     def section_tree(self, name = "root"):
-        try:
-            return Section(html.fromstring(sub(r"<style.*?</style>", "", self.html, flags=S)).find_class('mw-parser-output')[0], name).tree()
-        except IndexError:
-            return Section(html.fromstring(DEFAULT_HTML).find_class('mw-parser-output', name)[0]).tree()
+        return Section(self.etree_from_html().find_class('mw-parser-output')[0], name).tree()
 
     def get_wikitext(self):
         return self.wikitext
