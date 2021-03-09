@@ -156,24 +156,26 @@ def plot_size_and_reference_count(timesliced_data, filepath):
 
     return sizes, reference_counts
 
-def plot_diffs(data, filepath, section_name):
+def plot_diffs(data, filepath, section_name, width, height):
     articletitle = generate_articlename(filepath)
 
     differ_names = list(data)[0]["diffs"].keys()
-    ticks = []
-    for item in data:
-        timestamp = Timestamp(item["revision_timestamp"])
-        timestamp = str(timestamp.month).rjust(2,"0") + "/" + str(timestamp.year)
-        ticks.append(timestamp if timestamp not in ticks else "")
 
     for differ_name in differ_names:
+
+        ticks = []
+        for item in data:
+            timestamp = Timestamp(item["revision_timestamp"])
+            ticks.append(timestamp.string if
+                         any([item["diffs"][differ_name]["added_characters"],
+                              item["diffs"][differ_name]["removed_characters"]]) else "")
 
         added_characters = [item["diffs"][differ_name]["added_characters"] for item in data]
         removed_characters = [item["diffs"][differ_name]["removed_characters"] for item in data]
         sizes = [item["size"] for item in data]
 
-        plt.figure(figsize=(25, 5), dpi=250)
-        plt.subplots_adjust(bottom=0.15, top=0.95, left=0.02, right=0.99)
+        plt.figure(figsize=(width, height), dpi=150)
+        plt.subplots_adjust(bottom=0.1, top=0.975, left=0.005, right=0.999)
         plt.margins(x=0)
         plt.bar(np.arange(len(added_characters)) - 0.15, added_characters, width=0.3, label="added characters")
         plt.bar(np.arange(len(removed_characters)) + 0.15, removed_characters, width=0.3, label="removed characters")
@@ -185,7 +187,7 @@ def plot_diffs(data, filepath, section_name):
     
 if __name__ == "__main__":
 
-    filepath = "../articles/TEST/CRISPR_gene_editing_en"
+    filepath = "../articles/TEST/CRISPR_en"
 
     sections = {"Intro":([""],0),
                 "History":(["History",
@@ -198,16 +200,21 @@ if __name__ == "__main__":
                                 10)
                 }
 
-    differs = {"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
+    differs = {"difflib_differ":difflib_differ()}#,"custom_differ":custom_differ()}
 
-    section_name = "Intro"
+    section_name = "Application"
     strings,level = sections[section_name]
+    width = 200
+    height = 20
 
-    data = calculate_data(filepath, strings, level, differs)
+    section_filepath = filepath + "_" + section_name.lower()
 
-    filepath += "_" + section_name.lower()
+    if not exists(section_filepath + "_diff_data.json"):
+        data = calculate_data(filepath, strings, level, differs)
+        dump(data, open(section_filepath + "_diff_data.json", "w"))
+    else:
+        data = load(open(section_filepath + "_diff_data.json"))
     
-    dump(data, open(filepath + "_diff_data.json", "w"))
-    plot_diffs(data, filepath, section_name)
+    plot_diffs(data, section_filepath, section_name, width, height)
     timesliced_data = timeslice_data(data, 2021, 2)
-    sizes, reference_counts = plot_size_and_reference_count(timesliced_data, filepath)
+    plot_size_and_reference_count(timesliced_data, section_filepath)
