@@ -90,6 +90,8 @@ class TestRevision(unittest.TestCase):
                          [subsection.name for subsection in root_External_links_of_revision2.subsections])
 
     def test_find(self):
+        self.assertEqual([],
+                         [section.name for section in self.revision1_section_tree.find(strings=["FOOBAR"])])
         self.assertEqual(["root", "CRISPR Mechanism", "CRISPR Spacers and Repeats", "References", "External links"],
                          [section.name for section in self.revision1_section_tree.find(strings=[""])])
         self.assertEqual(["CRISPR Mechanism", "CRISPR Spacers and Repeats", "References"],
