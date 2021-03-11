@@ -89,6 +89,12 @@ class TestRevision(unittest.TestCase):
         self.assertEqual([],
                          [subsection.name for subsection in root_External_links_of_revision2.subsections])
 
+    def test_find(self):
+        self.assertEqual(["root", "CRISPR Mechanism", "CRISPR Spacers and Repeats", "References", "External links"],
+                         [section.name for section in self.revision1_section_tree.find(strings=[""])])
+        self.assertEqual(["CRISPR Mechanism", "CRISPR Spacers and Repeats", "References"],
+                         [section.name for section in self.revision1_section_tree.find(strings=["Re", "CRISPR"])])
+
     def test_find_reference_section_revision1(self):
         reference_section_text_of_revision1 = \
           ('^ Sorek R, Kunin V, Hugenholtz P (2008). "CRISPR - a widespread system that provides acquired resistance against phages in bacteria and archaea". Nature Reviews '

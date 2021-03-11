@@ -39,3 +39,4 @@ with open("section_tree.txt", "w") as file:
     text = section_tree.find([""])[0].get_text(10, with_headings=True)
     print(text)
     print(preprocessor.preprocess(text, False, False, False, True))
+    print([s.name for s in section_tree.find(["Re"])])

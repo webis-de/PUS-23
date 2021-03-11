@@ -175,7 +175,7 @@ def plot_diffs(data, filepath, section_name, width, height):
         sizes = [item["size"] for item in data]
 
         plt.figure(figsize=(width, height), dpi=150)
-        plt.subplots_adjust(bottom=0.1, top=0.975, left=0.005, right=0.999)
+        plt.subplots_adjust(bottom=0.1, top=0.975, left=0.01, right=0.999)
         plt.margins(x=0)
         plt.bar(np.arange(len(added_characters)) - 0.15, added_characters, width=0.3, label="added characters")
         plt.bar(np.arange(len(removed_characters)) + 0.15, removed_characters, width=0.3, label="removed characters")
@@ -187,7 +187,7 @@ def plot_diffs(data, filepath, section_name, width, height):
     
 if __name__ == "__main__":
 
-    filepath = "../articles/TEST/CRISPR_en"
+    filepath = "../analysis/2021_03_09/CRISPR_gene_editing_en"
 
     sections = {"Intro":([""],0),
                 "History":(["History",
@@ -204,7 +204,7 @@ if __name__ == "__main__":
 
     section_name = "Application"
     strings,level = sections[section_name]
-    width = 200
+    width = 50
     height = 20
 
     section_filepath = filepath + "_" + section_name.lower()
