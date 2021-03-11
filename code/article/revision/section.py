@@ -147,7 +147,8 @@ class Section:
                         break
                 recursive_find(subsection, strings, lower, sections)
             return sections
-        return recursive_find(self, strings, lower, [self] if any([string in self.name for string in strings]) else [])
+        return recursive_find(self, strings, lower,
+                              [self] if any([string in self.name for string in strings]) else [])
 
     def get_paragraphs(self):
         def recursive_get_paragraphs(section, paragraphs):
