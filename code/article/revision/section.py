@@ -34,7 +34,24 @@ class Section:
             return heading + text + "\n\n" + "".join([subsection.get_text(level - 1, include, with_headings) for subsection in self.subsections])
         else:
             return heading + text
+           
+    def get_wikilinks(self, level = 0): # Analog zu get_references (Arno) 
+        """
+        Get wikilinks in the section.
 
+        Args:
+            level: The depth to which wikilinks from subsections will be retrieved.
+        Returns:
+            A list of wikilinks as strings.
+        """
+        def recursive_get_wikilinks(section, level, wikilinks):
+            wikilinks += [element.get("href") for element in section.html.iter() if element.get("href") and element.get("href").startswith("/wiki/")]
+            if level != 0:
+                for subsection in section.subsections:
+                    recursive_get_wikilinks(subsection, level - 1, wikilinks)
+            return wikilinks
+        return recursive_get_wikilinks(self, level, [])
+        
     def get_reference_ids(self, level = 0):
         """
         Get reference ids in the section.
