@@ -79,14 +79,14 @@ class Differ:
                 self.m = self.m-1
                 self.n = self.n-1
                 diff.append(("  " + s1[self.n]))
-        return diff_start + diff[::-1] + diff_end
+        return diff_start + diff[::-1] + diff_end[::-1]
 
 
 if __name__ == "__main__":
 
     differ = Differ()
 
-    for s1, s2 in [("bbbXoooYaaa","bbbYoooXaaa")]:#, ("XoooYooo","YoooXooo"), ("Wir stellen uns die Frage, ob wir den Fehler finden.", "Ich stelle mir die Frage, wie ich den Fehler finde.")]:
+    for s1, s2 in [("This is the first sentence.","That is the second sentence.")]:#, ("XoooYooo","YoooXooo"), ("Wir stellen uns die Frage, ob wir den Fehler finden.", "Ich stelle mir die Frage, wie ich den Fehler finde.")]:
 
         print(s1, s2, "\n")
 
