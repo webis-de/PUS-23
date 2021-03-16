@@ -5,7 +5,7 @@ from differ.lcs import Differ as custom_differ
 from difflib import Differ as difflib_differ
 from datetime import datetime
 from json import load, dump
-from os.path import basename, exists
+from os.path import basename, dirname, exists, sep
 from glob import glob
 from urllib.parse import quote, unquote
 from math import sqrt
@@ -57,48 +57,55 @@ def generate_articlename(filepath):
 
 def calculate_data(filepath, strings, level, differs):
 
-    articletitle = generate_articlename(filepath)
+    with open(dirname(filepath) + sep + "CALCULATION.log", "a") as log_file:
 
-    print("Calculating diffs for " + articletitle + " and sections " + ", ".join(strings))
+        articletitle = generate_articlename(filepath)
 
-    data = []
-    
-    article = Article(filepath)
+        log_file.write("Calculating diffs for " + articletitle + " and sections '" + "', '".join(strings) + "'" + "\n")
 
-    prev_text = ""
-
-    for revision in article.yield_revisions():
-
-        if (revision.index + 1) % 100 == 0: print(revision.index + 1)
-
-        section_tree = revision.section_tree()
-
-        section = section_tree.find(strings, True)
-        text = section[0].get_text(level, include = ["p","li"], with_headings=True) if section else ""
-        references = section[0].get_sources(revision.get_references(), level) if section else []
-
-        diffs = {differ_name:list(differ.compare(prev_text, text))
-                 for differ_name, differ in differs.items()}
+        data = []
         
-        data.append(
-            {"revision_timestamp":revision.timestamp.timestamp_string(),
-             "revision_url":revision.url,
-             "revision_index":revision.index,
-             "revision_revid":revision.revid,
-             "size":len(text),
-             "refcount":len(references),
-             "diffs":{
-                 differ_name:{
-                     "added_characters":len([item for item in diff if item[0] == "+"]),
-                     "removed_characters":len([item for item in diff if item[0] == "-"]),
-                     "diff":diff} for differ_name, diff in diffs.items()
+        article = Article(filepath)
+
+        prev_text = ""
+
+        start = datetime.now()
+
+        for revision in article.yield_revisions():
+
+            log_file.write(str(revision.index + 1) + " " + str(revision.url) + "\n")
+            print(revision.index + 1)
+
+            section_tree = revision.section_tree()
+
+            section = section_tree.find(strings, True)
+            text = section[0].get_text(level, include = ["p","li"], with_headings=True) if section else ""
+            references = section[0].get_sources(revision.get_references(), level) if section else []
+
+            diffs = {differ_name:list(differ.compare(prev_text, text))
+                     for differ_name, differ in differs.items()}
+            
+            data.append(
+                {"revision_timestamp":revision.timestamp.timestamp_string(),
+                 "revision_url":revision.url,
+                 "revision_index":revision.index,
+                 "revision_revid":revision.revid,
+                 "size":len(text),
+                 "refcount":len(references),
+                 "diffs":{
+                     differ_name:{
+                         "added_characters":len([item for item in diff if item[0] == "+"]),
+                         "removed_characters":len([item for item in diff if item[0] == "-"]),
+                         "diff":diff} for differ_name, diff in diffs.items()
+                     }
                  }
-             }
-            )
+                )
 
-        prev_text = text
+            prev_text = text
 
-    return data
+        log_file.write("TOTAL TIME: " + str(datetime.now() - start))
+
+        return data
 
 def plot_size_and_reference_count(timesliced_data, filepath):
     articletitle = generate_articlename(filepath)
@@ -187,7 +194,7 @@ def plot_diffs(data, filepath, section_name, width, height):
     
 if __name__ == "__main__":
 
-    filepath = "../analysis/2021_03_09/CRISPR_gene_editing_en"
+    filepath = "../analysis/sections/2021_03_16_gw/CRISPR_en"
 
     sections = {"Intro":([""],0),
                 "History":(["History",
@@ -200,11 +207,11 @@ if __name__ == "__main__":
                                 10)
                 }
 
-    differs = {"difflib_differ":difflib_differ()}#,"custom_differ":custom_differ()}
+    differs = {"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
     section_name = "Application"
     strings,level = sections[section_name]
-    width = 50
+    width = 200
     height = 20
 
     section_filepath = filepath + "_" + section_name.lower()
