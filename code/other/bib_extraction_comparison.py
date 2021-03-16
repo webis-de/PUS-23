@@ -35,18 +35,18 @@ print("Duplicates:", set([pmid for pmid in bibliography_pmids if bibliography_pm
 
 print()
 
-data = load(open(ARTICLE_DIRECTORY + ARTICLE +"_bib.json"))
+data = load(open(ARTICLE_DIRECTORY + ARTICLE + "_bib.json"))
 
 article_titles = [to_alnum(to_lower(to_ascii(title))).strip() for title in data["titles"].keys()]
 articles_dois = data["dois"].keys()
 articles_pmids = data["pmids"].keys()
 
-print(f"Number of Titles in {ARTICLE} article (incl. near-duplicates):",len(article_titles))
-print(f"Number of DOIs in {ARTICLE} article:",len(articles_dois))
-print(f"Number of PMIDs in {ARTICLE} article:",len(articles_pmids))
+print("Number of Titles in " + ARTICLE + " article (incl. near-duplicates):",len(article_titles))
+print("Number of DOIs in " + ARTICLE + " article:",len(articles_dois))
+print("Number of PMIDs in " + ARTICLE + " article:",len(articles_pmids))
 
 print()
 
-print(f"Size of intersection of titles:", len(set(bibliography_titles).intersection(set(article_titles))))
-print(f"Size of intersection of DOIs:", len(set(bibliography_dois).intersection(set(articles_dois))))
-print(f"Size of intersection of PMIDs:", len(set(bibliography_pmids).intersection(set(articles_pmids))))
+print("Size of intersection of titles:", len(set(bibliography_titles).intersection(set(article_titles))))
+print("Size of intersection of DOIs:", len(set(bibliography_dois).intersection(set(articles_dois))))
+print("Size of intersection of PMIDs:", len(set(bibliography_pmids).intersection(set(articles_pmids))))
