@@ -139,10 +139,10 @@ def plot_size_and_reference_count(timesliced_data, filepath):
     print("Plotting " + articletitle)
 
     reference_counts_color = "y"
-    reference_counts_label = f"References in Section {section_name} in {articletitle}"
+    reference_counts_label = "References in Section " + section_name " in " + articletitle
 
     sizes_color = "b"
-    sizes_label = f"Size of Section {section_name} in {articletitle}"
+    sizes_label = "Size of Section " + section_name + " in " + articletitle
 
     fig, ax1 = plt.subplots()
     plt.xticks(list(range(len(timeslice_ticks))), timeslice_ticks, rotation=90)
@@ -188,7 +188,7 @@ def plot_diffs(data, filepath, section_name, width, height):
         plt.bar(np.arange(len(removed_characters)) + 0.15, removed_characters, width=0.3, label="removed characters")
         plt.plot(list(range(len(sizes))), sizes, label="section size", color="green")
         plt.xticks(list(range(len(ticks))), ticks, rotation = 90)
-        plt.title(f"Development of {section_name} Section in {articletitle}")
+        plt.title("Development of " + section_name " Section in " + articletitle)
         plt.legend()
         plt.savefig(filepath + "_section_analysis_" + differ_name + ".png")    
     
