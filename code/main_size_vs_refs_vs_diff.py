@@ -57,55 +57,57 @@ def generate_articlename(filepath):
 
 def calculate_data(filepath, strings, level, differs):
 
-    with open(dirname(filepath) + sep + "CALCULATION.log", "a") as log_file:
+    log_file = open(dirname(filepath) + sep + "CALCULATION.log", "a")
 
-        articletitle = generate_articlename(filepath)
+    articletitle = generate_articlename(filepath)
 
-        log_file.write("Calculating diffs for " + articletitle + " and sections '" + "', '".join(strings) + "'" + "\n")
+    log_file.write("Calculating diffs for " + articletitle + " and sections '" + "', '".join(strings) + "'" + "\n")
 
-        data = []
+    data = []
+    
+    article = Article(filepath)
+
+    prev_text = ""
+
+    start = datetime.now()
+
+    for revision in article.yield_revisions():
+
+        log_file.write(str(revision.index + 1) + " " + str(revision.url) + "\n")
+        print(revision.index + 1)
+
+        section_tree = revision.section_tree()
+
+        section = section_tree.find(strings, True)
+        text = section[0].get_text(level, include = ["p","li"], with_headings=True) if section else ""
+        references = section[0].get_sources(revision.get_references(), level) if section else []
+
+        diffs = {differ_name:list(differ.compare(prev_text, text))
+                 for differ_name, differ in differs.items()}
         
-        article = Article(filepath)
-
-        prev_text = ""
-
-        start = datetime.now()
-
-        for revision in article.yield_revisions():
-
-            log_file.write(str(revision.index + 1) + " " + str(revision.url) + "\n")
-            print(revision.index + 1)
-
-            section_tree = revision.section_tree()
-
-            section = section_tree.find(strings, True)
-            text = section[0].get_text(level, include = ["p","li"], with_headings=True) if section else ""
-            references = section[0].get_sources(revision.get_references(), level) if section else []
-
-            diffs = {differ_name:list(differ.compare(prev_text, text))
-                     for differ_name, differ in differs.items()}
-            
-            data.append(
-                {"revision_timestamp":revision.timestamp.timestamp_string(),
-                 "revision_url":revision.url,
-                 "revision_index":revision.index,
-                 "revision_revid":revision.revid,
-                 "size":len(text),
-                 "refcount":len(references),
-                 "diffs":{
-                     differ_name:{
-                         "added_characters":len([item for item in diff if item[0] == "+"]),
-                         "removed_characters":len([item for item in diff if item[0] == "-"]),
-                         "diff":diff} for differ_name, diff in diffs.items()
-                     }
+        data.append(
+            {"revision_timestamp":revision.timestamp.timestamp_string(),
+             "revision_url":revision.url,
+             "revision_index":revision.index,
+             "revision_revid":revision.revid,
+             "size":len(text),
+             "refcount":len(references),
+             "diffs":{
+                 differ_name:{
+                     "added_characters":len([item for item in diff if item[0] == "+"]),
+                     "removed_characters":len([item for item in diff if item[0] == "-"]),
+                     "diff":diff} for differ_name, diff in diffs.items()
                  }
-                )
+             }
+            )
 
-            prev_text = text
+        prev_text = text
 
-        log_file.write("TOTAL TIME: " + str(datetime.now() - start))
+    log_file.write("TOTAL TIME: " + str(datetime.now() - start))
 
-        return data
+    log_file.close()
+
+    return data
 
 def plot_size_and_reference_count(timesliced_data, filepath):
     articletitle = generate_articlename(filepath)
