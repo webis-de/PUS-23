@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from article.article import Article
 from article.revision.timestamp import Timestamp
 from differ.lcs import Differ as custom_differ
@@ -222,6 +222,6 @@ if __name__ == "__main__":
     else:
         data = load(open(section_filepath + "_diff_data.json"))
     
-    plot_diffs(data, section_filepath, section_name, width, height)
-    timesliced_data = timeslice_data(data, 2021, 2)
-    plot_size_and_reference_count(timesliced_data, section_filepath)
+##    plot_diffs(data, section_filepath, section_name, width, height)
+##    timesliced_data = timeslice_data(data, 2021, 2)
+##    plot_size_and_reference_count(timesliced_data, section_filepath)
