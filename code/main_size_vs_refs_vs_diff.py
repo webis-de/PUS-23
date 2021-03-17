@@ -1,4 +1,4 @@
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from article.article import Article
 from article.revision.timestamp import Timestamp
 from differ.lcs import Differ as custom_differ
@@ -196,9 +196,10 @@ def plot_diffs(data, filepath, section_name, width, height):
     
 if __name__ == "__main__":
 
-    filepath = "../analysis/sections/2021_03_16_gw/CRISPR_en"
+    filepath = "../analysis/sections/2021_03_17/CRISPR_en"
 
     sections = {"Intro":([""],0),
+                "All":([""],10),
                 "History":(["History",
                             "Discovery and properties",
                             "Discovery of CRISPR"],
@@ -211,9 +212,9 @@ if __name__ == "__main__":
 
     differs = {"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
-    section_name = "Application"
+    section_name = "All"
     strings,level = sections[section_name]
-    width = 200
+    width = 50
     height = 20
 
     section_filepath = filepath + "_" + section_name.lower()
@@ -224,6 +225,6 @@ if __name__ == "__main__":
     else:
         data = load(open(section_filepath + "_diff_data.json"))
     
-##    plot_diffs(data, section_filepath, section_name, width, height)
-##    timesliced_data = timeslice_data(data, 2021, 2)
-##    plot_size_and_reference_count(timesliced_data, section_filepath)
+    plot_diffs(data, section_filepath, section_name, width, height)
+    timesliced_data = timeslice_data(data, 2021, 2)
+    plot_size_and_reference_count(timesliced_data, section_filepath)
