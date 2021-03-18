@@ -4,11 +4,12 @@ from article.revision.timestamp import Timestamp
 from differ.lcs import Differ as custom_differ
 from difflib import Differ as difflib_differ
 from datetime import datetime
-from json import load, dump
+from json import load, loads, dump, dumps
 from os.path import basename, dirname, exists, sep
 from glob import glob
 from urllib.parse import quote, unquote
 from math import sqrt
+from preprocessor.preprocessor import Preprocessor
 import numpy as np
 
 def corr_coef(X,Y):
@@ -52,66 +53,61 @@ def generate_annual_timeslice_ticks(timeslices):
         timeslice_ticks.append(year if year not in timeslice_ticks else "")
     return timeslice_ticks
 
-def generate_articlename(filepath):
-    return unquote(basename(filepath).split("_en")[0]).replace("_", " ")
+def calculate_data(filepath, strings, level, differs, preprocessor = None):
 
-def calculate_data(filepath, strings, level, differs):
+    with open(dirname(filepath) + sep + "CALCULATION.log", "a") as log_file:
 
-    log_file = open(dirname(filepath) + sep + "CALCULATION.log", "a")
+        article = Article(filepath)
 
-    articletitle = generate_articlename(filepath)
+        log_file.write("Calculating diffs for " + article.name + " and sections '" + "', '".join(strings) + "'" + "\n")
 
-    log_file.write("Calculating diffs for " + articletitle + " and sections '" + "', '".join(strings) + "'" + "\n")
+        data = []
 
-    data = []
-    
-    article = Article(filepath)
+        prev_text = ""
 
-    prev_text = ""
+        start = datetime.now()
 
-    start = datetime.now()
+        for revision in article.yield_revisions():
 
-    for revision in article.yield_revisions():
+            log_file.write(str(revision.index + 1) + " " + str(revision.url) + "\n")
+            print(revision.index + 1)
 
-        log_file.write(str(revision.index + 1) + " " + str(revision.url) + "\n")
-        print(revision.index + 1)
+            section_tree = revision.section_tree()
 
-        section_tree = revision.section_tree()
+            section = section_tree.find(strings, True)
+            text = section[0].get_text(level, include = ["p","li"], with_headings=True) if section else ""
+            if preprocessor:
+                text = preprocessor.preprocess(text, lower=False, stopping=False, sentenize=False, tokenize=True)[0]
+            references = section[0].get_sources(revision.get_references(), level) if section else []
 
-        section = section_tree.find(strings, True)
-        text = section[0].get_text(level, include = ["p","li"], with_headings=True) if section else ""
-        references = section[0].get_sources(revision.get_references(), level) if section else []
-
-        diffs = {differ_name:list(differ.compare(prev_text, text))
-                 for differ_name, differ in differs.items()}
-        
-        data.append(
-            {"revision_timestamp":revision.timestamp.timestamp_string(),
-             "revision_url":revision.url,
-             "revision_index":revision.index,
-             "revision_revid":revision.revid,
-             "size":len(text),
-             "refcount":len(references),
-             "diffs":{
-                 differ_name:{
-                     "added_characters":len([item for item in diff if item[0] == "+"]),
-                     "removed_characters":len([item for item in diff if item[0] == "-"]),
-                     "diff":diff} for differ_name, diff in diffs.items()
+            diffs = {differ_name:list(differ.compare(prev_text, text))
+                     for differ_name, differ in differs.items()}
+            
+            data.append(
+                {"revision_timestamp":revision.timestamp.timestamp_string(),
+                 "revision_url":revision.url,
+                 "revision_index":revision.index,
+                 "revision_revid":revision.revid,
+                 "size":sum([len(item) for item in text]),
+                 "refcount":len(references),
+                 "diffs":{
+                     differ_name:{
+                         "added_characters":sum([len(item[2:]) for item in diff if item[0] == "+"]),
+                         "removed_characters":sum([len(item[2:]) for item in diff if item[0] == "-"]),
+                         "diff":diff} for differ_name, diff in diffs.items()
+                     }
                  }
-             }
-            )
+                )
 
-        prev_text = text
+            prev_text = text
 
-    log_file.write("TOTAL TIME: " + str(datetime.now() - start))
+        log_file.write("TOTAL TIME: " + str(datetime.now() - start) + "\n")
 
-    log_file.close()
+        log_file.close()
 
-    return data
+        return data
 
-def plot_size_and_reference_count(timesliced_data, filepath):
-    articletitle = generate_articlename(filepath)
-    
+def plot_size_and_reference_count(timesliced_data, filepath, articlename):
     sizes = []
     reference_counts = []
     timeslice_ticks = generate_annual_timeslice_ticks(timesliced_data)
@@ -119,8 +115,7 @@ def plot_size_and_reference_count(timesliced_data, filepath):
     prev_size = 0
     prev_reference_count = 0
     
-    for timeslice, data in timesliced_data.items():
-            
+    for timeslice, data in timesliced_data.items():       
         try:
             sizes.append(sum([item["size"] for item in data])/len(data))
             prev_size = sizes[-1]
@@ -138,13 +133,13 @@ def plot_size_and_reference_count(timesliced_data, filepath):
         pcc = "n/a"
 
     print("PCC:", pcc)
-    print("Plotting " + articletitle)
+    print("Plotting " + articlename)
 
     reference_counts_color = "y"
-    reference_counts_label = "References in Section " + section_name + " in " + articletitle
+    reference_counts_label = "References in Section " + section_name + " in " + articlename
 
     sizes_color = "b"
-    sizes_label = "Size of Section " + section_name + " in " + articletitle
+    sizes_label = "Size of Section " + section_name + " in " + articlename
 
     fig, ax1 = plt.subplots()
     plt.xticks(list(range(len(timeslice_ticks))), timeslice_ticks, rotation=90)
@@ -163,11 +158,7 @@ def plot_size_and_reference_count(timesliced_data, filepath):
     plt.savefig(filepath + "_section_revision_size_vs_reference_length.png")
     plt.close('all')
 
-    return sizes, reference_counts
-
-def plot_diffs(data, filepath, section_name, width, height):
-    articletitle = generate_articlename(filepath)
-
+def plot_diffs(data, filepath, section_name, width, height, articlename):
     differ_names = list(data)[0]["diffs"].keys()
 
     for differ_name in differ_names:
@@ -190,13 +181,22 @@ def plot_diffs(data, filepath, section_name, width, height):
         plt.bar(np.arange(len(removed_characters)) + 0.15, removed_characters, width=0.3, label="removed characters")
         plt.plot(list(range(len(sizes))), sizes, label="section size", color="green")
         plt.xticks(list(range(len(ticks))), ticks, rotation = 90)
-        plt.title("Development of " + section_name + " Section in " + articletitle)
+        plt.title("Development of " + section_name + " Section in " + articlename)
         plt.legend()
-        plt.savefig(filepath + "_section_analysis_" + differ_name + ".png")    
+        plt.savefig(filepath + "_section_analysis_" + differ_name + ".png")
+
+def save_data(data, section_filepath):
+    with open(section_filepath + "_diff_data.json", "w") as data_file:
+        for line in data:
+            data_file.write(dumps(line) + "\n")
+
+def load_data(data_filepath):
+    with open(data_filepath) as file:
+        return [loads(line) for line in file]
     
 if __name__ == "__main__":
 
-    filepath = "../analysis/sections/2021_03_17/CRISPR_en"
+    preprocessor = Preprocessor("en")
 
     sections = {"Intro":([""],0),
                 "All":([""],10),
@@ -212,19 +212,23 @@ if __name__ == "__main__":
 
     differs = {"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
-    section_name = "All"
+    article_name = "CRISPR"
+    article_lang = "en"
+    section_name = "Application"
     strings,level = sections[section_name]
-    width = 50
+    width = 200
     height = 20
-
-    section_filepath = filepath + "_" + section_name.lower()
+    
+    article_filepath = "../analysis/sections/TEST/" + article_name + "_" + article_lang
+    section_filepath = article_filepath + "_" + section_name.lower()
+    article_name = article_name.replace("_", " ")
 
     if not exists(section_filepath + "_diff_data.json"):
-        data = calculate_data(filepath, strings, level, differs)
-        dump(data, open(section_filepath + "_diff_data.json", "w"))
+        data = calculate_data(article_filepath, strings, level, differs, None)
+        save_data(data, section_filepath)
     else:
-        data = load(open(section_filepath + "_diff_data.json"))
+        data = load_data(section_filepath + "_diff_data.json")
     
-    plot_diffs(data, section_filepath, section_name, width, height)
+    plot_diffs(data, section_filepath, section_name, width, height, article_name)
     timesliced_data = timeslice_data(data, 2021, 2)
-    plot_size_and_reference_count(timesliced_data, section_filepath)
+    plot_size_and_reference_count(timesliced_data, section_filepath, article_name)
