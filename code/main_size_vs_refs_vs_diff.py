@@ -214,7 +214,7 @@ if __name__ == "__main__":
 
     article_name = "CRISPR"
     article_lang = "en"
-    section_name = "Application"
+    section_name = "All"
     strings,level = sections[section_name]
     width = 200
     height = 20
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     article_name = article_name.replace("_", " ")
 
     if not exists(section_filepath + "_diff_data.json"):
-        data = calculate_data(article_filepath, strings, level, differs, None)
+        data = calculate_data(article_filepath, strings, level, differs, preprocessor)
         save_data(data, section_filepath)
     else:
         data = load_data(section_filepath + "_diff_data.json")
