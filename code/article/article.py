@@ -25,7 +25,7 @@ class Article:
         """
         self.filepath = filepath
         self.filename = basename(filepath)
-        self.name = self.filename.replace(".","_")
+        self.name = " ".join(self.filename.split("_")[:-1])
         self.revisions = []
         self.timestamps = []
 
