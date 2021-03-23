@@ -158,12 +158,12 @@ def plot_size_and_reference_count(timesliced_data, filepath, article_name, secti
     plt.savefig(filepath + "_section_revision_size_vs_reference_length.png")
     plt.close('all')
 
-def plot_size_and_reference_count_and_diffs(timesliced_data, filepath, article_name, section_name, differ_name, width, height):
+def plot_size_and_reference_count_and_diffs(timesliced_data, filepath, article_name, section_name, differ_name, width, height, legend=True):
     sizes = []
     reference_counts = []
     added_characters = []
     removed_characters = []
-    timeslice_ticks = generate_annual_timeslice_ticks(timesliced_data, months=True)
+    timeslice_ticks = [item if index%3 == 0 else "" for index,item in enumerate(generate_annual_timeslice_ticks(timesliced_data, True))]
 
     prev_size = 0
     prev_reference_count = 0
@@ -194,7 +194,7 @@ def plot_size_and_reference_count_and_diffs(timesliced_data, filepath, article_n
         pcc = "n/a"
 
     print("PCC:", pcc)
-    print("Plotting " + article_name)
+    print("Plotting " + article_name + " " + section_name)
 
     reference_counts_color = "k"
     reference_counts_label = "NUMBER OF REFERENCES"
@@ -206,36 +206,37 @@ def plot_size_and_reference_count_and_diffs(timesliced_data, filepath, article_n
 
     removed_characters_color = "darkgray"
 
-    fig, ax1 = plt.subplots(figsize = (width, height), dpi = 150)
+    fig, ax1 = plt.subplots(figsize = (width, height), dpi = 500)
     
     #x axis
-    plt.xticks(list(range(len(timeslice_ticks))), timeslice_ticks, rotation=90)
+    plt.xticks(list(range(len(timeslice_ticks))), timeslice_ticks, rotation=90, fontsize="medium")
     plt.margins(x=0.005)
     #reference counts
     ax1.plot(list(range(len(reference_counts))), reference_counts, label=reference_counts_label, color=reference_counts_color, linestyle=":")
-    ax1.set_ylabel(reference_counts_label, color=reference_counts_color)
+    ax1.set_ylabel(reference_counts_label, color=reference_counts_color, fontsize="xx-large")
     ax1.tick_params('y', colors=reference_counts_color)
     ax1.set_ylim(ymin=0)
     #sizes
     ax2 = ax1.twinx()
     ax2.plot(list(range(len(sizes))), sizes, label=sizes_label, color=sizes_color)
-    ax2.set_ylabel("CHARACTERS")
+    ax2.set_ylabel("CHARACTERS", fontsize="xx-large")
     ax2.tick_params('y')
     ax2.set_ylim(ymin=0)
     ax2.set_ylim(ymax=max(max(added_characters),max(removed_characters)))
     #added characters
-    plt.bar(np.arange(len(added_characters)) - 0.15, added_characters, width=0.3, label="TOTAL NUMBER OF ADDED CHARACTERS", color=added_characters_color)
+    plt.bar(np.arange(len(added_characters)) - 0.2, added_characters, width=0.4, label="TOTAL NUMBER OF ADDED CHARACTERS", color=added_characters_color)
     #removed characters
-    plt.bar(np.arange(len(removed_characters)) + 0.15, removed_characters, width=0.3, label="TOTAL NUMBER OF REMOVED CHARACTERS", color=removed_characters_color)
+    plt.bar(np.arange(len(removed_characters)) + 0.2, removed_characters, width=0.4, label="TOTAL NUMBER OF REMOVED CHARACTERS", color=removed_characters_color)
 
-    plt.title(article_name + " " + section_name + " PCC: " + str(pcc))
+    plt.title("PCC: " + str(pcc), fontsize="xx-large")
     
     plt.subplots_adjust(bottom=0.1, top=0.975, left=0.01, right=0.999)
     
     fig.tight_layout()
-    fig.legend(bbox_to_anchor=(0.95, 0.95), bbox_transform=ax2.transAxes)
+    if legend: fig.legend(bbox_to_anchor=(0.32, 0.95), bbox_transform=ax2.transAxes, fontsize="large")
     plt.savefig(filepath + "_section_revision_size_vs_reference_length_vs_diff.png")
     plt.close('all')
+    return ax1
 
 def plot_diffs(data, filepath, section_name, width, height, article_name):
     differ_names = list(data)[0]["diffs"].keys()
@@ -275,7 +276,12 @@ def load_data(data_filepath):
     
 if __name__ == "__main__":
 
-    preprocessor = Preprocessor("en")
+    language = "en"
+
+    preprocessor = Preprocessor(language)
+
+    articles = (("CRISPR",16.5,True),
+                ("CRISPR_gene_editing",3.5,False))
 
     sections = {"Intro":([""],0),
                 "All":([""],10),
@@ -291,26 +297,24 @@ if __name__ == "__main__":
 
     differs = {"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
-    article_name = "CRISPR_gene_editing"
-    article_lang = "en"
-    section_name = "Intro"
-    differ_name = "custom_differ"
-    strings,level = sections[section_name]
-    width = 30.0
-    height = 10.0
-    
-    article_filepath = "../analysis/sections/TEST/" + article_name + "_" + article_lang
-    section_filepath = article_filepath + "_" + section_name.lower()
-    article_name = article_name.replace("_", " ")
+    for section_name in ["Intro","History","Application"]:
+        for article_name,width,legend in articles:
+            
+            differ_name = "custom_differ"
+            strings,level = sections[section_name]
+            height = 6
+            
+            article_filepath = "../analysis/sections/TEST/" + article_name + "_" + language
+            section_filepath = article_filepath + "_" + section_name.lower()
 
-    if not exists(section_filepath + "_diff_data.json"):
-        data = calculate_data(article_filepath, strings, level, differs, preprocessor)
-        save_data(data, section_filepath)
-    else:
-        data = load_data(section_filepath + "_diff_data.json")
+            if not exists(section_filepath + "_diff_data.json"):
+                data = calculate_data(article_filepath, strings, level, differs, preprocessor)
+                save_data(data, section_filepath)
+            else:
+                data = load_data(section_filepath + "_diff_data.json")
 
-    timesliced_data = timeslice_data(data, 2021, 2)
-    
-##    plot_diffs(data, section_filepath, section_name, width, height, article_name)    
-##    plot_size_and_reference_count(timesliced_data, section_filepath, article_name, section_name)
-    plot_size_and_reference_count_and_diffs(timesliced_data, section_filepath, article_name, section_name, differ_name, width, height)
+            timesliced_data = timeslice_data(data, 2021, 2)
+            
+            #plot_diffs(data, section_filepath, section_name, width, height, article_name)    
+            #plot_size_and_reference_count(timesliced_data, section_filepath, article_name, section_name)
+            plot_size_and_reference_count_and_diffs(timesliced_data, section_filepath, article_name.replace("_", " "), section_name, differ_name, width, height, legend=legend)
