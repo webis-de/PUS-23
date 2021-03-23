@@ -107,6 +107,42 @@ def calculate_data(filepath, strings, level, differs, preprocessor = None):
 
         return data
 
+def plot_diffs(data, filepath, section_name, width, height, article_name):
+    differ_names = list(data)[0]["diffs"].keys()
+
+    for differ_name in differ_names:
+
+        ticks = []
+        for item in data:
+            timestamp = Timestamp(item["revision_timestamp"])
+            ticks.append(timestamp.string if
+                         any([item["diffs"][differ_name]["added_characters"],
+                              item["diffs"][differ_name]["removed_characters"]]) else "")
+
+        added_characters = [item["diffs"][differ_name]["added_characters"] for item in data]
+        removed_characters = [item["diffs"][differ_name]["removed_characters"] for item in data]
+        sizes = [item["size"] for item in data]
+
+        plt.figure(figsize=(width, height), dpi=150)
+        plt.subplots_adjust(bottom=0.1, top=0.975, left=0.01, right=0.999)
+        plt.margins(x=0)
+        plt.bar(np.arange(len(added_characters)) - 0.15, added_characters, width=0.3, label="added characters")
+        plt.bar(np.arange(len(removed_characters)) + 0.15, removed_characters, width=0.3, label="removed characters")
+        plt.plot(list(range(len(sizes))), sizes, label="section size", color="green")
+        plt.xticks(list(range(len(ticks))), ticks, rotation = 90)
+        plt.title("Development of " + section_name + " Section in " + article_name)
+        plt.legend()
+        plt.savefig(filepath + "_section_analysis_" + differ_name + ".png")
+
+def save_data(data, section_filepath):
+    with open(section_filepath + "_diff_data.json", "w") as data_file:
+        for line in data:
+            data_file.write(dumps(line) + "\n")
+
+def load_data(data_filepath):
+    with open(data_filepath) as file:
+        return [loads(line) for line in file]
+
 def plot_size_and_reference_count(timesliced_data, filepath, article_name, section_name):
     sizes = []
     reference_counts = []
@@ -203,8 +239,10 @@ def plot_size_and_reference_count_and_diffs(timesliced_data, filepath, article_n
     sizes_label = "MEAN CHARACTER COUNT"
 
     added_characters_color = "lightgray"
+    added_characters_label = "TOTAL NUMBER OF ADDED CHARACTERS"
 
     removed_characters_color = "darkgray"
+    removed_characters_label = "TOTAL NUMBER OF REMOVED CHARACTERS"
 
     fig, ax1 = plt.subplots(figsize = (width, height), dpi = 500)
     
@@ -214,19 +252,18 @@ def plot_size_and_reference_count_and_diffs(timesliced_data, filepath, article_n
     #reference counts
     ax1.plot(list(range(len(reference_counts))), reference_counts, label=reference_counts_label, color=reference_counts_color, linestyle=":")
     ax1.set_ylabel(reference_counts_label, color=reference_counts_color, fontsize="xx-large")
-    ax1.tick_params('y', colors=reference_counts_color)
+    ax1.tick_params(colors=reference_counts_color)
     ax1.set_ylim(ymin=0)
     #sizes
     ax2 = ax1.twinx()
     ax2.plot(list(range(len(sizes))), sizes, label=sizes_label, color=sizes_color)
     ax2.set_ylabel("CHARACTERS", fontsize="xx-large")
-    ax2.tick_params('y')
-    ax2.set_ylim(ymin=0)
-    ax2.set_ylim(ymax=max(max(added_characters),max(removed_characters)))
+    ax2.tick_params(colors=sizes_color)
+    ax2.set_ylim(ymin=0, ymax=max(max(added_characters),max(removed_characters)))
     #added characters
-    plt.bar(np.arange(len(added_characters)) - 0.2, added_characters, width=0.4, label="TOTAL NUMBER OF ADDED CHARACTERS", color=added_characters_color)
+    plt.bar(np.arange(len(added_characters)) - 0.2, added_characters, width=0.4, label=added_characters_label, color=added_characters_color)
     #removed characters
-    plt.bar(np.arange(len(removed_characters)) + 0.2, removed_characters, width=0.4, label="TOTAL NUMBER OF REMOVED CHARACTERS", color=removed_characters_color)
+    plt.bar(np.arange(len(removed_characters)) + 0.2, removed_characters, width=0.4, label=removed_characters_label, color=removed_characters_color)
 
     plt.title("PCC: " + str(pcc), fontsize="xx-large")
     
@@ -237,42 +274,6 @@ def plot_size_and_reference_count_and_diffs(timesliced_data, filepath, article_n
     plt.savefig(filepath + "_section_revision_size_vs_reference_length_vs_diff.png")
     plt.close('all')
     return ax1
-
-def plot_diffs(data, filepath, section_name, width, height, article_name):
-    differ_names = list(data)[0]["diffs"].keys()
-
-    for differ_name in differ_names:
-
-        ticks = []
-        for item in data:
-            timestamp = Timestamp(item["revision_timestamp"])
-            ticks.append(timestamp.string if
-                         any([item["diffs"][differ_name]["added_characters"],
-                              item["diffs"][differ_name]["removed_characters"]]) else "")
-
-        added_characters = [item["diffs"][differ_name]["added_characters"] for item in data]
-        removed_characters = [item["diffs"][differ_name]["removed_characters"] for item in data]
-        sizes = [item["size"] for item in data]
-
-        plt.figure(figsize=(width, height), dpi=150)
-        plt.subplots_adjust(bottom=0.1, top=0.975, left=0.01, right=0.999)
-        plt.margins(x=0)
-        plt.bar(np.arange(len(added_characters)) - 0.15, added_characters, width=0.3, label="added characters")
-        plt.bar(np.arange(len(removed_characters)) + 0.15, removed_characters, width=0.3, label="removed characters")
-        plt.plot(list(range(len(sizes))), sizes, label="section size", color="green")
-        plt.xticks(list(range(len(ticks))), ticks, rotation = 90)
-        plt.title("Development of " + section_name + " Section in " + article_name)
-        plt.legend()
-        plt.savefig(filepath + "_section_analysis_" + differ_name + ".png")
-
-def save_data(data, section_filepath):
-    with open(section_filepath + "_diff_data.json", "w") as data_file:
-        for line in data:
-            data_file.write(dumps(line) + "\n")
-
-def load_data(data_filepath):
-    with open(data_filepath) as file:
-        return [loads(line) for line in file]
     
 if __name__ == "__main__":
 

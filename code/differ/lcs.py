@@ -86,6 +86,9 @@ if __name__ == "__main__":
 
     differ = Differ()
 
+    text1 = "".join(open("text1").readlines())
+    text2 = "".join(open("text2").readlines())
+
     for s1, s2 in [("This is the first sentence.","That is the second sentence.")]:#, ("XoooYooo","YoooXooo"), ("Wir stellen uns die Frage, ob wir den Fehler finden.", "Ich stelle mir die Frage, wie ich den Fehler finde.")]:
 
         print(s1, s2, "\n")
