@@ -53,7 +53,7 @@ def generate_annual_timeslice_ticks(timeslices, months = False):
         timeslice_ticks.append(year if year not in timeslice_ticks else "")
     return timeslice_ticks
 
-def calculate_data(filepath, strings, level, differs, preprocessor = None):
+def calculate_data(filepath, strings, level, differs, preprocessor = None, problematic_revids = []):
 
     with open(dirname(filepath) + sep + "CALCULATION.log", "a") as log_file:
 
@@ -71,6 +71,10 @@ def calculate_data(filepath, strings, level, differs, preprocessor = None):
 
             log_file.write(str(revision.index + 1) + " " + str(revision.url) + "\n")
             print(revision.index + 1)
+
+            if revision.revid in problematic_revids:
+                print("Blacklisted revid:",revision.revid)
+                continue
 
             section_tree = revision.section_tree()
 
@@ -142,7 +146,7 @@ def save_data(data, section_filepath):
 def load_data(data_filepath):
     with open(data_filepath) as file:
         return [loads(line) for line in file]
-
+"""
 def plot_size_and_reference_count(timesliced_data, filepath, article_name, section_name):
     sizes = []
     reference_counts = []
@@ -193,8 +197,9 @@ def plot_size_and_reference_count(timesliced_data, filepath, article_name, secti
     fig.tight_layout()
     plt.savefig(filepath + "_section_revision_size_vs_reference_length.png")
     plt.close('all')
+"""
 
-def plot_size_and_reference_count_and_diffs(timesliced_data, filepath, article_name, section_name, differ_name, width, height, legend=True):
+def handle_timesliced_data(timesliced_data):
     sizes = []
     reference_counts = []
     added_characters = []
@@ -223,66 +228,89 @@ def plot_size_and_reference_count_and_diffs(timesliced_data, filepath, article_n
             removed_characters.append(sum([item["diffs"][differ_name]["removed_characters"] for item in data]))
         except ZeroDivisionError:
             removed_characters.append(0)
+    return sizes, reference_counts, added_characters, removed_characters, timeslice_ticks
 
-    try:
-        pcc = round(corr_coef(sizes, reference_counts), 3)
-    except:
-        pcc = "n/a"
+def plot_size_and_reference_count_and_diffs(timesliced_datasets, article_filepath, section_name, differ_name):
 
-    print("PCC:", pcc)
-    print("Plotting " + article_name + " " + section_name)
+    fig = plt.figure(figsize=(30,6))
+    axs = [plt.subplot2grid((12, 48), (0, 0), colspan=39, rowspan=12),
+           plt.subplot2grid((12, 48), (0, 41), colspan=6, rowspan=12)]
 
-    reference_counts_color = "k"
-    reference_counts_label = "NUMBER OF REFERENCES"
+    handle_yaxis = True
+    reference_max = None
+    sizes_max = None
 
-    sizes_color = "k"
-    sizes_label = "MEAN CHARACTER COUNT"
+    for timesliced_data, ax1 in zip(timesliced_datasets, axs):
+        
+        sizes, reference_counts, added_characters, removed_characters, timeslice_ticks = handle_timesliced_data(timesliced_datasets[timesliced_data])
 
-    added_characters_color = "lightgray"
-    added_characters_label = "TOTAL NUMBER OF ADDED CHARACTERS"
+        if handle_yaxis:
+            reference_max = max(reference_counts)
+            sizes_max = max(max(added_characters),max(removed_characters))
 
-    removed_characters_color = "darkgray"
-    removed_characters_label = "TOTAL NUMBER OF REMOVED CHARACTERS"
+        try:
+            pcc = round(corr_coef(sizes, reference_counts), 3)
+        except:
+            pcc = "n/a"
 
-    fig, ax1 = plt.subplots(figsize = (width, height), dpi = 500)
-    
-    #x axis
-    plt.xticks(list(range(len(timeslice_ticks))), timeslice_ticks, rotation=90, fontsize="medium")
-    plt.margins(x=0.005)
-    #reference counts
-    ax1.plot(list(range(len(reference_counts))), reference_counts, label=reference_counts_label, color=reference_counts_color, linestyle=":")
-    ax1.set_ylabel(reference_counts_label, color=reference_counts_color, fontsize="xx-large")
-    ax1.tick_params(colors=reference_counts_color)
-    ax1.set_ylim(ymin=0)
-    #sizes
-    ax2 = ax1.twinx()
-    ax2.plot(list(range(len(sizes))), sizes, label=sizes_label, color=sizes_color)
-    ax2.set_ylabel("CHARACTERS", fontsize="xx-large")
-    ax2.tick_params(colors=sizes_color)
-    ax2.set_ylim(ymin=0, ymax=max(max(added_characters),max(removed_characters)))
-    #added characters
-    plt.bar(np.arange(len(added_characters)) - 0.2, added_characters, width=0.4, label=added_characters_label, color=added_characters_color)
-    #removed characters
-    plt.bar(np.arange(len(removed_characters)) + 0.2, removed_characters, width=0.4, label=removed_characters_label, color=removed_characters_color)
+        print("PCC:", pcc)
+        print("Plotting " + article_name + " " + section_name)
 
-    plt.title("PCC: " + str(pcc), fontsize="xx-large")
-    
-    plt.subplots_adjust(bottom=0.1, top=0.975, left=0.01, right=0.999)
-    
+        reference_counts_color = "k"
+        reference_counts_label = "NUMBER OF REFERENCES"
+
+        sizes_color = "k"
+        sizes_label = "MEAN CHARACTER COUNT"
+
+        added_characters_color = "lightgray"
+        added_characters_label = "TOTAL NUMBER OF ADDED CHARACTERS"
+
+        removed_characters_color = "darkgray"
+        removed_characters_label = "TOTAL NUMBER OF REMOVED CHARACTERS"
+        
+        #x ticks
+        ax1.set_xticks(list(range(len(timeslice_ticks))))
+        ax1.set_xticklabels(timeslice_ticks, rotation=90, fontsize="medium")
+        #reference counts
+        ax1.margins(x=0.005)
+        ax1.plot(list(range(len(reference_counts))), reference_counts, label=reference_counts_label, color=reference_counts_color, linestyle=":")
+        if handle_yaxis: ax1.set_ylabel(reference_counts_label, color=reference_counts_color, fontsize="xx-large")
+        ax1.tick_params(colors=reference_counts_color)
+        ax1.set_ylim(ymin=0, ymax=reference_max)
+        #sizes
+        ax2 = ax1.twinx()
+        ax2.margins(x=0.005)
+        ax2.plot(list(range(len(sizes))), sizes, label=sizes_label, color=sizes_color)
+        if not handle_yaxis: ax2.set_ylabel("CHARACTERS", color=sizes_color, fontsize="xx-large")
+        ax2.tick_params(colors=sizes_color)
+        ax2.set_ylim(ymin=0, ymax=sizes_max)
+        #added characters
+        plt.bar(np.arange(len(added_characters)) - 0.2, added_characters, width=0.4, label=added_characters_label, color=added_characters_color)
+        #removed characters
+        plt.bar(np.arange(len(removed_characters)) + 0.2, removed_characters, width=0.4, label=removed_characters_label, color=removed_characters_color)
+
+        plt.title("PCC: " + str(pcc), fontsize="xx-large")
+
+        handle_yaxis = False
+        
+    plt.subplots_adjust(bottom=0.15, top=0.925, left=0.03, right=0.98)
     fig.tight_layout()
-    if legend: fig.legend(bbox_to_anchor=(0.32, 0.95), bbox_transform=ax2.transAxes, fontsize="large")
-    plt.savefig(filepath + "_section_revision_size_vs_reference_length_vs_diff.png")
+    #fig.legend(bbox_to_anchor=(0.01, 0.95), bbox_transform=ax2.transAxes, fontsize="large")
+    plt.savefig(dirname(article_filepath) + sep + "_".join(timesliced_datasets.keys()).replace(" ","_") + "_" + section_name  + "_" + "section_revision_size_vs_references_vs_diffs.png")
     plt.close('all')
-    return ax1
     
 if __name__ == "__main__":
+
+    from problematic_revids import problematic_revids_CRISPR_en, problematic_revids_CRISPR_gene_editing_en
 
     language = "en"
 
     preprocessor = Preprocessor(language)
 
-    articles = (("CRISPR",16.5,True),
-                ("CRISPR_gene_editing",3.5,False))
+    articles = (
+        ("CRISPR",16.5,True,problematic_revids_CRISPR_en),
+        ("CRISPR_gene_editing",3.5,False,problematic_revids_CRISPR_gene_editing_en)
+        )
 
     sections = {"Intro":([""],0),
                 "All":([""],10),
@@ -298,24 +326,27 @@ if __name__ == "__main__":
 
     differs = {"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
-    for section_name in ["Intro","History","Application"]:
-        for article_name,width,legend in articles:
+    for section_name in ["Application"]:#["Intro","History","Application"]:
+
+        timesliced_datasets = {}
+        
+        for article_name,width,legend,problematic_revids in articles:
             
             differ_name = "custom_differ"
             strings,level = sections[section_name]
             height = 6
             
-            article_filepath = "../analysis/sections/TEST/" + article_name + "_" + language
+            article_filepath = "../analysis/sections/2021_03_16_linejson_tokenized_summedaschar2021_03_16_linejson_tokenized_summedaschar_combined/" + article_name + "_" + language
             section_filepath = article_filepath + "_" + section_name.lower()
 
             if not exists(section_filepath + "_diff_data.json"):
-                data = calculate_data(article_filepath, strings, level, differs, preprocessor)
+                data = calculate_data(article_filepath, strings, level, differs, preprocessor, [])
                 save_data(data, section_filepath)
             else:
                 data = load_data(section_filepath + "_diff_data.json")
 
-            timesliced_data = timeslice_data(data, 2021, 2)
+            timesliced_datasets[article_name.replace("_", " ")] = timeslice_data(data, 2021, 2)
             
             #plot_diffs(data, section_filepath, section_name, width, height, article_name)    
             #plot_size_and_reference_count(timesliced_data, section_filepath, article_name, section_name)
-            plot_size_and_reference_count_and_diffs(timesliced_data, section_filepath, article_name.replace("_", " "), section_name, differ_name, width, height, legend=legend)
+        plot_size_and_reference_count_and_diffs(timesliced_datasets, article_filepath, section_name, differ_name)
