@@ -11,6 +11,7 @@ from urllib.parse import quote, unquote
 from math import sqrt
 from preprocessor.preprocessor import Preprocessor
 import numpy as np
+from utility.logger import Logger
 
 def corr_coef(X,Y):
     mean_x = sum(X) / len(X)
@@ -53,63 +54,58 @@ def generate_annual_timeslice_ticks(timeslices, months = False):
         timeslice_ticks.append(year if year not in timeslice_ticks else "")
     return timeslice_ticks
 
-def calculate_data(filepath, strings, level, differs, preprocessor = None, problematic_revids = []):
+def calculate_data(filepath, logger, strings, level, differs, preprocessor = None, problematic_revids = []):
 
-    with open(dirname(filepath) + sep + "CALCULATION.log", "a") as log_file:
+    article = Article(filepath)
 
-        article = Article(filepath)
+    logger.log("Calculating diffs for " + article.name + " and sections '" + "', '".join(strings) + "'" + "\n")
 
-        log_file.write("Calculating diffs for " + article.name + " and sections '" + "', '".join(strings) + "'" + "\n")
+    data = []
 
-        data = []
+    prev_text = ""
 
-        prev_text = ""
+    start = datetime.now()
 
-        start = datetime.now()
+    for revision in article.yield_revisions():
 
-        for revision in article.yield_revisions():
+        logger.log(str(revision.index + 1) + " " + str(revision.url) + "\n")
 
-            log_file.write(str(revision.index + 1) + " " + str(revision.url) + "\n")
-            print(revision.index + 1)
+        if revision.revid in problematic_revids:
+            logger.log("Blacklisted revid:",revision.revid)
+            continue
 
-            if revision.revid in problematic_revids:
-                print("Blacklisted revid:",revision.revid)
-                continue
+        section_tree = revision.section_tree()
 
-            section_tree = revision.section_tree()
+        section = section_tree.find(strings, True)
+        text = section[0].get_text(level, include = ["p","li"], with_headings=True) if section else ""
+        if preprocessor:
+            text = preprocessor.preprocess(text, lower=False, stopping=False, sentenize=False, tokenize=True)[0]
+        references = section[0].get_sources(revision.get_references(), level) if section else []
 
-            section = section_tree.find(strings, True)
-            text = section[0].get_text(level, include = ["p","li"], with_headings=True) if section else ""
-            if preprocessor:
-                text = preprocessor.preprocess(text, lower=False, stopping=False, sentenize=False, tokenize=True)[0]
-            references = section[0].get_sources(revision.get_references(), level) if section else []
-
-            diffs = {differ_name:list(differ.compare(prev_text, text))
-                     for differ_name, differ in differs.items()}
-            
-            data.append(
-                {"revision_timestamp":revision.timestamp.timestamp_string(),
-                 "revision_url":revision.url,
-                 "revision_index":revision.index,
-                 "revision_revid":revision.revid,
-                 "size":sum([len(item) for item in text]),
-                 "refcount":len(references),
-                 "diffs":{
-                     differ_name:{
-                         "added_characters":sum([len(item[2:]) for item in diff if item[0] == "+"]),
-                         "removed_characters":sum([len(item[2:]) for item in diff if item[0] == "-"]),
-                         "diff":diff} for differ_name, diff in diffs.items()
-                     }
+        diffs = {differ_name:list(differ.compare(prev_text, text))
+                 for differ_name, differ in differs.items()}
+        
+        data.append(
+            {"revision_timestamp":revision.timestamp.timestamp_string(),
+             "revision_url":revision.url,
+             "revision_index":revision.index,
+             "revision_revid":revision.revid,
+             "size":sum([len(item) for item in text]),
+             "refcount":len(references),
+             "diffs":{
+                 differ_name:{
+                     "added_characters":sum([len(item[2:]) for item in diff if item[0] == "+"]),
+                     "removed_characters":sum([len(item[2:]) for item in diff if item[0] == "-"]),
+                     "diff":diff} for differ_name, diff in diffs.items()
                  }
-                )
+             }
+            )
 
-            prev_text = text
+        prev_text = text
 
-        log_file.write("TOTAL TIME: " + str(datetime.now() - start) + "\n")
+    logger.log("TOTAL TIME: " + str(datetime.now() - start) + "\n")
 
-        log_file.close()
-
-        return data
+    return data
 
 def plot_diffs(data, filepath, section_name, width, height, article_name):
     differ_names = list(data)[0]["diffs"].keys()
@@ -230,7 +226,7 @@ def handle_timesliced_data(timesliced_data):
             removed_characters.append(0)
     return sizes, reference_counts, added_characters, removed_characters, timeslice_ticks
 
-def plot_size_and_reference_count_and_diffs(timesliced_datasets, article_filepath, section_name, differ_name):
+def plot_size_and_reference_count_and_diffs(timesliced_datasets, logger, directory, section_name, differ_name):
 
     fig = plt.figure(figsize=(30,6))
     axs = [plt.subplot2grid((12, 48), (0, 0), colspan=39, rowspan=12),
@@ -253,8 +249,8 @@ def plot_size_and_reference_count_and_diffs(timesliced_datasets, article_filepat
         except:
             pcc = "n/a"
 
-        print("PCC:", pcc)
-        print("Plotting " + article_name + " " + section_name)
+        logger.log("PCC:", pcc)
+        logger.log("Plotting " + article_name + " " + section_name)
 
         reference_counts_color = "k"
         reference_counts_label = "NUMBER OF REFERENCES"
@@ -296,7 +292,7 @@ def plot_size_and_reference_count_and_diffs(timesliced_datasets, article_filepat
     plt.subplots_adjust(bottom=0.15, top=0.925, left=0.03, right=0.98)
     fig.tight_layout()
     #fig.legend(bbox_to_anchor=(0.01, 0.95), bbox_transform=ax2.transAxes, fontsize="large")
-    plt.savefig(dirname(article_filepath) + sep + "_".join(timesliced_datasets.keys()).replace(" ","_") + "_" + section_name  + "_" + "section_revision_size_vs_references_vs_diffs.png")
+    plt.savefig(directory + sep + "_".join(timesliced_datasets.keys()).replace(" ","_") + "_" + section_name  + "_" + "section_revision_size_vs_references_vs_diffs.png")
     plt.close('all')
     
 if __name__ == "__main__":
@@ -326,7 +322,11 @@ if __name__ == "__main__":
 
     differs = {"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
-    for section_name in ["Application"]:#["Intro","History","Application"]:
+    directory = "../analysis/sections/TEST1/"
+
+    logger = Logger(directory)
+
+    for section_name in ["All","Intro","History","Application"]:
 
         timesliced_datasets = {}
         
@@ -336,11 +336,11 @@ if __name__ == "__main__":
             strings,level = sections[section_name]
             height = 6
             
-            article_filepath = "../analysis/sections/2021_03_16_linejson_tokenized_summedaschar2021_03_16_linejson_tokenized_summedaschar_combined/" + article_name + "_" + language
+            article_filepath = directory + article_name + "_" + language
             section_filepath = article_filepath + "_" + section_name.lower()
 
             if not exists(section_filepath + "_diff_data.json"):
-                data = calculate_data(article_filepath, strings, level, differs, preprocessor, [])
+                data = calculate_data(article_filepath, logger, strings, level, differs, preprocessor, [])
                 save_data(data, section_filepath)
             else:
                 data = load_data(section_filepath + "_diff_data.json")
@@ -349,4 +349,4 @@ if __name__ == "__main__":
             
             #plot_diffs(data, section_filepath, section_name, width, height, article_name)    
             #plot_size_and_reference_count(timesliced_data, section_filepath, article_name, section_name)
-        plot_size_and_reference_count_and_diffs(timesliced_datasets, article_filepath, section_name, differ_name)
+        plot_size_and_reference_count_and_diffs(timesliced_datasets, directory, logger, section_name, differ_name)

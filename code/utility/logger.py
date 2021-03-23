@@ -46,10 +46,10 @@ class Logger:
             """
 
             with open(self.file_path, "a") as file:
-                if message.strip() != "":
+                if str(message).strip() != "":
                     message = str(message)
-                    print(message + ("\n" * line_breaks))
-                    file.write(str(datetime.now()) + " >>> " + message.strip() + "\n")
+                    print(str(message) + ("\n" * line_breaks))
+                    file.write(str(datetime.now()) + " >>> " + str(message).strip() + "\n")
 
         def close(self, message = ""):
             """
