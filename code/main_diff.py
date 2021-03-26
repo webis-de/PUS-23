@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from article.article import Article
 from article.revision.timestamp import Timestamp
 from differ.lcs import Differ as custom_differ
@@ -71,7 +71,7 @@ def calculate_data(filepath, logger, strings, level, differs, preprocessor = Non
         logger.log(str(revision.index + 1) + " " + str(revision.url) + "\n")
 
         if revision.revid in problematic_revids:
-            logger.log("Blacklisted revid:",revision.revid)
+            logger.log("Blacklisted revid: " + str(revision.revid))
             continue
 
         section_tree = revision.section_tree()
@@ -226,7 +226,7 @@ def handle_timesliced_data(timesliced_data):
             removed_characters.append(0)
     return sizes, reference_counts, added_characters, removed_characters, timeslice_ticks
 
-def plot_size_and_reference_count_and_diffs(timesliced_datasets, logger, directory, section_name, differ_name):
+def plot_size_and_reference_count_and_diffs(timesliced_datasets, directory, logger, section_name, differ_name):
 
     fig = plt.figure(figsize=(30,6))
     axs = [plt.subplot2grid((12, 48), (0, 0), colspan=39, rowspan=12),
@@ -242,14 +242,14 @@ def plot_size_and_reference_count_and_diffs(timesliced_datasets, logger, directo
 
         if handle_yaxis:
             reference_max = max(reference_counts)
-            sizes_max = max(max(added_characters),max(removed_characters))
+            sizes_max = max(max(added_characters),max(removed_characters),max(sizes))
 
         try:
             pcc = round(corr_coef(sizes, reference_counts), 3)
         except:
             pcc = "n/a"
 
-        logger.log("PCC:", pcc)
+        logger.log("PCC: " + str(pcc))
         logger.log("Plotting " + article_name + " " + section_name)
 
         reference_counts_color = "k"
@@ -288,7 +288,7 @@ def plot_size_and_reference_count_and_diffs(timesliced_datasets, logger, directo
         plt.title("PCC: " + str(pcc), fontsize="xx-large")
 
         handle_yaxis = False
-        
+
     plt.subplots_adjust(bottom=0.15, top=0.925, left=0.03, right=0.98)
     fig.tight_layout()
     #fig.legend(bbox_to_anchor=(0.01, 0.95), bbox_transform=ax2.transAxes, fontsize="large")
@@ -304,8 +304,8 @@ if __name__ == "__main__":
     preprocessor = Preprocessor(language)
 
     articles = (
-        ("CRISPR",16.5,True,problematic_revids_CRISPR_en),
-        ("CRISPR_gene_editing",3.5,False,problematic_revids_CRISPR_gene_editing_en)
+        ("CRISPR_gene_editing",3.5,False,problematic_revids_CRISPR_gene_editing_en),
+        ("CRISPR",16.5,True,problematic_revids_CRISPR_en)
         )
 
     sections = {"Intro":([""],0),
@@ -322,31 +322,32 @@ if __name__ == "__main__":
 
     differs = {"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
-    directory = "../analysis/sections/TEST1/"
+    articles_directory = "../articles/2021-03-01"
+    analysis_directory = "../analysis/sections/2021_03_26/complete"
 
-    logger = Logger(directory)
+    logger = Logger(analysis_directory)
 
     for section_name in ["All","Intro","History","Application"]:
 
         timesliced_datasets = {}
         
         for article_name,width,legend,problematic_revids in articles:
-            
+
             differ_name = "custom_differ"
             strings,level = sections[section_name]
             height = 6
             
-            article_filepath = directory + article_name + "_" + language
-            section_filepath = article_filepath + "_" + section_name.lower()
+            articles_filepath = articles_directory + sep + article_name + "_" + language
+            analysis_filepath = analysis_directory + sep + article_name + "_" + language + "_" + section_name.lower()
 
-            if not exists(section_filepath + "_diff_data.json"):
-                data = calculate_data(article_filepath, logger, strings, level, differs, preprocessor, [])
-                save_data(data, section_filepath)
+            if not exists(analysis_filepath + "_diff_data.json"):
+                data = calculate_data(articles_filepath, logger, strings, level, differs, preprocessor, [])
+                save_data(data, analysis_filepath)
             else:
-                data = load_data(section_filepath + "_diff_data.json")
+                data = load_data(analysis_filepath + "_diff_data.json")
 
             timesliced_datasets[article_name.replace("_", " ")] = timeslice_data(data, 2021, 2)
-            
+
             #plot_diffs(data, section_filepath, section_name, width, height, article_name)    
             #plot_size_and_reference_count(timesliced_data, section_filepath, article_name, section_name)
-        plot_size_and_reference_count_and_diffs(timesliced_datasets, directory, logger, section_name, differ_name)
+        #plot_size_and_reference_count_and_diffs(timesliced_datasets, directory, logger, section_name, differ_name)
