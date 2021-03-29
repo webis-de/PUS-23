@@ -29,9 +29,12 @@ problematic_revids_CRISPR_en = [
         898138824, # ERROR/ copyright deletion: https://en.wikipedia.org/w/index.php?title=CRISPR&oldid=898138824
 
         944612830, # History section deleted: https://en.wikipedia.org/w/index.php?title=CRISPR&oldid=944612830
+    
+        983861187, # Vandalism by 50.230.60.126: https://en.wikipedia.org/w/index.php?title=CRISPR&oldid=983861187
+        983861487, # Vandalism by 50.230.60.126: https://en.wikipedia.org/w/index.php?title=CRISPR&oldid=983861487
 
         985911343, # History section deleted: https://en.wikipedia.org/w/index.php?title=CRISPR&oldid=985911343
-    
+        
 ]
 
 problematic_revids_CRISPR_gene_editing_en = [

@@ -1,4 +1,7 @@
-#import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except ModuleNotFoundError:
+    print("Skipping matplotlib import!")
 from article.article import Article
 from article.revision.timestamp import Timestamp
 from differ.lcs import Differ as custom_differ
@@ -200,7 +203,7 @@ def handle_timesliced_data(timesliced_data):
     reference_counts = []
     added_characters = []
     removed_characters = []
-    timeslice_ticks = [item if index%3 == 0 else "" for index,item in enumerate(generate_annual_timeslice_ticks(timesliced_data, True))]
+    timeslice_ticks = [item if item[:2] in ["01","04","07","10"] else "" for index,item in enumerate(generate_annual_timeslice_ticks(timesliced_data, True))]
 
     prev_size = 0
     prev_reference_count = 0
@@ -226,15 +229,17 @@ def handle_timesliced_data(timesliced_data):
             removed_characters.append(0)
     return sizes, reference_counts, added_characters, removed_characters, timeslice_ticks
 
-def plot_size_and_reference_count_and_diffs(timesliced_datasets, directory, logger, section_name, differ_name):
+def plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_directory, logger, section_name, differ_name):
 
     fig = plt.figure(figsize=(30,6))
-    axs = [plt.subplot2grid((12, 48), (0, 0), colspan=39, rowspan=12),
+    axs = [plt.subplot2grid((12, 48), (0, 0), colspan=41, rowspan=12),
            plt.subplot2grid((12, 48), (0, 41), colspan=6, rowspan=12)]
 
     handle_yaxis = True
     reference_max = None
     sizes_max = None
+
+    article_abbreviation_index = 1
 
     for timesliced_data, ax1 in zip(timesliced_datasets, axs):
         
@@ -249,8 +254,8 @@ def plot_size_and_reference_count_and_diffs(timesliced_datasets, directory, logg
         except:
             pcc = "n/a"
 
+        logger.log("Plotting " + timesliced_data + " " + section_name)
         logger.log("PCC: " + str(pcc))
-        logger.log("Plotting " + article_name + " " + section_name)
 
         reference_counts_color = "k"
         reference_counts_label = "NUMBER OF REFERENCES"
@@ -266,18 +271,26 @@ def plot_size_and_reference_count_and_diffs(timesliced_datasets, directory, logg
         
         #x ticks
         ax1.set_xticks(list(range(len(timeslice_ticks))))
-        ax1.set_xticklabels(timeslice_ticks, rotation=90, fontsize="medium")
+        ax1.set_xticklabels(timeslice_ticks, rotation=90)
         #reference counts
         ax1.margins(x=0.005)
         ax1.plot(list(range(len(reference_counts))), reference_counts, label=reference_counts_label, color=reference_counts_color, linestyle=":")
-        if handle_yaxis: ax1.set_ylabel(reference_counts_label, color=reference_counts_color, fontsize="xx-large")
+        if handle_yaxis:
+            ax1.set_ylabel(reference_counts_label, color=reference_counts_color, fontsize="xx-large")
+        else:
+            ax1.set_yticks([])
+            ax1.set_yticklabels([])
         ax1.tick_params(colors=reference_counts_color)
         ax1.set_ylim(ymin=0, ymax=reference_max)
         #sizes
         ax2 = ax1.twinx()
         ax2.margins(x=0.005)
         ax2.plot(list(range(len(sizes))), sizes, label=sizes_label, color=sizes_color)
-        if not handle_yaxis: ax2.set_ylabel("CHARACTERS", color=sizes_color, fontsize="xx-large")
+        if not handle_yaxis:
+            ax2.set_ylabel("CHARACTERS", color=sizes_color, fontsize="xx-large")
+        else:
+            ax2.set_yticks([])
+            ax2.set_yticklabels([])
         ax2.tick_params(colors=sizes_color)
         ax2.set_ylim(ymin=0, ymax=sizes_max)
         #added characters
@@ -285,17 +298,23 @@ def plot_size_and_reference_count_and_diffs(timesliced_datasets, directory, logg
         #removed characters
         plt.bar(np.arange(len(removed_characters)) + 0.2, removed_characters, width=0.4, label=removed_characters_label, color=removed_characters_color)
 
-        plt.title("PCC: " + str(pcc), fontsize="xx-large")
+        plt.title("\"" + timesliced_data + "\" (C" + str(article_abbreviation_index) + ")", fontsize="xx-large")
+        article_abbreviation_index += 1
 
         handle_yaxis = False
 
-    plt.subplots_adjust(bottom=0.15, top=0.925, left=0.03, right=0.98)
+    plt.subplots_adjust(bottom=0.2, top=0.925, left=0.03, right=0.98)
     fig.tight_layout()
     #fig.legend(bbox_to_anchor=(0.01, 0.95), bbox_transform=ax2.transAxes, fontsize="large")
-    plt.savefig(directory + sep + "_".join(timesliced_datasets.keys()).replace(" ","_") + "_" + section_name  + "_" + "section_revision_size_vs_references_vs_diffs.png")
+    plt.savefig(analysis_directory + sep + "_".join(timesliced_datasets.keys()).replace(" ","_") + "_" + section_name  + "_" + "section_revision_size_vs_references_vs_diffs.png")
     plt.close('all')
     
 if __name__ == "__main__":
+
+    import matplotlib
+
+    matplotlib.rc('xtick', labelsize=15) 
+    matplotlib.rc('ytick', labelsize=15)
 
     from problematic_revids import problematic_revids_CRISPR_en, problematic_revids_CRISPR_gene_editing_en
 
@@ -304,8 +323,8 @@ if __name__ == "__main__":
     preprocessor = Preprocessor(language)
 
     articles = (
-        ("CRISPR_gene_editing",3.5,False,problematic_revids_CRISPR_gene_editing_en),
-        ("CRISPR",16.5,True,problematic_revids_CRISPR_en)
+        ("CRISPR",16.5,True,problematic_revids_CRISPR_en),
+        ("CRISPR_gene_editing",3.5,False,problematic_revids_CRISPR_gene_editing_en)
         )
 
     sections = {"Intro":([""],0),
@@ -323,7 +342,7 @@ if __name__ == "__main__":
     differs = {"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
     articles_directory = "../articles/2021-03-01"
-    analysis_directory = "../analysis/sections/2021_03_26/complete"
+    analysis_directory = "../analysis/sections/2021_03_26/filtered"
 
     logger = Logger(analysis_directory)
 
@@ -341,13 +360,11 @@ if __name__ == "__main__":
             analysis_filepath = analysis_directory + sep + article_name + "_" + language + "_" + section_name.lower()
 
             if not exists(analysis_filepath + "_diff_data.json"):
-                data = calculate_data(articles_filepath, logger, strings, level, differs, preprocessor, [])
+                data = calculate_data(articles_filepath, logger, strings, level, differs, preprocessor, problematic_revids)
                 save_data(data, analysis_filepath)
             else:
                 data = load_data(analysis_filepath + "_diff_data.json")
 
-            timesliced_datasets[article_name.replace("_", " ")] = timeslice_data(data, 2021, 2)
+            timesliced_datasets[article_name.replace("_", " ")] = timeslice_data(data, 2020, 12)
 
-            #plot_diffs(data, section_filepath, section_name, width, height, article_name)    
-            #plot_size_and_reference_count(timesliced_data, section_filepath, article_name, section_name)
-        #plot_size_and_reference_count_and_diffs(timesliced_datasets, directory, logger, section_name, differ_name)
+        plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_directory, logger, section_name, differ_name)
