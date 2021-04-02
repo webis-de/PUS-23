@@ -23,7 +23,7 @@ class Source:
         Returns:
             The full reference as a string.
         """
-        reference_text = self.html.find(".//cite")
+        reference_text = self.html.find("..//cite")
         if reference_text is not None:
             return reference_text.xpath("string()")
         else:
