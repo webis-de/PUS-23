@@ -71,8 +71,7 @@ class TestSource(unittest.TestCase):
         text = self.source3.get_text()
         self.assertEqual(text, ('Tang TH, Bachellerie JP, Rozhdestvensky T, Bortolin ML, Huber H, Drungowski M;  et al. (2002). '
                                 '"Identification of 86 candidates for small non-messenger RNAs from the archaeon Archaeoglobus fulgidus". '
-                                'Proc Natl Acad Sci U S A. 99 (11): 7536–41. Bibcode:2002PNAS...99.7536T. doi:10.1073/pnas.112047299. PMC 124276. PMID 12032318.'
-                                'CS1 maint: multiple names: authors list (link) '))
+                                'Proc Natl Acad Sci U S A. 99 (11): 7536–41. Bibcode:2002PNAS...99.7536T. doi:10.1073/pnas.112047299. PMC 124276. PMID 12032318.'))
         
     def test_get_title(self):
         self.assertEqual(self.source1.get_title("en"), ("Nature of DNA polymorphism in the direct repeat cluster of Mycobacterium tuberculosis; "
@@ -87,6 +86,9 @@ class TestSource(unittest.TestCase):
 
         authors = self.source2.get_authors("en")
         self.assertEqual(authors, [('Groenen', 'PM'), ('Bunschoten', 'AE'), ('van Soolingen', 'D')])
+
+        authors = self.source3.get_authors("en")
+        self.assertEqual(authors, [('Tang', 'TH'), ('Bachellerie', 'JP'), ('Rozhdestvensky', 'T'), ('Bortolin', 'ML'), ('Huber', 'H'), ('Drungowski', 'M'), ('', 'et\xa0al')])
         
     def test_get_dois(self):
         dois = self.source1.get_dois()

@@ -23,8 +23,11 @@ class Source:
         Returns:
             The full reference as a string.
         """
-        return "".join([element.xpath("string()") for element in self.html.iter() if
-                        element.get("class") != "mw-cite-backlink"])
+        reference_text = self.html.find(".//cite")
+        if reference_text is not None:
+            return reference_text.xpath("string()")
+        else:
+            return ""
 
     def get_reference_ids(self):
         """
