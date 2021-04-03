@@ -23,11 +23,16 @@ class Source:
         Returns:
             The full reference as a string.
         """
-        reference_text = self.html.find("..//cite")
+##        try:
+##            return "".join(self.html.xpath(".//cite")[0].itertext())
+##        except IndexError:
+##            return  "".join(self.html.itertext())
+
+        reference_text = self.html.find(".//cite")
         if reference_text is not None:
             return reference_text.xpath("string()")
         else:
-            return ""
+            return self.html.xpath("string()")
 
     def get_reference_ids(self):
         """
