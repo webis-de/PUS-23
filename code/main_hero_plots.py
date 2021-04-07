@@ -1,7 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import rc, colors
-from math import log
 from os.path import basename, exists, sep
 from os import makedirs
 
@@ -12,7 +11,6 @@ PATH = "../data/"
 df1 = pd.read_pickle(PATH + 'heroes_CRISPR_en.pickle')
 df2 = pd.read_pickle(PATH + 'heroes_CRISPR_gene_editing_en.pickle')
 hero_frames = [df1, df2]
-##f, axs = plt.subplots(1, 2, sharey=True, sharex=True, figsize=(6, 3), dpi=200, facecolor='white')
 fig = plt.figure(figsize=(20,9), dpi=400)
 axs = [plt.subplot2grid((10, 20), (0, 0), colspan=15, rowspan=10),
        plt.subplot2grid((10, 20), (0, 15), colspan=5, rowspan=10)]
@@ -21,9 +19,7 @@ handle_yaxis = True
 names1 = df1[(df1['controversiality']==1) & (df1['prominence']<.5) & (df1['prominence']>=.1)]['name'].to_list()
 names2 = df1[(df1['controversiality']==1) & (df1['prominence']<.1) & (df1['prominence']>=.01)]['name'].to_list()
 names3 = df1[(df1['controversiality']==1) & (df1['prominence']<.01)]['name'].to_list()
-print(names1)
-print(names2)
-print(names3)
+
 for i, df in enumerate(hero_frames):
     xytextdict = {}
     
@@ -49,7 +45,6 @@ for i, df in enumerate(hero_frames):
 
     for index, (xi,yi) in enumerate(zip(x,y)): # https://queirozf.com/entries/add-labels-and-text-to-matplotlib-plots-annotation-examples
         label = df['name'].iloc[index]
-        print(df['endurance'].iloc[index])
         if label in names1 or label in names2 or label in names2:
             addx = -0.5
             addy = -0.2
@@ -194,11 +189,7 @@ for i, df in enumerate(hero_frames):
         ax.set_yticks([])
     ax.set_ylim(ymin=-0.25, ymax=4.25)
 
-    # # add color scale for hue
-#cbar = plt.colorbar()  # show color scale
-    #cbar.ax.set_ylabel(hue_label)
-
-for i in [.1, .5, 1., ]:
+for i in [0.1, 0.5, 1.0]:
     plt.scatter([], [], c='w', s=i * 500, label=str(i), edgecolor='k')
 plt.legend(scatterpoints=1, frameon=True, edgecolor="k", fancybox=True, labelspacing=2, title=size_label, borderpad=1.2, title_fontsize="x-large")
 plt.subplots_adjust(bottom=0.075, top=0.96, left=0.04, right=0.965)
@@ -211,3 +202,4 @@ cbar.ax.set_ylabel(hue_label, fontsize="xx-large")
 if not exists('../analysis/heroes'):
     makedirs('../analysis/heroes')
 plt.savefig('../analysis/heroes/heroes_plot_combined.png')
+plt.savefig('../analysis/heroes/heroes_plot_combined.pdf')
