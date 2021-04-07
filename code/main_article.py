@@ -79,7 +79,7 @@ def analyse(event, revision, revision_text_lower, revision_text_lower_ascii, rev
 
     #VERBATIM EVENT PMIDS
     if event.pmids and not event.first_mentioned["verbatim"].get("pmids", None):
-        verbatim_pmid_results = {event_pmid:scroll_to_url(revision.url, event_pmid) for event_pmid in event.pmids if event_pmid in referenced_pmids}
+        verbatim_pmid_results = {event_pmid:scroll_to_url(revision.url, event_pmid) for event_pmid in event.pmids if event_pmid and event_pmid in revision_text_lower}
         if len(verbatim_pmid_results) == len(event.pmids):
             event.first_mentioned["verbatim"]["pmids"] = occurrence(revision, result=verbatim_pmid_results)
 
@@ -323,7 +323,7 @@ if __name__ == "__main__":
             ### All authors occuring in 'References' and 'Further Reading', ASCII-normalised.
             referenced_author_sets_ascii = [[to_ascii(author[0]) for author in source.get_authors(language)] for source in sources]
             ### All PMIDs occuring in 'References' and 'Further Reading'.
-            referenced_pmids = set(flatten_list_of_lists([source.get_pmids() for source in sources]))
+            referenced_pmids = set([])#set(flatten_list_of_lists([source.get_pmids() for source in sources]))
 
             with Pool(24) as pool:
                 eventlist.events = pool.starmap(analyse,

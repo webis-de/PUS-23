@@ -98,7 +98,7 @@ for i, df in enumerate(hero_frames):
                     textcoords="data", # how to position the text
                     xytext=xytext, # distance from text to points (x,y)
                     ha='right', # position of the text to points
-                    arrowprops=dict(arrowstyle="->",connectionstyle="angle3,angleA=-10,angleB=50",facecolor='black'),
+                    arrowprops=dict(arrowstyle="->",connectionstyle="angle3,angleA=-5,angleB=50",facecolor='black'),
                     fontsize=11,
                 )
         elif label == names2[-1]:
@@ -197,10 +197,10 @@ for i, df in enumerate(hero_frames):
     #cbar.ax.set_ylabel(hue_label)
 
 for i in [.1, .5, 1., ]:
-    plt.scatter([], [], c='k', alpha=0.2, s=i * 500, label=str(int(i*2000)) )
-plt.legend(scatterpoints=1, frameon=True, fancybox=True, labelspacing=2, title=size_label, borderpad=2, title_fontsize="x-large")
+    plt.scatter([], [], c='w', s=i * 500, label=str(i), edgecolor='k')
+plt.legend(scatterpoints=1, frameon=True, edgecolor="k", fancybox=True, labelspacing=2, title=size_label, borderpad=1.2, title_fontsize="x-large")
 plt.subplots_adjust(bottom=0.075, top=0.96, left=0.04, right=0.965)
-cmap = plt.get_cmap('Greys', 2000)
+cmap = plt.get_cmap('gist_gray', 2000)
 norm = colors.Normalize(vmin=0, vmax=2000)
 sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
 sm.set_array([])

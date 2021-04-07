@@ -1,4 +1,4 @@
-directory = "../../analysis/2021_02_09/publication-events/"
+directory = "../../analysis/bibliography/2021_04_02/publication-events/"
 JSON = directory + "CRISPR_en.json"
 JSON_ANNOTATED = directory + "CRISPR_en_annotated.json"
 JSON_CORRECT = directory + "CRISPR_en_correct.json"
