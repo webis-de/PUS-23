@@ -14,7 +14,7 @@ hero_frames = [df1, df2]
 fig = plt.figure(figsize=(20,9), dpi=400)
 axs = [plt.subplot2grid((10, 20), (0, 0), colspan=15, rowspan=10),
        plt.subplot2grid((10, 20), (0, 15), colspan=5, rowspan=10)]
-handle_yaxis = True
+first_subplot = True
 
 names1 = df1[(df1['controversiality']==1) & (df1['prominence']<.5) & (df1['prominence']>=.1)]['name'].to_list()
 names2 = df1[(df1['controversiality']==1) & (df1['prominence']<.1) & (df1['prominence']>=.01)]['name'].to_list()
@@ -74,7 +74,7 @@ for i, df in enumerate(hero_frames):
             xytextdict[xi][yi][1] += 0.1
 
         endurance_shift = 0 #0.04 if df['endurance'].iloc[index] < 0.5 else 0
-        xytext = (xi + addx, yi + addy - endurance_shift) # distance from text to points (x,y)
+        xytext = (xi + addx, yi + addy - endurance_shift) # position of text (x,y)
         
         if label in names1:
             xytext = (xytext[0], xytext[1]+xytext[1]*0.5)
@@ -83,7 +83,7 @@ for i, df in enumerate(hero_frames):
                     label, # this is the text
                     (xi,yi), # this is the point to label
                     textcoords="data", # how to position the text
-                    xytext=xytext, # distance from text to points (x,y)
+                    xytext=xytext, # position of text (x,y)
                     ha='right', # position of the text to points
                     arrowprops=dict(arrowstyle="->",connectionstyle="angle3,angleA=2,angleB=50",facecolor='black'),
                     fontsize=11,
@@ -93,7 +93,7 @@ for i, df in enumerate(hero_frames):
                     "Vergnaud, Bolotin", # this is the text
                     (xi,yi), # this is the point to label
                     textcoords="data", # how to position the text
-                    xytext=xytext, # distance from text to points (x,y)
+                    xytext=xytext, # position of text (x,y)
                     ha='right', # position of the text to points
                     arrowprops=dict(arrowstyle="->",connectionstyle="angle3,angleA=-5,angleB=50",facecolor='black'),
                     fontsize=11,
@@ -105,7 +105,7 @@ for i, df in enumerate(hero_frames):
                 ", ".join(names2), # this is the text
                 (xi,yi), # this is the point to label
                 textcoords="data", # how to position the text
-                xytext=xytext, # distance from text to points (x,y)
+                xytext=xytext, # position of text (x,y)
                 ha='left', # position of the text to points
                 arrowprops=dict(arrowstyle="->",connectionstyle="angle3,angleA=2,angleB=-30",facecolor='black'),
                 fontsize=11,
@@ -117,7 +117,7 @@ for i, df in enumerate(hero_frames):
                 ", ".join(names3), # this is the text
                 (xi,yi), # this is the point to label
                 textcoords="data", # how to position the text
-                xytext=xytext, # distance from text to points (x,y)
+                xytext=xytext, # position of text (x,y)
                 ha='left', # position of the text to points
                 arrowprops=dict(arrowstyle="->",connectionstyle="angle3,angleA=3,angleB=-60",facecolor='black'),
                 fontsize=11,
@@ -130,7 +130,7 @@ for i, df in enumerate(hero_frames):
                     label, # this is the text
                     (xi,yi), # this is the point to label
                     textcoords="data", # how to position the text
-                    xytext=xytext, # distance from text to points (x,y)
+                    xytext=xytext, # position of text (x,y)
                     ha='center', # position of the text to points
                     arrowprops=dict(arrowstyle="->",connectionstyle="angle3,angleA=0,angleB=-60",facecolor='black'),
                     fontsize=11,
@@ -141,7 +141,7 @@ for i, df in enumerate(hero_frames):
                     label, # this is the text
                     (xi,yi), # this is the point to label
                     textcoords="data", # how to position the text
-                    xytext=xytext, # distance from text to points (x,y)
+                    xytext=xytext, # position of text (x,y)
                     ha='left', # position of the text to points
                     arrowprops=dict(arrowstyle="->",connectionstyle="angle3,angleA=0,angleB=-120",facecolor='black'),
                     fontsize=11,
@@ -152,7 +152,7 @@ for i, df in enumerate(hero_frames):
                     label, # this is the text
                     (xi,yi), # this is the point to label
                     textcoords="data", # how to position the text
-                    xytext=xytext, # distance from text to points (x,y)
+                    xytext=xytext, # position of text (x,y)
                     ha='center', # position of the text to points
                     arrowprops=dict(arrowstyle="->",connectionstyle="angle3,angleA=15,angleB=120",facecolor='black'),
                     fontsize=11,
@@ -162,7 +162,7 @@ for i, df in enumerate(hero_frames):
                     label, # this is the text
                     (xi,yi), # this is the point to label
                     textcoords="data", # how to position the text
-                    xytext=xytext, # distance from text to points (x,y)
+                    xytext=xytext, # position of text (x,y)
                     ha='left', # position of the text to points
                     arrowprops=dict(arrowstyle="->",connectionstyle="angle3,angleA=0,angleB=120",facecolor='black'),
                     fontsize=11,
@@ -172,7 +172,7 @@ for i, df in enumerate(hero_frames):
                     label, # this is the text
                     (xi,yi), # this is the point to label
                     textcoords="data", # how to position the text
-                    xytext=xytext, # distance from text to points (x,y)
+                    xytext=xytext, # position of text (x,y)
                     ha='center', # position of the text to points
                     arrowprops=None,
                     fontsize=11,
@@ -180,10 +180,10 @@ for i, df in enumerate(hero_frames):
 
     ax.set_title(("\"CRISPR\"" if i == 0 else "\"CRISPR gene editing\"") + " (C" + str(i+1) + ")", fontsize="xx-large")
     ax.set_xlabel(xlabel, fontsize="xx-large")
-    ax.set_xlim(-0.5, xmax=8.5 if handle_yaxis else 1.5)
-    if handle_yaxis:
+    ax.set_xlim(-0.5, xmax=8.5 if first_subplot else 1.5)
+    if first_subplot:
         ax.set_ylabel(ylabel, fontsize="xx-large")
-        handle_yaxis = False
+        first_subplot = False
     else:
         ax.set_xticks([0,1])
         ax.set_yticks([])
