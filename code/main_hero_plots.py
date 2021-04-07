@@ -2,11 +2,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import rc, colors
 from math import log
+from os.path import basename, exists, sep
+from os import makedirs
 
 rc('xtick', labelsize=15)
 rc('ytick', labelsize=15)
 
-PATH = ""
+PATH = "../data/"
 df1 = pd.read_pickle(PATH + 'heroes_CRISPR_en.pickle')
 df2 = pd.read_pickle(PATH + 'heroes_CRISPR_gene_editing_en.pickle')
 hero_frames = [df1, df2]
@@ -206,4 +208,6 @@ sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
 sm.set_array([])
 cbar = plt.colorbar(sm, ticks=[i for i in range(200,2000,200)])
 cbar.ax.set_ylabel(hue_label, fontsize="xx-large")
-plt.savefig(PATH + 'heroes_plot_combined.png')
+if not exists('../analysis/heroes'):
+    makedirs('../analysis/heroes')
+plt.savefig('../analysis/heroes/heroes_plot_combined.png')
