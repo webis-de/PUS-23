@@ -29,15 +29,14 @@ for i, df in enumerate(hero_frames):
     y = df['prominence']
     ylabel = 'Prominence'
     hue = df['age']
-    hue_label = 'First Appearance'
+    hue_label = '      older ⟷ younger\nAge' # '      older ⟵ Age ⟶ younger'
     size = df['endurance']    
-    size_label = 'Endurance'
+    size_label = 'Endurance99'
     labels = df['name']
     ax.scatter(
         x=x, y=y, 
         c=hue, 
         s=size * 500,
-        alpha=0.3,
         cmap='gist_yarg',
         edgecolors='black',
     )
@@ -48,12 +47,9 @@ for i, df in enumerate(hero_frames):
         if label in names1 or label in names2 or label in names2:
             addx = -0.5
             addy = -0.2
-        elif label == "Yang" and df['controversiality'][index] == 0 and df['prominence'][index] == 2:
+        elif label == "Šikšnys" and df['controversiality'][index] == 0 and df['prominence'][index] == 2:
             addx = 0.5
             addy = 0.2
-        elif label == "Šikšnys" and df['controversiality'][index] == 0 and df['prominence'][index] == 2:
-            addx = 0
-            addy = 0.225
         elif label == "Haft":
             addx = 0.5
             addy = 0.2
@@ -123,7 +119,7 @@ for i, df in enumerate(hero_frames):
                 fontsize=11,
             )
         if not any([label in names for names in [names1, names2, names3]]):
-            if label == "Yang" and df['controversiality'][index] == 0 and df['prominence'][index] == 2:
+            if label == "Šikšnys" and df['controversiality'][index] == 0 and df['prominence'][index] == 2:
                 xytext = (xi + 0.5,
                       yi - 0.2)
                 ax.annotate(
@@ -193,11 +189,17 @@ for i in [0.1, 0.5, 1.0]:
     plt.scatter([], [], c='w', s=i * 500, label=str(i), edgecolor='k')
 plt.legend(scatterpoints=1, frameon=True, edgecolor="k", fancybox=True, labelspacing=2, title=size_label, borderpad=1.2, title_fontsize="x-large")
 plt.subplots_adjust(bottom=0.075, top=0.96, left=0.04, right=0.965)
-cmap = plt.get_cmap('gist_gray', 2000)
-norm = colors.Normalize(vmin=0, vmax=2000)
+
+cmap_gradient = 2000
+cmap_ticks = 11
+cmap_start = 0
+cmap_stop = 1
+cmap = plt.get_cmap('gist_gray', cmap_gradient)
+norm = colors.Normalize(vmin=cmap_start, vmax=cmap_stop)
 sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
 sm.set_array([])
-cbar = plt.colorbar(sm, ticks=[i for i in range(200,2000,200)])
+cbar = plt.colorbar(sm, ticks=[]) #ticks=[i for i in np.linspace(cmap_start,cmap_stop,11)]
+
 cbar.ax.set_ylabel(hue_label, fontsize="xx-large")
 if not exists('../analysis/heroes'):
     makedirs('../analysis/heroes')
