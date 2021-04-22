@@ -355,7 +355,7 @@ if __name__ == "__main__":
     differs = {"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
     articles_directory = "../articles/2021-03-01"
-    analysis_directory = "../analysis/sections/test/filtered"
+    analysis_directory = "../analysis/development/2021-04-22"
 
     logger = Logger(analysis_directory)
 
@@ -380,6 +380,6 @@ if __name__ == "__main__":
 
             timesliced_datasets[article_name.replace("_", " ")] = timeslice_data(data, 2020, 12)
 
-            #plot_size_and_reference_count(timeslice_data(data, 2020, 12), analysis_filepath, article_name, section_name)
+            #plot_size_and_reference_count(timeslice_data(data, 2020, 12), analysis_filepath, article_name, section_name) #different result compared to previous version due to use of section tree!
             
         plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_directory, logger, section_name, differ_name)
