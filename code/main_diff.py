@@ -58,7 +58,19 @@ def generate_annual_timeslice_ticks(timeslices, months = False):
     return timeslice_ticks
 
 def calculate_data(filepath, logger, strings, level, differs, preprocessor = None, problematic_revids = []):
+    """
+    Analyses all revisions, generating diffs for the section as defined by the strings provided and
+    provides a data map containing revision metadata, revision size, reference counts and diffs for each revision.
 
+    Args:
+        filepath: Path to the revision file.
+        logger: The logger this method uses.
+        strings: List of strings defining the sections to use.
+        level: Depth to which the section will be explored.
+        differs: The differ objects to apply.
+        preprocessor: Preprocessor used to handle tokenization.
+        problematic_revids: Revids to skip.
+    """
     article = Article(filepath)
 
     logger.log("Calculating diffs for " + article.name + " and sections '" + "', '".join(strings) + "'" + "\n")
@@ -110,6 +122,15 @@ def calculate_data(filepath, logger, strings, level, differs, preprocessor = Non
 
     return data
 
+def save_data(data, section_filepath):
+    with open(section_filepath + "_diff_data.json", "w") as data_file:
+        for line in data:
+            data_file.write(dumps(line) + "\n")
+
+def load_data(data_filepath):
+    with open(data_filepath) as file:
+        return [loads(line) for line in file]
+
 def plot_diffs(data, filepath, section_name, width, height, article_name):
     differ_names = list(data)[0]["diffs"].keys()
 
@@ -137,15 +158,37 @@ def plot_diffs(data, filepath, section_name, width, height, article_name):
         plt.legend()
         plt.savefig(filepath + "_section_analysis_" + differ_name + ".png")
 
-def save_data(data, section_filepath):
-    with open(section_filepath + "_diff_data.json", "w") as data_file:
-        for line in data:
-            data_file.write(dumps(line) + "\n")
+def handle_timesliced_data(timesliced_data):
+    sizes = []
+    reference_counts = []
+    added_characters = []
+    removed_characters = []
+    timeslice_ticks = [item if item[:2] in ["01","04","07","10"] else "" for index,item in enumerate(generate_annual_timeslice_ticks(timesliced_data, True))]
 
-def load_data(data_filepath):
-    with open(data_filepath) as file:
-        return [loads(line) for line in file]
-"""
+    prev_size = 0
+    prev_reference_count = 0
+    
+    for data in timesliced_data.values():       
+        try:
+            sizes.append(sum([item["size"] for item in data])/len(data))
+            prev_size = sizes[-1]
+        except ZeroDivisionError:
+            sizes.append(prev_size)
+        try:
+            reference_counts.append(sum([item["refcount"] for item in data])/len(data))
+            prev_reference_count = reference_counts[-1]
+        except ZeroDivisionError:
+            reference_counts.append(prev_reference_count)
+        try:
+            added_characters.append(sum([item["diffs"][differ_name]["added_characters"] for item in data]))
+        except ZeroDivisionError:
+            added_characters.append(0)
+        try:
+            removed_characters.append(sum([item["diffs"][differ_name]["removed_characters"] for item in data]))
+        except ZeroDivisionError:
+            removed_characters.append(0)
+    return sizes, reference_counts, added_characters, removed_characters, timeslice_ticks
+
 def plot_size_and_reference_count(timesliced_data, filepath, article_name, section_name):
     sizes = []
     reference_counts = []
@@ -196,38 +239,6 @@ def plot_size_and_reference_count(timesliced_data, filepath, article_name, secti
     fig.tight_layout()
     plt.savefig(filepath + "_section_revision_size_vs_reference_length.png")
     plt.close('all')
-"""
-
-def handle_timesliced_data(timesliced_data):
-    sizes = []
-    reference_counts = []
-    added_characters = []
-    removed_characters = []
-    timeslice_ticks = [item if item[:2] in ["01","04","07","10"] else "" for index,item in enumerate(generate_annual_timeslice_ticks(timesliced_data, True))]
-
-    prev_size = 0
-    prev_reference_count = 0
-    
-    for data in timesliced_data.values():       
-        try:
-            sizes.append(sum([item["size"] for item in data])/len(data))
-            prev_size = sizes[-1]
-        except ZeroDivisionError:
-            sizes.append(prev_size)
-        try:
-            reference_counts.append(sum([item["refcount"] for item in data])/len(data))
-            prev_reference_count = reference_counts[-1]
-        except ZeroDivisionError:
-            reference_counts.append(prev_reference_count)
-        try:
-            added_characters.append(sum([item["diffs"][differ_name]["added_characters"] for item in data]))
-        except ZeroDivisionError:
-            added_characters.append(0)
-        try:
-            removed_characters.append(sum([item["diffs"][differ_name]["removed_characters"] for item in data]))
-        except ZeroDivisionError:
-            removed_characters.append(0)
-    return sizes, reference_counts, added_characters, removed_characters, timeslice_ticks
 
 def plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_directory, logger, section_name, differ_name):
 
@@ -316,15 +327,17 @@ if __name__ == "__main__":
     matplotlib.rc('xtick', labelsize=15) 
     matplotlib.rc('ytick', labelsize=15)
 
-    from problematic_revids import problematic_revids_CRISPR_en, problematic_revids_CRISPR_gene_editing_en
+    problematic_revids = load(open("../data/problematic_revids.json"))
+    problematic_revids_CRISPR_en = [item[0] for item in problematic_revids["CRISPR_en"]]
+    problematic_revids_CRISPR_gene_editing_en = [item[0] for item in problematic_revids["CRISPR_gene_editing_en"]]
 
     language = "en"
 
     preprocessor = Preprocessor(language)
 
     articles = (
-        ("CRISPR",16.5,True,problematic_revids_CRISPR_en),
-        ("CRISPR_gene_editing",3.5,False,problematic_revids_CRISPR_gene_editing_en)
+##        ("CRISPR",16.5,True,problematic_revids_CRISPR_en),
+        ("CRISPR_gene_editing",3.5,False,problematic_revids_CRISPR_gene_editing_en),
         )
 
     sections = {"Intro":([""],0),
@@ -342,7 +355,7 @@ if __name__ == "__main__":
     differs = {"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
     articles_directory = "../articles/2021-03-01"
-    analysis_directory = "../analysis/sections/2021_03_26/filtered"
+    analysis_directory = "../analysis/sections/test/filtered"
 
     logger = Logger(analysis_directory)
 
@@ -367,4 +380,6 @@ if __name__ == "__main__":
 
             timesliced_datasets[article_name.replace("_", " ")] = timeslice_data(data, 2020, 12)
 
+            #plot_size_and_reference_count(timeslice_data(data, 2020, 12), analysis_filepath, article_name, section_name)
+            
         plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_directory, logger, section_name, differ_name)
