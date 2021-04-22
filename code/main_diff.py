@@ -336,7 +336,7 @@ if __name__ == "__main__":
     preprocessor = Preprocessor(language)
 
     articles = (
-##        ("CRISPR",16.5,True,problematic_revids_CRISPR_en),
+        ("CRISPR",16.5,True,problematic_revids_CRISPR_en),
         ("CRISPR_gene_editing",3.5,False,problematic_revids_CRISPR_gene_editing_en),
         )
 
