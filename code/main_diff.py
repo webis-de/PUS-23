@@ -57,15 +57,17 @@ def generate_annual_timeslice_ticks(timeslices, months = False):
         timeslice_ticks.append(year if year not in timeslice_ticks else "")
     return timeslice_ticks
 
-def calculate_data(filepath, logger, strings, level, differs, preprocessor = None, problematic_revids = []):
+def calculate_data(filepath, logger, section_strings, level, differs, preprocessor = None, problematic_revids = []):
     """
-    Analyses all revisions, generating diffs for the section as defined by the strings provided and
+    Analyses all revisions, generating diffs for the section as defined by the section strings provided and
     provides a data map containing revision metadata, revision size, reference counts and diffs for each revision.
+
+    If no section strings are provided, i.e. an empty list, the entire revision is used as basis.
 
     Args:
         filepath: Path to the revision file.
         logger: The logger this method uses.
-        strings: List of strings defining the sections to use.
+        section_strings: List of strings defining the sections to use.
         level: Depth to which the section will be explored.
         differs: The differ objects to apply.
         preprocessor: Preprocessor used to handle tokenization.
@@ -73,7 +75,7 @@ def calculate_data(filepath, logger, strings, level, differs, preprocessor = Non
     """
     article = Article(filepath)
 
-    logger.log("Calculating diffs for " + article.name + " and sections '" + "', '".join(strings) + "'" + "\n")
+    logger.log("Calculating diffs for " + article.name + " and sections '" + "', '".join(section_strings) + "'" + "\n")
 
     data = []
 
@@ -89,13 +91,16 @@ def calculate_data(filepath, logger, strings, level, differs, preprocessor = Non
             logger.log("Blacklisted revid: " + str(revision.revid))
             continue
 
-        section_tree = revision.section_tree()
-
-        section = section_tree.find(strings, True)
-        text = section[0].get_text(level, include = ["p","li"], with_headings=True) if section else ""
-        if preprocessor:
-            text = preprocessor.preprocess(text, lower=False, stopping=False, sentenize=False, tokenize=True)[0]
-        references = section[0].get_sources(revision.get_references(), level) if section else []
+        if section_strings != []:
+            section_tree = revision.section_tree()
+            section = section_tree.find(strings, True)
+            text = section[0].get_text(level, include = ["p","li"], with_headings=True) if section else ""
+            if preprocessor:
+                text = preprocessor.preprocess(text, lower=False, stopping=False, sentenize=False, tokenize=True)[0]
+            references = section[0].get_sources(revision.get_references(), level) if section else []
+        else:
+            text = revision.get_text()
+            references = revision.get_references() + revision.get_further_reading()
 
         diffs = {differ_name:list(differ.compare(prev_text, text))
                  for differ_name, differ in differs.items()}
@@ -105,7 +110,7 @@ def calculate_data(filepath, logger, strings, level, differs, preprocessor = Non
              "revision_url":revision.url,
              "revision_index":revision.index,
              "revision_revid":revision.revid,
-             "size":sum([len(item) for item in text]),
+             "size":sum([len(item) for item in text]) if section_strings != [] else revision.size,
              "refcount":len(references),
              "diffs":{
                  differ_name:{
@@ -217,27 +222,30 @@ def plot_size_and_reference_count(timesliced_data, filepath, article_name, secti
     print("PCC:", pcc)
     print("Plotting " + article_name)
 
-    reference_counts_color = "y"
-    reference_counts_label = "References in Section " + section_name + " in " + article_name
+    reference_counts_color = "k"
+    reference_counts_label = "Number of References in " + article_name + " Article"
 
-    sizes_color = "b"
-    sizes_label = "Size of Section " + section_name + " in " + article_name
+    sizes_color = "k"
+    sizes_label = "Size of " + article_name + " Article in Characters"
 
-    fig, ax1 = plt.subplots()
+    fig, ax1 = plt.subplots(figsize=(12,6), dpi=500)
     plt.xticks(list(range(len(timeslice_ticks))), timeslice_ticks, rotation=90)
-    ax1.plot(list(range(len(reference_counts))), reference_counts, label=reference_counts_label, color=reference_counts_color)
-    ax1.set_ylabel(reference_counts_label, color=reference_counts_color)
+    ax1.plot(list(range(len(reference_counts))), reference_counts, label=reference_counts_label, color=reference_counts_color, linestyle=":")
+    ax1.set_ylabel(reference_counts_label, color=reference_counts_color, fontsize="xx-large")
     ax1.tick_params('y', colors=reference_counts_color)
+    ax1.margins(x=0.005)
     ax2 = ax1.twinx()
     ax2.plot(list(range(len(sizes))), sizes, label=sizes_label, color=sizes_color)
-    ax2.set_ylabel(sizes_label, color=sizes_color)
+    ax2.set_ylabel(sizes_label, color=sizes_color, fontsize="xx-large")
     ax2.tick_params('y', colors=sizes_color)
     ax1.set_ylim(ymin=0)
     ax2.set_ylim(ymin=0)
+    ax2.margins(x=0.005)
     #plt.subplots_adjust(bottom=0.12, top=0.98, left=0.12, right=0.88)
-    plt.title("PCC: " + str(pcc))
+    #plt.title("PCC: " + str(pcc))
+    fig.legend(loc="upper left", bbox_to_anchor=(0.1, 0.93), fontsize="xx-large")
     fig.tight_layout()
-    plt.savefig(filepath + "_section_revision_size_vs_reference_length.png")
+    plt.savefig(filepath + "_section_revision_size_vs_reference_length.pdf", transparent=True)
     plt.close('all')
 
 def plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_directory, logger, section_name, differ_name):
@@ -328,8 +336,8 @@ if __name__ == "__main__":
     matplotlib.rc('ytick', labelsize=15)
 
     problematic_revids = load(open("../data/problematic_revids.json"))
-    problematic_revids_CRISPR_en = [item[0] for item in problematic_revids["CRISPR_en"]]
-    problematic_revids_CRISPR_gene_editing_en = [item[0] for item in problematic_revids["CRISPR_gene_editing_en"]]
+    problematic_revids_CRISPR_en = []#[item[0] for item in problematic_revids["CRISPR_en"]]
+    problematic_revids_CRISPR_gene_editing_en = []#[item[0] for item in problematic_revids["CRISPR_gene_editing_en"]]
 
     language = "en"
 
@@ -337,7 +345,7 @@ if __name__ == "__main__":
 
     articles = (
         ("CRISPR",16.5,True,problematic_revids_CRISPR_en),
-        ("CRISPR_gene_editing",3.5,False,problematic_revids_CRISPR_gene_editing_en),
+        #("CRISPR_gene_editing",3.5,False,problematic_revids_CRISPR_gene_editing_en),
         )
 
     sections = {"Intro":([""],0),
@@ -349,37 +357,38 @@ if __name__ == "__main__":
                 "Application":(["The significance for evolution and possible applications",
                                 "Possible applications",
                                 "Applications"],
-                                10)
+                                10),
+                "NO_SECTION_TREE":([],0)
                 }
 
-    differs = {"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
+    differs = {}#"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
     articles_directory = "../articles/2021-03-01"
-    analysis_directory = "../analysis/development/2021-04-22"
+    analysis_directory = "../analysis/development/2021-04-23"
 
     logger = Logger(analysis_directory)
 
-    for section_name in ["All","Intro","History","Application"]:
+    for section_name in ["NO_SECTION_TREE"]:#["All","Intro","History","Application"]:
 
         timesliced_datasets = {}
         
         for article_name,width,legend,problematic_revids in articles:
 
             differ_name = "custom_differ"
-            strings,level = sections[section_name]
+            section_strings,level = sections[section_name]
             height = 6
             
             articles_filepath = articles_directory + sep + article_name + "_" + language
             analysis_filepath = analysis_directory + sep + article_name + "_" + language + "_" + section_name.lower()
 
             if not exists(analysis_filepath + "_diff_data.json"):
-                data = calculate_data(articles_filepath, logger, strings, level, differs, preprocessor, problematic_revids)
+                data = calculate_data(articles_filepath, logger, section_strings, level, differs, preprocessor, problematic_revids)
                 save_data(data, analysis_filepath)
             else:
                 data = load_data(analysis_filepath + "_diff_data.json")
 
-            timesliced_datasets[article_name.replace("_", " ")] = timeslice_data(data, 2020, 12)
+            timesliced_datasets[article_name.replace("_", " ")] = timeslice_data(data, 2021, 2)
 
-            #plot_size_and_reference_count(timeslice_data(data, 2020, 12), analysis_filepath, article_name, section_name) #different result compared to previous version due to use of section tree!
+            plot_size_and_reference_count(timeslice_data(data, 2021, 2), analysis_filepath, article_name, section_name) #different result compared to previous version due to use of section tree!
             
-        plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_directory, logger, section_name, differ_name)
+        #plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_directory, logger, section_name, differ_name)
