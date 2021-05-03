@@ -1,4 +1,4 @@
-from timeline.event import Event
+from code.timeline.event import Event
 from os.path import sep
 
 import unittest

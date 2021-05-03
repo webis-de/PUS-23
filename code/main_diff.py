@@ -293,6 +293,7 @@ def plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_direct
 
         #sizes
         ax1.margins(x=0.005)
+
         ax1.plot(list(range(len(sizes))), sizes, label="Mean Character Count", color="k", linewidth=1)
         ax1.set_ylabel("\"" + timesliced_data + "\" (C" + str(article_abbreviation_index) + ")" + "\n" + "Characters", color="k", fontsize="x-small")
         ax1.tick_params(axis='y', direction="in", pad=-24 if len(str(int(sizes_max))) > 5 else -18)
@@ -305,6 +306,7 @@ def plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_direct
         #reference counts
         ax2 = ax1.twinx()
         ax2.margins(x=0.005)
+
         ax2.plot(list(range(len(reference_counts))), reference_counts, label="Mean Number of References", color="k", linestyle=":", linewidth=1)
         if first_plot:
             ax2.set_ylabel("References", color="k", fontsize="x-small")
@@ -321,12 +323,14 @@ def plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_direct
         article_abbreviation_index += 1
 
         first_plot = False
+
         #plt.legend(["PCC REFERENCES/CHARACTERS = " + str(pcc)], frameon=False, handlelength=0.0, loc="upper center")
 
     plt.subplots_adjust(bottom=0.2, top=0.98, left=0.03, right=0.99)
     
     plt.savefig(analysis_directory + sep + "_".join(timesliced_datasets.keys()).replace(" ","_") + "_" + section_name  + "_" + "section_revision_size_vs_references_vs_diffs.png", transparent=False)
     export_legend(legend, analysis_directory + sep + "legend.png")
+
     plt.close('all')
     
 if __name__ == "__main__":

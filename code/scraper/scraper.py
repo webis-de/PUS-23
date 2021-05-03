@@ -95,7 +95,7 @@ class Scraper:
         Returns:
             The corrected titles as defined by the redirect.
         """
-        response = GET(self.api_url, params={"format":"json","action":"query","titles":title,"redirects":""}, headers=self.headers).json()
+        response = GET(self.api_url, params={"format":"json","action":"query","titles":title,"redirects":""}, headers=self.headers, timeout=5).json()
         self.page_id = list(response["query"]["pages"].keys())[0]
         if self.page_id == "-1":
             self.logger.log("Article '" + title + "' does not exist.")
@@ -147,7 +147,7 @@ class Scraper:
             filepath: Path to the revisions file.
         """
         latest_revid = self._latest_revid(filepath)
-        response = GET(self.api_url, {"format":"json","action":"query","titles":self.title,"prop":"revisions","rvlimit":"1","rvdir":"newer","rvstartid":str(latest_revid)}).json()
+        response = GET(self.api_url, {"format":"json","action":"query","titles":self.title,"prop":"revisions","rvlimit":"1","rvdir":"newer","rvstartid":str(latest_revid)}, timeout=5).json()
         self.rvcontinue = response.get("continue",{}).get("rvcontinue",None)
         if self.rvcontinue:
             self.parameters["rvstartid"] = self.rvcontinue.split("|")[1]
@@ -183,7 +183,7 @@ class Scraper:
             date is on day of deadline or there are no more revisions, else True.
         """
         if self.rvcontinue:
-            response = GET(self.api_url, params=self.parameters, headers=self.headers)
+            response = GET(self.api_url, params=self.parameters, headers=self.headers, timeout=5)
             response_json = response.json()
             sleep(self._delay())
             for revision in response_json["query"]["pages"][self.page_id]["revisions"]:
@@ -240,7 +240,7 @@ class Scraper:
         Returns:
             The HTML of the revision.
         """
-        response = GET(revision_url, headers=self.headers)
+        response = GET(revision_url, headers=self.headers, timeout=5)
         tree = html.fromstring(response.text)
         #get text from MediaWiki
         try:

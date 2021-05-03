@@ -1,4 +1,4 @@
-from article.revision.revision import Revision
+from code.article.revision.revision import Revision
 import unittest
 from json import loads
 

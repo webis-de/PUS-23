@@ -1,7 +1,7 @@
-from scraper.scraper import Scraper
-from utility.logger import Logger
-from article.article import Article
-from article.revision.revision import Revision
+from code.scraper.scraper import Scraper
+from code.utility.logger import Logger
+from code.article.article import Article
+from code.article.revision.revision import Revision
 from os import remove
 from os.path import exists, sep
 from shutil import rmtree

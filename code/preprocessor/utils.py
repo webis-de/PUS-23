@@ -1,3 +1,5 @@
+from os.path import sep
+
 def stopwords(stopwords_filepath):
     """
     Reads a list of stopwords from a file.
@@ -20,7 +22,14 @@ def stopwords(stopwords_filepath):
                 stopwords.add(word)
                 stopwords.add(word[0].upper() + word[1:])
     except FileNotFoundError:
-        print("Stopword file (" + stopwords_filepath +") not found.")
+        try:
+            with open ("code" + sep + stopwords_filepath) as file:
+                for word in file:
+                    word = word.strip()
+                    stopwords.add(word)
+                    stopwords.add(word[0].upper() + word[1:])
+        except FileNotFoundError:
+            print("Stopword file (" + stopwords_filepath +") not found.")
     return stopwords
 
 def abbreviations(abbreviations_filepath):
@@ -45,5 +54,12 @@ def abbreviations(abbreviations_filepath):
                 abbreviations.add(word)
                 abbreviations.add(word.lower())
     except FileNotFoundError:
-        print("Abbreviations file (" + abbreviations_filepath +") not found.")
+        try:
+            with open ("code" + sep + abbreviations_filepath) as file:
+                for word in file:
+                    word = word.strip()
+                    abbreviations.add(word)
+                    abbreviations.add(word.lower())
+        except FileNotFoundError:
+            print("Abbreviations file (" + abbreviations_filepath +") not found.")
     return abbreviations
