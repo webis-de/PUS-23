@@ -17,9 +17,14 @@ class Preprocessor:
         self.tokenizer = Tokenizer("preprocessor/data/abbreviations_" + language + ".txt", filterwords)
         self.sentenizer = Sentenizer("preprocessor/data/abbreviations_" + language + ".txt")
         self.stopwords = stopwords("preprocessor/data/stopwords_" + language + ".txt")
-        with open("preprocessor/data/contractions_" + language + ".txt") as file:
-            lines = list(file.readlines())
-            self.contractions = [line.strip().split("-") for line in lines] + [[word[0].upper() + word[1:] for word in line.strip().split("-")] for line in lines]
+        try:
+            with open("preprocessor/data/contractions_" + language + ".txt") as file:
+                lines = list(file.readlines())
+                self.contractions = [line.strip().split("-") for line in lines] + [[word[0].upper() + word[1:] for word in line.strip().split("-")] for line in lines]
+        except FileNotFoundError:
+            with open("code/preprocessor/data/contractions_" + language + ".txt") as file:
+                lines = list(file.readlines())
+                self.contractions = [line.strip().split("-") for line in lines] + [[word[0].upper() + word[1:] for word in line.strip().split("-")] for line in lines]
 
     def __enter__(self):
         return self

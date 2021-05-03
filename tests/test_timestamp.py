@@ -1,4 +1,4 @@
-from article.revision.timestamp import Timestamp
+from code.article.revision.timestamp import Timestamp
 import unittest
 
 class TestTimestamp(unittest.TestCase):

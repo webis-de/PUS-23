@@ -47,7 +47,7 @@ class Bibentry:
         """
         header = {'user-agent': 'Modzilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0'}
         sleep(self._delay())
-        return get("https://doi.org/" + self.doi, headers = header).status_code != 404
+        return get("https://doi.org/" + self.doi, headers = header, timeout = 1).status_code != 404
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.bibkey == other.bibkey

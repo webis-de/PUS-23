@@ -1,4 +1,4 @@
-from article.revision.source import Source
+from code.article.revision.source import Source
 from lxml import html
 import unittest
 

@@ -3,7 +3,6 @@ from .source import Source
 from .section import Section
 from .arno_section import Arno_Section
 from pprint import pformat
-from requests import get
 from lxml import html, etree
 from re import findall, finditer, search, split, sub, S
 

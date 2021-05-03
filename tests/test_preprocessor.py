@@ -1,4 +1,4 @@
-from preprocessor.preprocessor import Preprocessor
+from code.preprocessor.preprocessor import Preprocessor
 from os.path import sep
 import unittest
 

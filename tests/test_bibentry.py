@@ -1,4 +1,4 @@
-from bibliography.bibentry import Bibentry
+from code.bibliography.bibentry import Bibentry
 import unittest
 
 class MockedBibentry:
