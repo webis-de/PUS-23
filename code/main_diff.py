@@ -13,6 +13,10 @@ from preprocessor.preprocessor import Preprocessor
 import numpy as np
 from utility.logger import Logger
 
+#################################################################
+# This file serves as an entry point to diff Wikipedia articles.#
+#################################################################
+
 def corr_coef(X,Y):
     mean_x = sum(X) / len(X)
     mean_y = sum(Y) / len(Y)

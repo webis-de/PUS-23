@@ -24,15 +24,16 @@ if __name__ == "__main__":
     LANGUAGE = ["en", "de"][0]
     FILEPATH = "../articles/2021-03-01/CRISPR_" + LANGUAGE
 
-    preprocessor = Preprocessor(LANGUAGE, ["prokaryotic antiviral system", "10.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"])
-    if LANGUAGE == "en":
-        spacy = English()
-    if LANGUAGE == "de":
-        spacy = German()
+    if PROCESSING:
+        preprocessor = Preprocessor(LANGUAGE, ["prokaryotic antiviral system", "10.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"])
+        if LANGUAGE == "en":
+            spacy = English()
+        if LANGUAGE == "de":
+            spacy = German()
 
     with open("revision_extraction" + PROCESSING + ".txt", "w", encoding="utf-8") as file:        
         revid = None if SELECTION == "random" else 701817377
-        index = randint(0, len(open(FILEPATH).readlines()) - 1) if SELECTION == "random" else 60
+        index = randint(0, len(open(FILEPATH).readlines()) - 1) if SELECTION == "random" else 1500
         revision = Article(FILEPATH).get_revision(index, revid)
         index = revision.index
         
@@ -110,7 +111,8 @@ if __name__ == "__main__":
                 heading("\n" + source[0] + " " + "(" + str(len(source[1])) + ")", file)
                 for reference in source[1]:
                     #file.write("HTML: " + html.tostring(reference.html).decode("utf-8") + "\n")
-                    file.write("REFERENCE TEXT: " + reference.get_text().strip() + "\n")
+                    file.write("REFERENCE TEXT: " + \
+                               reference.get_text().strip() + "\n")
                     #file.write("REFERENCE TEXT TOKENISED: " + "|".join(preprocessor.preprocess(reference.get_text().strip(), lower=False, stopping=False, sentenize=False, tokenize=True)[0]) + "\n")
                     file.write("\n")
                     file.write("AUTHORS: " + str(reference.get_authors(LANGUAGE)) + "\n")
@@ -119,12 +121,6 @@ if __name__ == "__main__":
                     file.write("PMIDs: " + str(reference.get_pmids()) + "\n")
                     file.write("PMCs: " + str(reference.get_pmcs()) + "\n")
                     file.write("IDENTIFIERS: " + str(reference.get_identifiers()) + "\n")
-##                    file.write("\nLINKED SECTIONS:" + "\n")
-##                    linked_sections = reference.linked_sections(sections)
-##                    if linked_sections:
-##                        file.write("\n---\n".join([linked_section.get_text().strip() for linked_section in linked_sections]) + "\n")
-##                    else:
-##                        file.write("-" + "\n")
                     file.write("-"*50 + "\n")
     extraction_end = datetime.now()
     print("Extraction: ", extraction_end - extraction_start)

@@ -9,6 +9,10 @@ import numpy as np
 from os.path import exists, sep
 from os import makedirs
 
+##################################################################################
+# This file serves as an entry point to analyse Wikipedia articles contributions.#
+##################################################################################
+
 def length_diff(text, previous_text):
     return len(text)/len(previous_text)
 

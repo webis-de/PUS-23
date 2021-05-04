@@ -4,6 +4,10 @@ from matplotlib import rc, colors
 from os.path import basename, exists, sep
 from os import makedirs
 
+#######################################################################
+# This file serves as an entry point to plot Wikipedia article heroes.#
+#######################################################################
+
 rc('xtick', labelsize=15)
 rc('ytick', labelsize=15)
 

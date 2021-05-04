@@ -2,6 +2,10 @@ from article.article import Article
 from preprocessor.preprocessor import Preprocessor
 from pprint import pprint, pformat
 
+####################################################################
+# This file serves as an entry point to analyse Wikipedia sections.#
+####################################################################
+
 article = Article("../articles/2021-03-01/CRISPR_en")
 
 revision = article.get_revision(index=1200)
