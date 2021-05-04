@@ -1,7 +1,4 @@
-try:
-    import matplotlib.pyplot as plt
-except ModuleNotFoundError:
-    print("Skipping matplotlib import!")
+import matplotlib.pyplot as plt
 from article.article import Article
 from article.revision.timestamp import Timestamp
 from differ.differ import Differ as custom_differ

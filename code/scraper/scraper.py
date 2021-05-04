@@ -8,12 +8,14 @@ from urllib.parse import quote, unquote
 from time import sleep
 from random import randint, random
 from datetime import datetime
+import logging
 
 class Scraper:
     """
     Scrape revision history from Wikipedia page.
 
     Attributes:
+        directory: The directory to which scraped revisions will be saved.
         logger: The logger this Scraper uses.
         headers: Header for GET request.
         title: The title of the Wikipedia page.
@@ -31,16 +33,18 @@ class Scraper:
         updating: Flag for update mode.
         update_count: Number of revisions scraped if updating.
     """
-    def __init__(self, logger, title, language):
+    def __init__(self, directory, title, language):
         """
         Initialise scraper.
 
         Args:
-            logger: The logger this Scraper uses.
+            directory: The directory to which scraped revisions will be saved.
             title: The title of the Wikipedia page to scrape.
             language: The language of the Wikipedia page to scrape.
         """
-        self.logger = logger
+        self.directory = directory
+        if not exists(directory): makedirs(directory)
+        self.logger = self._logger(directory)
         self.headers = {'user-agent': 'Modzilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0'}
         self.language = language
         self.api_url = "https://" + language + ".wikipedia.org/w/api.php"
@@ -61,8 +65,23 @@ class Scraper:
 
     def __exit__(self, type, value, traceback):
         """Logs the number of scraped and updated revisions when the instance is closed."""
-        if self.updating: self.logger.log("Number of updates: " + str(self.update_count))
-        self.logger.stop("Done. Number of revisions: " + str(self.revision_count))
+        if self.updating: self.logger.info("Number of updates: " + str(self.update_count))
+        self.logger.info("Done. Number of revisions: " + str(self.revision_count))
+
+    def _logger(self, directory):
+        """Set up the logger for this scraper."""
+        logger = logging.getLogger("scraper_logger")
+        formatter = logging.Formatter("%(asctime)s >>> %(message)s", "%F %H:%M:%S")
+        logger.setLevel(logging.DEBUG)
+        stream_handler = logging.StreamHandler()
+        stream_handler.setLevel(logging.INFO)
+        stream_handler.setFormatter(formatter)
+        file_handler = logging.FileHandler(self.directory + sep + "log.txt", "a")
+        file_handler.setFormatter(formatter)
+        file_handler.setLevel(logging.DEBUG)
+        logger.addHandler(stream_handler)
+        logger.addHandler(file_handler)
+        return logger
 
     def _quote_filename(self, title):
         """
@@ -98,10 +117,10 @@ class Scraper:
         response = GET(self.api_url, params={"format":"json","action":"query","titles":title,"redirects":""}, headers=self.headers, timeout=5).json()
         self.page_id = list(response["query"]["pages"].keys())[0]
         if self.page_id == "-1":
-            self.logger.log("Article '" + title + "' does not exist.")
+            self.logger.warning("Article '" + title + "' does not exist.")
         redirect = response["query"].get("redirects", [{"to":None}])[0]["to"]
         if redirect:
-            self.logger.log("Article '" + title + "' redirects to " + redirect + ". Setting title to " + redirect + ".")
+            self.logger.warning("Article '" + title + "' redirects to " + redirect + ". Setting title to " + redirect + ".")
             return redirect
         else:
             return title
@@ -122,8 +141,8 @@ class Scraper:
             return 1
         else:
             revisions = []
-            self.logger.start("Scraping revisions of " + self.title + " (" + self.language + ") before " + deadline + ".")
-            if not gethtml: self.logger.log("Not getting HTLM.")
+            self.logger.info("Scraping revisions of " + self.title + " (" + self.language + ") before " + deadline + ".")
+            if not gethtml: self.logger.info("Not getting HTLM.")
             if exists(str(directory) + sep + self.filename):
                 self._rvstartid(directory + sep + self.filename)
                 self.updating = True
@@ -208,7 +227,7 @@ class Scraper:
                 self.revision_count += 1
                 if self.updating: self.update_count += 1
                 if self.revision_count % 100 == 0:
-                    self.logger.end_check(self.revision_count)
+                    self.logger.info(self.revision_count)
                 else:
                     if verbose: print("revision count:",str(self.revision_count).rjust(5, " "),"revid:",revision["revid"])
 
@@ -258,7 +277,7 @@ class Scraper:
             mediawiki_normal_catlinks = "<div id='mw-normal-catlinks' class='mw-normal-catlinks'></div>"
         HTML = mediawiki_parser_output + mediawiki_normal_catlinks
         if not HTML:
-            self.logger.log("Issue encountered with revid: " + str(revision["revid"]))        
+            self.logger.warning("Issue encountered with revid: " + str(revision["revid"]))        
         sleep(self._delay())
         return HTML
     

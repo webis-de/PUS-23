@@ -7,16 +7,15 @@ from os.path import exists, sep
 from shutil import rmtree
 from hashlib import sha256
 import unittest
+import logging
 
-class TestSraper(unittest.TestCase):
+class TestScraper(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.directory = "tests" + sep + "scraper_test_directory"
-        cls.log_directory = cls.directory + sep + "log"
-        cls.data_directory = cls.directory + sep + "data"
-        cls.logger = Logger(cls.log_directory)
         cls.no_title = "ABA)=$)!"
+        logging.disable(logging.CRITICAL)
         
     @classmethod
     def tearDownClass(cls):
@@ -45,37 +44,27 @@ class TestSraper(unittest.TestCase):
     def mock_latest_revid(self, filepath):
         return filepath
 
-    def mock_log(self, message, line_breaks = 0):
-        pass
-
     def test_quote_and_unquote_filename(self):
 
         TITLE = "CRISPR/Cpf1 gene-editing"
         QUOTED = "CRISPR%2FCpf1_gene-editing_en"
 
-        self.logger.log = self.mock_log
-
-        with Scraper(logger = self.logger, title = self.no_title, language = "en") as scraper:
+        with Scraper(directory = self.directory, title = self.no_title, language = "en") as scraper:
             quoted_filename = scraper._quote_filename(TITLE)
             self.assertEqual(quoted_filename, QUOTED)
 
-        with Scraper(logger = self.logger, title = self.no_title, language = "en") as scraper:
+        with Scraper(directory = self.directory, title = self.no_title, language = "en") as scraper:
             unquoted_filename = scraper._unquote_filename(QUOTED)
             self.assertEqual(unquoted_filename, TITLE)
 
     def test_sanity_check(self):
 
-        self.logger.log = self.mock_log
-
-        with Scraper(logger = self.logger, title = self.no_title, language = "en") as scraper:
+        with Scraper(directory = self.directory, title = self.no_title, language = "en") as scraper:
             sanity_checked_title = scraper._sanity_check("Crispr")
             self.assertEqual(sanity_checked_title, "CRISPR")
 
-    def test_rvstartid(self):
-        
-        self.logger.log = self.mock_log
-        
-        with Scraper(logger = self.logger, title = "CRISPR/Cas Tools", language = "en") as scraper:
+    def test_rvstartid(self):        
+        with Scraper(directory = self.directory, title = "CRISPR/Cas Tools", language = "en") as scraper:
             scraper._save = self.mock_save
             scraper._delay = self.mock_delay
             scraper._latest_revid = self.mock_latest_revid
@@ -83,17 +72,12 @@ class TestSraper(unittest.TestCase):
         self.assertEqual(scraper.parameters["rvstartid"], "653185393")
 
     def test_before(self):
-
-        self.logger.log = self.mock_log
-
-        with Scraper(logger = self.logger, title = self.no_title, language = "en") as scraper:
+        with Scraper(directory = self.directory, title = self.no_title, language = "en") as scraper:
             self.assertTrue(scraper._before("2000-10-20T15:00:00Z", "2000-10-21"))
             self.assertTrue(scraper._before("2000-09-22T15:00:00Z", "2000-10-21"))
             self.assertTrue(scraper._before("1999-11-22T15:00:00Z", "2000-10-21"))
 
     def test_wikitext(self):
-
-        self.logger.log = self.mock_log
 
         wikitext = ("CRISPR are direct repeats found in the [[DNA]] of many [[bacteria]] and [[archaea]]. " +
                     "The name is an acronym for clustered regularly interspaced short palindromic repeats. " +
@@ -103,7 +87,7 @@ class TestSraper(unittest.TestCase):
                     "according to differences in the spacers in their CRISPR arrays, a technique called [[spoligotyping]].")
 
         #scrape first revision
-        with Scraper(logger = self.logger, title = "CRISPR", language = "en") as scraper:
+        with Scraper(directory = self.directory, title = "CRISPR", language = "en") as scraper:
             scraper._save = self.mock_save
             scraper._delay = self.mock_delay
             revisions = []
@@ -115,10 +99,8 @@ class TestSraper(unittest.TestCase):
 
     def test_single_scrape(self):
 
-        self.logger.log = self.mock_log
-
         #scrape first five revisions
-        with Scraper(logger = self.logger, title = "CRISPR/Cas Tools", language = "en") as scraper:
+        with Scraper(directory = self.directory, title = "CRISPR/Cas Tools", language = "en") as scraper:
             scraper._save = self.mock_save
             scraper._delay = self.mock_delay
             revisions = []
@@ -149,10 +131,8 @@ class TestSraper(unittest.TestCase):
         LANGUAGE = "en"
         DEADLINE = "2005-12-15"
 
-        self.logger.log = self.mock_log
-
         #scrape first five revisions
-        with Scraper(logger = self.logger, title = TITLE, language = LANGUAGE) as scraper:
+        with Scraper(directory = self.directory, title = TITLE, language = LANGUAGE) as scraper:
             scraper._save = self.mock_save
             scraper._delay = self.mock_delay
             revisions = []
@@ -180,9 +160,7 @@ class TestSraper(unittest.TestCase):
         LANGUAGE = "en"
         DEADLINE = "2020-10-25"
 
-        self.logger.log = self.mock_log
-        
-        #ARTICLE CHECKSUMS
+        #ARTICLE METADATA
         ARTICLES = {"CRISPR":{"revid":31073051,"parentid":31072600,"timestamp":"2005-12-12 18:00"},
                     "CRISPR gene editing":{"revid":883728113,"parentid":883727959,"timestamp":"2019-02-17 06:39"},
                     "Cas9":{"revid":598617730,"parentid":597687410,"timestamp":"2014-03-07 23:25"},
@@ -191,7 +169,7 @@ class TestSraper(unittest.TestCase):
         
         #scrape first five revisions of each article and assert checksum code state 24 September 2020
         for article in ARTICLES:
-            with Scraper(logger = self.logger, title = article, language = LANGUAGE) as scraper:
+            with Scraper(directory = self.directory, title = article, language = LANGUAGE) as scraper:
                 scraper._save = self.mock_save
                 scraper._delay = self.mock_delay
                 revisions = []
@@ -206,16 +184,14 @@ class TestSraper(unittest.TestCase):
         LANGUAGE = "en"
         DEADLINE = "2019-02-18"
 
-        self.logger.log = self.mock_log
-        
-        self.assertFalse(exists(self.data_directory), msg="Last test run aborted, please remove directory: " + self.data_directory)
+        self.assertFalse(exists(self.directory + sep + "CRISPR gene editing"), msg="Last test run aborted, please remove directory: " + self.directory)
 
         #scrape article in full
-        with Scraper(logger = self.logger, title = TITLE, language = LANGUAGE) as scraper:
+        with Scraper(directory = self.directory, title = TITLE, language = LANGUAGE) as scraper:
             scraper._delay = self.mock_delay
-            scraper.scrape(self.data_directory, DEADLINE, number=15, verbose=False)
+            scraper.scrape(self.directory, DEADLINE, number=15, verbose=False)
             number_of_full_scraped_revisions = scraper.revision_count
-            FILEPATH = self.data_directory + sep + scraper.filename
+            FILEPATH = self.directory + sep + scraper.filename
             
         full_scrape_file_checksum = self.file_checksum(FILEPATH)
         full_article = Article(FILEPATH)
@@ -227,13 +203,13 @@ class TestSraper(unittest.TestCase):
         remove(FILEPATH)
         
         #scrape first five revisions
-        with Scraper(logger = self.logger, title = TITLE, language = LANGUAGE) as scraper:
+        with Scraper(directory = self.directory, title = TITLE, language = LANGUAGE) as scraper:
             scraper._delay = self.mock_delay
-            scraper.scrape(self.data_directory, DEADLINE, number=10, verbose=False)
+            scraper.scrape(self.directory, DEADLINE, number=10, verbose=False)
         #scrape remaining revisions
-        with Scraper(logger = self.logger, title = TITLE, language = LANGUAGE) as scraper:
+        with Scraper(directory = self.directory, title = TITLE, language = LANGUAGE) as scraper:
             scraper._delay = self.mock_delay
-            scraper.scrape(self.data_directory, DEADLINE, number=15, verbose=False)
+            scraper.scrape(self.directory, DEADLINE, number=15, verbose=False)
             number_of_updated_scraped_revisions = scraper.revision_count
         update_scrape_file_checksum = self.file_checksum(FILEPATH)
         update_article = Article(FILEPATH)

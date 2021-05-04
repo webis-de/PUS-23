@@ -1,5 +1,4 @@
 from scraper.scraper import Scraper
-from utility.logger import Logger
 from utility.utils import flatten_list_of_lists
 from json import load
 from re import split
@@ -19,7 +18,8 @@ if __name__ == "__main__":
 
     argument_parser.add_argument("-dir", "--directory",
                                  default="../articles",
-                                 help="The relative or absolute path to the directory to which the revisions will be saved.")
+                                 help="The relative or absolute path to the directory " + \
+                                      "to which the revisions will be saved.")
     argument_parser.add_argument("-a", "--articles",
                                  default="../data/relevant_articles/articles_arno.json",
                                  help="Either the relative of abolute path to a JSON file of articles " + \
@@ -56,11 +56,10 @@ if __name__ == "__main__":
     GETHTML = args["nohtml"]
 
     ARTICLES = wikipedia_articles
-    with Logger(DIRECTORY) as logger:
-        for article in ARTICLES:
-            with Scraper(logger, article, LANGUAGE) as scraper:
-                scraper.scrape(directory = DIRECTORY,
-                               deadline = DEADLINE,
-                               number = NUMBER,
-                               verbose = True,
-                               gethtml = GETHTML)
+    for article in ARTICLES:
+        with Scraper(DIRECTORY, article, LANGUAGE) as scraper:
+            scraper.scrape(directory = DIRECTORY,
+                           deadline = DEADLINE,
+                           number = NUMBER,
+                           verbose = True,
+                           gethtml = GETHTML)
