@@ -1,6 +1,6 @@
 from datetime import datetime
 from article.article import Article
-from differ.lcs import Differ
+from differ.differ import Differ
 from preprocessor.preprocessor import Preprocessor
 from multiprocessing import Pool
 

@@ -4,7 +4,7 @@ except ModuleNotFoundError:
     print("Skipping matplotlib import!")
 from article.article import Article
 from article.revision.timestamp import Timestamp
-from differ.lcs import Differ as custom_differ
+from differ.differ import Differ as custom_differ
 from difflib import Differ as difflib_differ
 from datetime import datetime
 from json import load, loads, dump, dumps
