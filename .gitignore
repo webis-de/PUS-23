@@ -1,15 +1,13 @@
-/analysis*
-/articles*
-/contributors*
-/plots*
-test
-extractions
+/analysis
+/articles
+/schema
 
 /**/__pycache__
 /**/logs
 
 /code/revision_extraction*.txt
-/code/section_tree*.txt
 /code/article_extraction.txt
+/code/section_tree*.txt
+
 /code/nohup.out
 .DS_Store
