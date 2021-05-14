@@ -22,9 +22,9 @@ class Tokenizer:
         """
         strings_to_escape = {}
         for pattern in self.abbreviations_and_filterwords:
-            for string_to_escape in re.findall(pattern, string):
+            for string_to_escape in re.findall(" " + pattern, string):
                 hashed_string_to_escape = md5(string_to_escape.encode()).hexdigest()
-                string = string.replace(string_to_escape, hashed_string_to_escape)
+                string = string.replace(string_to_escape, " " + hashed_string_to_escape)
                 strings_to_escape[hashed_string_to_escape] = string_to_escape
         for mark in [".","!","?",", ",": ",";", "(", ")","[","]","{","}","/","\\","'","\""]:
             string = string.replace(mark, " " + mark + " ")
@@ -35,4 +35,4 @@ class Tokenizer:
             for string_to_escape in strings_to_escape:
                 split_string[i] = split_string[i].replace(string_to_escape, strings_to_escape[string_to_escape])
 
-        return split_string
+        return [string.strip() for string in split_string]
