@@ -1,10 +1,6 @@
 from article.article import Article
 from preprocessor.preprocessor import Preprocessor
-from spacy.lang.en import English
-from spacy.lang.de import German
 from random import randint
-from json import loads
-from lxml import html
 from re import sub
 from datetime import datetime
 
@@ -19,22 +15,21 @@ def heading(text, file):
 
 if __name__ == "__main__":
 
-    PROCESSING = ["", "_raw", "_preprocessor", "_spacy"][0]
-    SELECTION = ["index", "revid", "random"][0]
+    #SELECT PROCESSING
+    PROCESSING = ["", "_raw", "_preprocessor"][0]
+    #SELECT LANGUAGE
     LANGUAGE = ["en", "de"][0]
-    FILEPATH = "../articles/2021-03-01/CRISPR_" + LANGUAGE
+    #SELECT REVISION FILE
+    FILEPATH = "../articles/Lucy_Arbell/Lucy_Arbell_" + LANGUAGE
+    #SELECT REVID
+    REVID = None
+    #SELECT INDEX
+    INDEX = 39 #randint(0, len(open(FILEPATH).readlines()) - 1)
 
-    if PROCESSING:
-        preprocessor = Preprocessor(LANGUAGE, ["prokaryotic antiviral system", "10.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"])
-        if LANGUAGE == "en":
-            spacy = English()
-        if LANGUAGE == "de":
-            spacy = German()
+    preprocessor = Preprocessor(LANGUAGE, ["prokaryotic antiviral system", "10.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"])
 
     with open("revision_extraction" + PROCESSING + ".txt", "w", encoding="utf-8") as file:        
-        revid = None if SELECTION == "random" else 701817377
-        index = randint(0, len(open(FILEPATH).readlines()) - 1) if SELECTION == "random" else 1500
-        revision = Article(FILEPATH).get_revision(index, revid)
+        revision = Article(FILEPATH).get_revision(INDEX, REVID)
         index = revision.index
         
         preprocessing_start = datetime.now()
@@ -44,20 +39,17 @@ if __name__ == "__main__":
         if PROCESSING == "_preprocessor":
             #TOKENIZED USING PREPROCESSOR
             TEXT = "|".join(preprocessor.preprocess(revision.get_text().strip() + "\n", lower=False, stopping=False, sentenize=False, tokenize=True)[0])
-        if PROCESSING == "_spacy":
-            #TOKENIZED USING SPACY
-            TEXT = "|".join([str(token) for token in spacy(revision.get_text().strip() + "\n")])
         preprocessing_end = datetime.now()
         print("Preprocessing: ", preprocessing_end - preprocessing_start)
 
         extraction_start = datetime.now()
 
         file.write("You are looking at revision number " + str(index) + " from " + revision.timestamp.string + "." + "\n")
-        #URL of revisions
+        #URL of revision
         heading("\nURL OF REVISION", file)
         file.write(revision.url + "\n")
 
-        #Print text from html
+        #text from html
         heading("\nTEXT", file)
         if PROCESSING: file.write("Processing text took : " + str(preprocessing_end - preprocessing_start) + "\n\n")
 
