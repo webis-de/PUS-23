@@ -24,21 +24,25 @@ with open("section_tree.txt", "w") as file:
     section_tree = revision.section_tree(article.name)
     file.write(pformat(section_tree.json(), width=200, sort_dicts=False))
     file.write("\n\n" + ("="*100) + "\n")
-    
-    file.write("History Section\n\n")
-    
-    history_sections = section_tree.find(["History"])
 
-    if history_sections:
-        history_section_tree = history_sections[0]
-        file.write(pformat(history_section_tree.json(), width=200, sort_dicts=False) + "\n\n")
+    SECTION_NAMES = ["History"]
 
-        file.write("Titles and Authors in History Section\n\n")
-        for source in history_section_tree.get_sources(revision.get_references(), 1):
+    TITLE = ", ".join(SECTION_NAMES)
+    
+    file.write(TITLE + " Section\n\n")
+    
+    SECTIONS = section_tree.find(SECTION_NAMES)
+
+    if SECTIONS:
+        SECTION_TREE = SECTIONS[0]
+        file.write(pformat(SECTION_TREE.json(), width=200, sort_dicts=False) + "\n\n")
+
+        file.write("Titles and Authors in " + TITLE + " Section\n\n")
+        for source in SECTION_TREE.get_sources(revision.get_references(), 1):
             file.write(source.get_title("en") + "\n")
             file.write(str(source.get_authors("en")) + "\n\n")
     else:
-        file.write("NO HISTORY SECTION")
+        file.write("NO " + TITLE + " SECTION")
 
     text = section_tree.find([""])[0].get_text(10, with_headings=True)
     print(text)
