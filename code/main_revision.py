@@ -20,7 +20,7 @@ if __name__ == "__main__":
     #SELECT LANGUAGE
     LANGUAGE = ["en", "de"][0]
     #SELECT REVISION FILE
-    FILEPATH = "../articles/Lucy_Arbell/Lucy_Arbell_" + LANGUAGE
+    FILEPATH = "../articles/2021-03-01/CRISPR_" + LANGUAGE
     #SELECT REVID
     REVID = None
     #SELECT INDEX
