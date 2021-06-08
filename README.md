@@ -1,29 +1,14 @@
 # Science Analytics Wikipedia
 
-This repository contains information and code concerning the project Tracing Innovations on Wikipedia.
-
-## DOCUMENTS
-##### Hub (Benno)
-- https://docs.google.com/document/d/1QBe9mvq0BlYRzYDi0ul97GLRB8nibWsjxA7uUFYTino
-##### Timeline (Marion)
-- https://docs.google.com/spreadsheets/d/1so4jyyjT62wzqMe_l7rpa94QhAWurNtSYed2oGSphoM
-##### CRISPR Events and Account (Arno)
-- https://docs.google.com/spreadsheets/d/1wRwgRmMYluVJPrr_p-BKn6fycDGmZ_JdlI-5dWUKnMw
-##### Manuscript (Arno)
-- https://docs.google.com/document/d/1KOKK47m_EJqCqUsBGf9ZDlUKeSqTjJbd6yIgCjuS1K8
-##### Formalisation (Wolfgang)
-- https://www.overleaf.com/6167482995mjqkmtckbfpr
-
-## FILES
-- https://files.webis.de/wikipedia-tracing-innovations
-- articles and analysis
-
-## CVS
-- proposals-in-progress/BMBF-indikatorik-19-today
-- research-in-progress/computational-social-science/CONF-20/science-analytics-wikipedia
+This repository contains information and code concerning the project 'Tracing Innovations on Wikipedia'.
 
 ## analysis
 - default directory for article analyis runs
+  - bibliography: reference matching
+  - contributors: editor distribution analysis
+  - development: character-reference-time plots
+  - heroes: import researchers
+  - sections: section analysis
 - on gitignore
 
 ## articles
@@ -31,37 +16,56 @@ This repository contains information and code concerning the project Tracing Inn
 - on gitignore
 
 ## code
-##### article_main.py
+##### main_article.py
 - analyse revision as per eventlist and bibliography
 - save to JSON Lines and pretty printed TXT file
-##### eventlist_main.py
-- test the Event and EventList classes
-##### pipeline_main.py
-- deprecated
-##### revision_main.py
-- test the revision class, including section and reference extraction
-##### scraper_main.py
-- scrape Wikipedia articles
-##### test.py
-- unit and integration tests
-##### entity
-- all wrapper classes
-##### preprocessor
-- preprocessor for lowering, tokenisation, sentenisation and stopping
+##### main_contributors.py
+- analyse editor distribution
+##### main_diff.py
+- diff revisions of article
+##### main_heroes.py
+- analyse how researchers are mentioned
+##### main_revision.py
+- detailed view and analysis of revision
+##### main_scraper.py
+- scrape revision history of an article with HTML
+##### main_sections.py
+- build article section tree
+##### main_timeline.py
+- analyse events and accounts
+##### article
+- article, revision, section, source
+##### bibliography
+- bibentry, bibliography
+##### contribution
+- contribution
+##### differ
+- custom word-level differ
+##### evaluation
+- evaluation helper scripts
 ##### scraper
 - scrape revisions of Wikipedia article up to given date and/or count
 - downloads HTML and extracts MediaWiki text and categories, discarding boilerplate
 - save to JSON Lines file
+##### timeline
+- account and event
 ##### utility
 - logger and other utility functions
 
 ## data
-- tracing-innovations-lit.bib: bibliography related to Crispr Cas (BibTex) as compiled by Marion
-- articles_arno.json: relevant Wikipedia article titles as compiled by Arno
-- CRISPR_events - events.csv: list of CRISPR events
-- CRISPR_events - accounts.csv: list of CRISPR accounts
+- account and event CSVs
+- bibliography BIB
+- problematic revid JSON
 
-### notes
-- revision histories of up to 1000 edits can be extracted via https://en.wikipedia.org/wiki/Special:Export and https://de.wikipedia.org/wiki/Spezial:Exportieren respectively
-- Scraper uses Wikimedia API
+## test
+- test scripts
+
+## NOT IN REPOSITORY
+### FILES
+- https://files.webis.de/wikipedia-tracing-innovations
+- articles and analysis
+
+### CVS
+- proposals-in-progress/BMBF-indikatorik-19-today
+- research-in-progress/computational-social-science/CONF-20/science-analytics-wikipedia
 
