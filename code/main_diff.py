@@ -58,7 +58,7 @@ def generate_annual_timeslice_ticks(timeslices, months = False):
         timeslice_ticks.append(year if year not in timeslice_ticks else "")
     return timeslice_ticks
 
-def calculate_data(filepath, logger, section_strings, level, differs, preprocessor = None, problematic_revids = []):
+def calculate_data(filepath, logger, section_strings, section_level, differs, preprocessor = None, problematic_revids = []):
     """
     Analyses all revisions, generating diffs for the section as defined by the section strings provided and
     provides a data map containing revision metadata, revision size, reference counts and diffs for each revision.
@@ -69,7 +69,7 @@ def calculate_data(filepath, logger, section_strings, level, differs, preprocess
         filepath: Path to the revision file.
         logger: The logger this method uses.
         section_strings: List of strings defining the sections to use.
-        level: Depth to which the section will be explored.
+        section_level: Depth to which the section will be explored.
         differs: The differ objects to apply.
         preprocessor: Preprocessor used to handle tokenization.
         problematic_revids: Revids to skip.
@@ -94,11 +94,11 @@ def calculate_data(filepath, logger, section_strings, level, differs, preprocess
 
         if section_strings != []:
             section_tree = revision.section_tree()
-            section = section_tree.find(strings, True)
-            text = section[0].get_text(level, include = ["p","li"], with_headings=True) if section else ""
+            section = section_tree.find(section_strings, True)
+            text = section[0].get_text(section_level, include = ["p","li"], with_headings=True) if section else ""
             if preprocessor:
                 text = preprocessor.preprocess(text, lower=False, stopping=False, sentenize=False, tokenize=True)[0]
-            references = section[0].get_sources(revision.get_references(), level) if section else []
+            references = section[0].get_sources(revision.get_references(), section_level) if section else []
         else:
             text = revision.get_text()
             references = revision.get_references() + revision.get_further_reading()
@@ -368,14 +368,14 @@ if __name__ == "__main__":
         for article_name,width,legend,problematic_revids in articles:
 
             differ_name = "custom_differ"
-            section_strings,level = sections[section_name]
+            section_strings,section_level = sections[section_name]
             height = 6
             
             articles_filepath = articles_directory + sep + article_name + "_" + language
             analysis_filepath = analysis_directory + sep + article_name + "_" + language + "_" + section_name.lower()
 
             if not exists(analysis_filepath + "_diff_data.json"):
-                data = calculate_data(articles_filepath, logger, section_strings, level, differs, preprocessor, problematic_revids)
+                data = calculate_data(articles_filepath, logger, section_strings, section_level, differs, preprocessor, problematic_revids)
                 save_data(data, analysis_filepath)
             else:
                 data = load_data(analysis_filepath + "_diff_data.json")
