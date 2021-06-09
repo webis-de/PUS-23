@@ -172,6 +172,7 @@ class Section:
 
         Args:
             strings: A list of strings to search in the title.
+            lower: Lower search strings if True.
         Returns:
             A list of sections.
         """
