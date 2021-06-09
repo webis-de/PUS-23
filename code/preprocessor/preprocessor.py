@@ -59,9 +59,9 @@ class Preprocessor:
 
         if tokenize:
             if stopping:
-                phrase = [[token for token in self.tokenizer.tokenize(sentence) if token not in self.stopwords] for sentence in phrase]
+                phrase = [[token for token in self.tokenizer.tokenize(sentence) if token != "" and token not in self.stopwords] for sentence in phrase]
             else:
-                phrase = [[token for token in self.tokenizer.tokenize(sentence)] for sentence in phrase]
+                phrase = [[token for token in self.tokenizer.tokenize(sentence) if token != ""] for sentence in phrase]
 
         return phrase
 
