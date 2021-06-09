@@ -1,18 +1,20 @@
-from difflib import Differ
-
 class Contribution:
     """
-    Class to track editor contributions for a revision text on a character basis
-    by diffing it against a previous revision text.
+    Class to track editor contributions for a revision
+    by diffing it against a previous revision.
 
     Attributes:
+        differ: The Differ used to diff two texts.
+        index: The index of the revision in the revision history.
+        url: The url of the revision on Wikipedia
+        size: The size of the revision.
         text: The text of the revision.
-        editor: The editor of this revision.
+        user: The editor of this revision.
+        userid: The ID of the editor of this revision
         character_editor_map: List of character and editor tuples.
-        differ: The difflib Differ used to diff two texts.
     """
-    def __init__(self, index, url, size, text, user, userid):
-
+    def __init__(self, differ, index, url, size, text, user, userid):
+        self.differ = differ
         self.index = index
         self.url = url
         self.size = size
@@ -20,26 +22,26 @@ class Contribution:
         self.user = user
         self.userid = userid
         self.character_editor_map = []
-        self.differ = Differ()
 
     def diff(self, previous_contribution=None):
         """
-        Diff the text and this revision, comparing and mapping contributor on a character level.
-        If there is no previsious revision, i.e. previous_contribution is None, then all characters
-        are mapped to the editor of this revision, otherwise the text of this and the previous revision are diffed.
+        Diff the text and this revision, comparing and mapping contributors.
+        If there is no previsious revision, i.e. previous_contribution is None,
+        then everything is mapped to the editor of this revision,
+        otherwise the text of this and the previous revision are diffed.
         
-        The difflib Differ provides a list of three-character result strings
-        of the form "+ c", "- c" or "  c":
-        - ' ' means there was no change.
-        - '-' means c was removed
-        - '+' means c was added        
+        The Differ provides a list of result strings of the form "+ c", "- c" or "  c",
+        with c comprising one or more characters:
+        - '  c' means there was no change to .
+        - '- c' means c was removed
+        - '+ c' means c was added        
         For each result string in the diff the following respective actions are applied:
         - add previous mapping in case of no change
         - discard mapping in case of removal
         - add new mapping in case of addition        
         """
         if not previous_contribution:
-            self.character_editor_map = [(character, self.user + "|" + str(self.userid)) for character in self.text]
+            self.character_editor_map = [(unit, self.user + "|" + str(self.userid)) for unit in self.text]
         else:
             diffs = list(self.differ.compare(previous_contribution.text, self.text))
             previous_character_editor_map = self._previous_character_editor_map(previous_contribution)
@@ -49,7 +51,7 @@ class Contribution:
                 elif diff[0] == "-":
                     continue
                 elif diff[0] == "+":
-                    self.character_editor_map.append((diff[2], self.user + "|" + str(self.userid)))
+                    self.character_editor_map.append((diff[2:], self.user + "|" + str(self.userid)))
                 else:
                     raise Exception
 
@@ -64,7 +66,8 @@ class Contribution:
 
     def parts(self):
         """
-        Map editor map on character level to section level by merging consecutive characters contributed
+        Map editor map on unit level to section level
+        by merging consecutive unit contributed
         by the same editor to string sections.
         """
         parts = []
@@ -73,13 +76,13 @@ class Contribution:
         else:
             part = ""
             old_editor = self.character_editor_map[0][1]
-            for character, new_editor in self.character_editor_map:
+            for unit, new_editor in self.character_editor_map:
                 if new_editor == old_editor:
-                    part += character
+                    part += unit
                 else:
                     if part:
                         parts.append((part, old_editor))
-                        part = character
+                        part = unit
                         old_editor = new_editor
             if part:
                 parts.append((part, old_editor))
@@ -94,7 +97,7 @@ class Contribution:
             editors[editor] += len(part)
         for editor in editors:
             editors[editor] = {"absolute":editors[editor],
-                               "relative":round(editors[editor]/len(self.text), 5)}
+                               "relative":round(editors[editor]/len("".join(self.text)), 5)}
         return editors
 
     def table(self, editors):
@@ -113,17 +116,3 @@ class Contribution:
 
     def json(self, editors):
         return {key:editors[key] for key in sorted(editors.keys())}
-            
-if __name__ == "__main__":              
-    t1 = "This here is a sentence."
-    t2 = "This is another sentence."
-
-    c1 = Contribution("0", "www.url.com/1", 10, t1, "editor 1", "1")
-    c1.diff()
-    print(c1.parts())
-    print(c1.editors())
-
-    c2 = Contribution("1", "www.url.com/2", 30, t2, "editor 2", "2")
-    c2.diff(c1)
-    print(c2.parts())
-    print(c2.editors())
