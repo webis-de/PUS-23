@@ -103,7 +103,7 @@ class Contribution:
     def table(self, editors):
         table = ""
         table += str(self.index) + " " + self.url + " " + "\n"
-        table += "html length: " + str(len(self.text)) + " " + "wikimedia size: " + str(self.size) + "\n"
+        table += "tokens: " + str(self.size) + " " + "characters (no whitespaces): " + str(len("".join(self.text))) + "\n"
         header = "user|userid".rjust(60, " ") + "absolute".rjust(20, " ") + "relative".rjust(20, " ")
         table += "\n" + header + "\n"
         table += "-" * len(header) + "\n"

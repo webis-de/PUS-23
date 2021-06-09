@@ -191,6 +191,29 @@ if __name__ == "__main__":
     output_directory = "../analysis/contributors/" + article_title
     basename = output_directory + sep + article_title + "_" + section_name.lower() + "_section_editor_contributions"
     problematic_revids = [item[0] for item in load(open("../data/problematic_revids.json"))[article_title]]
+    other_revids = [744165876,
+                    744168725,
+                    744170373,
+                    744170840,
+                    744174870,
+                    744176252,
+                    744177987,
+                    744178893,
+                    744242190,
+                    744242364,
+                    744285348,
+                    744286128,
+                    744286281,
+                    744372705,
+                    744373569,
+                    744374017,
+                    744377127,
+                    744380512,
+                    744382780,
+                    744432555,
+                    757160059]
+    if section_name == "Application":
+        problematic_revids += other_revids              
 
     contributions = get_contributions(output_directory,
                                       article_title,
@@ -199,5 +222,8 @@ if __name__ == "__main__":
                                       section_level,
                                       problematic_revids,
                                       basename)
-    plot_contributions(contributions[:1589] + contributions[1590:], basename, threshold)
+
+    plot_contributions(contributions, basename, threshold)
+
+    #plot_contributions(contributions[:1589] + contributions[1590:], basename, threshold)
     

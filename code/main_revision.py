@@ -24,7 +24,7 @@ if __name__ == "__main__":
     #SELECT REVID
     REVID = None
     #SELECT INDEX
-    INDEX = 39 #randint(0, len(open(FILEPATH).readlines()) - 1)
+    INDEX = 1589 #randint(0, len(open(FILEPATH).readlines()) - 1)
 
     preprocessor = Preprocessor(LANGUAGE, ["prokaryotic antiviral system", "10.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"])
 
