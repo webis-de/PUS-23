@@ -18,6 +18,14 @@ from utility.logger import Logger
 #################################################################
 
 def corr_coef(X,Y):
+    """
+    Calculate Pearsons Correlation Coefficient.
+    Args:
+        X: The first list of data.
+        Y: The second list of data.
+    Returns:
+        Pearsons Correlation Coefficient of X and Y.
+    """
     mean_x = sum(X) / len(X)
     mean_y = sum(Y) / len(Y)
 
@@ -32,6 +40,16 @@ def corr_coef(X,Y):
     return Sxy / sqrt(Sxx * Syy)
 
 def timeslice_data(data, FINAL_YEAR, FINAL_MONTH):
+    """
+    Collate data by MONTH/YEAR timestamp.
+    Args:
+        data: A list of data entries with associated timestamps
+              under the key 'revision_timestamp'.
+        FINAL_YEAR: Last year to consider.
+        FINAL_MONTH: Last month to consider.
+    Returns:
+        A new data set with entries grouped as per their month and year.
+    """
     first_timestamp = Timestamp(data[0]["revision_timestamp"])
     FIRST_YEAR, FIRST_MONTH = first_timestamp.year, first_timestamp.month
     timeslices = []
@@ -52,6 +70,16 @@ def timeslice_data(data, FINAL_YEAR, FINAL_MONTH):
     return timesliced_data
 
 def generate_annual_timeslice_ticks(timeslices, months = False):
+    """
+    Convert timeslice ticks by adding leading zeros (months == True)
+    or cleaning the months and keeping only the first year (months == False):
+        - if months: '7/2010 -> 07/2010'
+        - if not months: '7/2010 -> 2010'
+    Args:
+        months: Flag for retaining months.
+    Returns:
+        List of timestamp strings.
+    """
     timeslice_ticks = []
     for timeslice in timeslices:
         year = timeslice.rjust(7, "0") if months else timeslice.split("/")[-1]

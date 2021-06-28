@@ -5,7 +5,6 @@
 /**/logs
 
 /code/revision_extraction*.txt
-/code/article_extraction.txt
 /code/section_tree*.txt
 
 /code/nohup.out

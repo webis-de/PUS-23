@@ -49,7 +49,19 @@ def skat(gains, ideal, expected, provided):
                 score -= gains[item]/position
     return score/ideal
 
-def analyse(event, revision, revision_text_lower, revision_text_lower_ascii, revision_text_lower_ascii_alnum, source_texts, source_texts_ascii, source_titles, source_titles_lower_ascii_alnum, referenced_author_sets_ascii, referenced_pmids, language, thresholds):
+def analyse(event,
+            revision,
+            revision_text_lower,
+            revision_text_lower_ascii,
+            revision_text_lower_ascii_alnum,
+            source_texts,
+            source_texts_ascii,
+            source_titles,
+            source_titles_lower_ascii_alnum,
+            referenced_author_sets_ascii,
+            referenced_pmids,
+            language,
+            thresholds):
 
     NED_LOW = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][0]
     NED_MID = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][1]
@@ -303,7 +315,7 @@ if __name__ == "__main__":
 
             print(revision.index)
 
-            #FIX REVISION URL BY REPLACEING SPACES WITH UNDERSCORES
+            #FIX REVISION URL BY REPLACING SPACES WITH UNDERSCORES
             revision.url = revision.url.replace(" ", "_")
 
             ### The lowered full text.
