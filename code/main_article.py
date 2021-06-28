@@ -18,7 +18,7 @@ import logging
 ####################################################################
 
 def get_logger(directory):
-    """Set up the logger for this scraper."""
+    """Set up the logger."""
     logger = logging.getLogger("article_logger")
     formatter = logging.Formatter("%(asctime)s >>> %(message)s", "%F %H:%M:%S")
     logger.setLevel(logging.DEBUG)

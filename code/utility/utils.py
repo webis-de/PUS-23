@@ -1,4 +1,3 @@
-from itertools import combinations
 from Levenshtein import distance
 
 def flatten_list_of_lists(list_of_lists):
@@ -13,17 +12,6 @@ def flatten_list_of_lists(list_of_lists):
         A flattened list of elements of each list in the list of lists.
     """
     return [item for sublist in list_of_lists for item in sublist]
-
-def powerset(items, min_len):
-    """
-    Calculate the powerset of given list.
-
-    Args:
-        items: The list for which the powerset should be calculated.
-    Returns:
-        The powerset.
-    """
-    return [x for length in range(len(items)+1, min_len-1, -1) for x in combinations(items, length)]
 
 def levenshtein_custom(word1, word2, verbose = False):
     """

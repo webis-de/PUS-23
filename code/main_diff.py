@@ -6,16 +6,32 @@ from difflib import Differ as difflib_differ
 from datetime import datetime
 from json import load, loads, dump, dumps
 from os.path import basename, dirname, exists, sep
+from os import makedirs
 from glob import glob
 from urllib.parse import quote, unquote
 from math import sqrt
 from preprocessor.preprocessor import Preprocessor
 import numpy as np
-from utility.logger import Logger
+import logging
 
 #################################################################
 # This file serves as an entry point to diff Wikipedia articles.#
 #################################################################
+
+def get_logger(directory):
+    """Set up the logger."""
+    logger = logging.getLogger("diff_logger")
+    formatter = logging.Formatter("%(asctime)s >>> %(message)s", "%F %H:%M:%S")
+    logger.setLevel(logging.DEBUG)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    stream_handler.setLevel(logging.INFO)
+    file_handler = logging.FileHandler(directory + sep + "log.txt", "a")
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.DEBUG)
+    logger.addHandler(stream_handler)
+    logger.addHandler(file_handler)
+    return logger
 
 def corr_coef(X,Y):
     """
@@ -104,7 +120,7 @@ def calculate_data(filepath, logger, section_strings, section_level, differs, pr
     """
     article = Article(filepath)
 
-    logger.log("Calculating diffs for " + article.name + " and sections '" + "', '".join(section_strings) + "'" + "\n")
+    logger.info("Calculating diffs for " + article.name + " and sections '" + "', '".join(section_strings) + "'")
 
     data = []
 
@@ -114,10 +130,10 @@ def calculate_data(filepath, logger, section_strings, section_level, differs, pr
 
     for revision in article.yield_revisions():
 
-        logger.log(str(revision.index + 1) + " " + str(revision.url) + "\n")
+        logger.info(str(revision.index + 1) + " " + str(revision.url))
 
         if revision.revid in problematic_revids:
-            logger.log("Blacklisted revid: " + str(revision.revid))
+            logger.info("Blacklisted revid: " + str(revision.revid))
             continue
 
         if section_strings != []:
@@ -152,7 +168,7 @@ def calculate_data(filepath, logger, section_strings, section_level, differs, pr
 
         prev_text = text
 
-    logger.log("TOTAL TIME: " + str(datetime.now() - start) + "\n")
+    logger.info("TOTAL TIME: " + str(datetime.now() - start))
 
     return data
 
@@ -302,8 +318,8 @@ def plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_direct
         except:
             pcc = "n/a"
 
-        logger.log("Plotting " + timesliced_data + " " + section_name)
-        logger.log("PCC: " + str(pcc))
+        logger.info("Plotting " + timesliced_data + " " + section_name)
+        logger.info("PCC: " + str(pcc))
         
         if not first_plot:
             fig.legend(bbox_to_anchor=(0.2075, 0.9), prop={'size': 15})
@@ -365,8 +381,9 @@ if __name__ == "__main__":
     preprocessor = Preprocessor(language)
 
     articles = (
-        ("CRISPR",16.5,True,problematic_revids_CRISPR_en),
-        ("CRISPR_gene_editing",3.5,False,problematic_revids_CRISPR_gene_editing_en),
+##        ("CRISPR",16.5,True,problematic_revids_CRISPR_en),
+##        ("CRISPR_gene_editing",3.5,False,problematic_revids_CRISPR_gene_editing_en),
+        ("Cas9",16.5,True,[]),
         )
 
     sections = {"Intro":([""],0),
@@ -382,12 +399,14 @@ if __name__ == "__main__":
                 "NO_SECTION_TREE":([],0)
                 }
 
-    differs = {}#"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
+    differs = {"custom_differ":custom_differ()}#"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
-    articles_directory = "../articles/2021-03-01"
-    analysis_directory = "../analysis/sections/2021_03_29/filtered"
+    articles_directory = "../articles/2021-02-14"
+    analysis_directory = "../analysis/sections/2021_06_28" + sep + str(datetime.now())[:-7].replace(":","_").replace("-","_").replace(" ","_")
 
-    logger = Logger(analysis_directory)
+    if not exists(analysis_directory): makedirs(analysis_directory)
+    
+    logger = get_logger(analysis_directory)
 
     for section_name in ["All","Intro","History","Application"]:
 

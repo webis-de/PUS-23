@@ -1,5 +1,4 @@
 from code.scraper.scraper import Scraper
-from code.utility.logger import Logger
 from code.article.article import Article
 from code.article.revision.revision import Revision
 from os import remove
