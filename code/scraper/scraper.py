@@ -77,8 +77,8 @@ class Scraper:
         stream_handler.setLevel(logging.INFO)
         stream_handler.setFormatter(formatter)
         file_handler = logging.FileHandler(self.directory + sep + "log.txt", "a")
-        file_handler.setFormatter(formatter)
         file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)
         logger.addHandler(file_handler)
         return logger

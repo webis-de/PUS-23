@@ -3,7 +3,7 @@ from timeline.eventlist import EventList
 from timeline.accountlist import AccountList
 from bibliography.bibliography import Bibliography
 from utility.utils import flatten_list_of_lists, levenshtein
-from utility.logger import Logger
+from datetime import datetime
 from multiprocessing import Pool
 from unicodedata import normalize
 from argparse import ArgumentParser
@@ -11,10 +11,26 @@ from os.path import basename, exists, sep
 from os import makedirs
 from json import load, dumps
 from urllib.parse import quote, unquote
+import logging
 
 ####################################################################
 # This file serves as an entry point to analyse Wikipedia articles.#
 ####################################################################
+
+def get_logger(directory):
+    """Set up the logger for this scraper."""
+    logger = logging.getLogger("article_logger")
+    formatter = logging.Formatter("%(asctime)s >>> %(message)s", "%F %H:%M:%S")
+    logger.setLevel(logging.DEBUG)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    stream_handler.setLevel(logging.INFO)
+    file_handler = logging.FileHandler(directory + sep + "log.txt", "a")
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.DEBUG)
+    logger.addHandler(stream_handler)
+    logger.addHandler(file_handler)
+    return logger
 
 def occurrence(revision, result):
     return {"index":revision.index,"url":revision.url,"timestamp":revision.timestamp.string,"result":result}
@@ -245,7 +261,7 @@ if __name__ == "__main__":
 
     article_directory = args["articledir"]
     event_file = args["eventfile"]
-    output_directory = args["outputdir"]
+    output_directory = args["outputdir"] + sep + str(datetime.now())[:-7].replace(":","_").replace("-","_").replace(" ","_")
     articles = args["articlelist"]
     conditions = args["conditions"]
     equalling = args["equalling"]
@@ -255,33 +271,32 @@ if __name__ == "__main__":
                   "JACCARD_SCORE_THRESHOLD":args["jaccard_score_threshold"],
                   "SKAT_SCORE_THRESHOLD":args["skat_score_threshold"]}
 
-    logger = Logger(output_directory)
-    output_directory = logger.directory
-
     if not exists(output_directory): makedirs(output_directory)
+
+    logger = get_logger(output_directory)
     
     if not articles: articles = flatten_list_of_lists(load(open(args["articlefile"])).values())
 
     bibliography = Bibliography("../data/tracing-innovations-lit.bib")
     accountlist = AccountList("../data/CRISPR_accounts.csv")
 
-    logger.start("Analysing articles [" + ", ".join(articles) + "]")
-    logger.log("Using event file: " + basename(event_file))
+    logger.info("Analysing articles [" + ", ".join(articles) + "]")
+    logger.info("Using event file: " + basename(event_file))
 
-    logger.log("Using events with conditions: " + ", ".join(conditions if conditions else ["-"]))
-    logger.log("Equalling events to attributes: " + ", ".join(equalling if equalling else ["-"]))
-    logger.log("Using the below thresholds:")
+    logger.info("Using events with conditions: " + ", ".join(conditions if conditions else ["-"]))
+    logger.info("Equalling events to attributes: " + ", ".join(equalling if equalling else ["-"]))
+    logger.info("Using the below thresholds:")
     for threshold in thresholds:
-        logger.log(threshold + ": " + str(thresholds[threshold]))    
+        logger.info(threshold + ": " + str(thresholds[threshold]))    
 
     for article in articles:
 
-        logger.start_check(article)
+        logger.info(article)
 
         filename = quote(article.replace(" ","_"), safe="")
         filepath = article_directory + sep + filename + "_" + language
         if not exists(filepath):
-            logger.end_check(filepath + " does not exist.")
+            logger.info(filepath + " does not exist.")
             continue
         
         article = Article(filepath)
@@ -356,9 +371,7 @@ if __name__ == "__main__":
 
             revision = next(revisions, None)
 
-        logger.end_check("Done.")
+        logger.info("Done.")
 
         eventlist.write_text(output_directory + sep + filename + "_" + language + "." + "txt")
         eventlist.write_json(output_directory + sep + filename + "_" + language + "." + "json")
-
-    logger.close()
