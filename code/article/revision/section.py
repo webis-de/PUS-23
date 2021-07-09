@@ -4,9 +4,26 @@ from queue import Queue
 from copy import deepcopy
 
 class Section:
+    """
+    A section of a Wikipedia article built from the HTML element.
+    Calling tree() on this instance builds a subsection tree by
+    evaluating and collating children elements of this HTML element
+    based on their headings, initialising them as Sections,
+    adding them to the subsections attribute of this instance
+    and recursively calling tree() on them.
 
+    Attributes:
+        html: The lxml HMTL element used to build this instance.
+        name: The heading of this section, defaults to 'root'.
+        parent: The parent of this section, if any.
+        prev: The sibling section preceeding this instance, if any.
+        next: The sibling section succeeding this instance, if any.
+        level: The level of this instance in the section tree,
+               with root being at 0.
+        subsections: The subsections of this instance, populated
+                     at calling tree().
+    """
     def __init__(self, html, name = "root", parent = None, level = 0):
-
         self.html = html
         self.name = name
         self.parent = parent
