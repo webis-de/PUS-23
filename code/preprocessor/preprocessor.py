@@ -45,11 +45,8 @@ class Preprocessor:
 
         Returns:
             A list containing each sentence, as a list if tokenized.
-            Returns the sting of no preprocessing flags were applied.
+            Returns the sting as a one-item list if no preprocessing flags were applied.
         """
-        if lower:
-            phrase = phrase.lower()
-
         phrase = self.clean(phrase)
 
         if sentenize:
@@ -63,6 +60,9 @@ class Preprocessor:
             else:
                 phrase = [[token for token in self.tokenizer.tokenize(sentence) if token != ""] for sentence in phrase]
 
+        if lower:
+            phrase = [[token.lower() for token in item] if type(item) == list else item.lower() for item in phrase]
+                
         return phrase
 
     def clean(self, phrase):
@@ -80,9 +80,11 @@ class Preprocessor:
         for contraction in self.contractions:
             phrase = phrase.replace(contraction[0], contraction[1])
         #eliminate quotation marks and apostrophes
-##        phrase = phrase.replace("”", " ").replace("“", " ")
-##        phrase = phrase.replace("'"," ").replace("'"," ")
-##        phrase = phrase.replace("\""," ")
+        """
+        phrase = phrase.replace("”", " ").replace("“", " ")
+        phrase = phrase.replace("'"," ").replace("'"," ")
+        phrase = phrase.replace("\""," ")
+        """
         #eliminate double and multiple full stops
         phrase = sub("(\.+ *){2,}", " ", phrase)
         return phrase

@@ -6,7 +6,8 @@ class Sentenizer:
 
     def __init__(self, abbreviations_filepath):
         self.abbreviations_filepath = abbreviations_filepath
-        self.abbreviation_dictionary = {" " + abbreviation:md5(abbreviation.encode()).hexdigest() for abbreviation in abbreviations(abbreviations_filepath)}
+        self.abbreviation_dictionary = {" " + abbreviation:" " + md5(abbreviation.encode()).hexdigest() for abbreviation in abbreviations(abbreviations_filepath)}
+        self.inverted_abbreviation_dictionary = {v:k for k,v in self.abbreviation_dictionary.items()}
 
     def sentenize(self, text):
         """
@@ -18,18 +19,20 @@ class Sentenizer:
         Returns:
             A list of strings representing all sentences in the text.
         """
-        encountered_abbreviations = {}
+        masked_abbreviations = set()
         for abbreviation in self.abbreviation_dictionary:
             if abbreviation in text:
-                hashed_abbreviation = " " + self.abbreviation_dictionary[abbreviation]
-                text = text.replace(abbreviation, hashed_abbreviation)
-                encountered_abbreviations[hashed_abbreviation] = abbreviation
-        marks = []
-        for character in text:
-            if character in ['.', '!', '?']:
-                marks.append(character)
-        split_text = re.split("[\.!?]", text.strip())
-        for i in range(len(split_text)):
-            for encountered_abbreviation in encountered_abbreviations:
-                split_text[i] = split_text[i].replace(encountered_abbreviation, encountered_abbreviations[encountered_abbreviation])
-        return [split_text[i] + marks[i] if i < len(marks) else split_text[i] for i in range(len(split_text))]
+                text = text.replace(abbreviation, self.abbreviation_dictionary[abbreviation])
+                masked_abbreviations.add(self.abbreviation_dictionary[abbreviation])
+
+        marks = [character for character in text if character in ['.', '!', '?']]
+
+        split_text = [sentence for sentence in re.split("[\.!?]", text.strip()) if sentence != ""]
+
+        def dehash_abbreviations(sentence):
+            for masked_abbreviation in masked_abbreviations:
+                sentence = sentence.replace(masked_abbreviation, self.inverted_abbreviation_dictionary[masked_abbreviation])
+            return sentence
+        split_text = [dehash_abbreviations(sentence) for sentence in split_text]
+        
+        return [split_text[i].strip() + marks[i] if i < len(marks) else split_text[i] for i in range(len(split_text))]
