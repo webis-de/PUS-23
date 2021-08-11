@@ -21,10 +21,10 @@ class Event:
         self.comment = args["comment"]
         self.titles = {bibkey:bibentry.title for bibkey,bibentry in self.bibentries.items()}
         self.authors = {bibkey:bibentry.authors for bibkey,bibentry in self.bibentries.items()}
-        self.dois = [bibentry.doi for bibentry in self.bibentries.values()]
-        self.pmids = [bibentry.pmid for bibentry in self.bibentries.values()]
+        self.dois = {bibkey:bibentry.doi for bibkey,bibentry in self.bibentries.items()}
+        self.pmids = {bibkey:bibentry.pmid for bibkey,bibentry in self.bibentries.items()}
         self.equalling = equalling
-        self.first_mentioned = {}
+        self.trace = {}
 
     def int(self, value):
         try:

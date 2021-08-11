@@ -77,7 +77,10 @@ def analyse(event,
             referenced_author_sets_ascii,
             referenced_pmids,
             language,
-            thresholds):
+            thresholds,
+            article_title,
+            first_or_index,
+            heuristics):
 
     NED_LOW = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][0]
     NED_MID = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][1]
@@ -87,40 +90,44 @@ def analyse(event,
     SKAT = thresholds["SKAT_SCORE_THRESHOLD"]
 
     #VERBATIM EVENT TITLES
-    if event.titles and not event.first_mentioned["verbatim"].get("titles", None):
-            verbatim_title_results = {}
-            for event_bibkey, event_title in event.titles.items():
-                if to_alnum(to_ascii(to_lower(event_title))) in revision_text_lower_ascii_alnum:
-                    verbatim_title_results[event_bibkey] = scroll_to_url(revision.url, event_title)
-            if len(verbatim_title_results) == len(event.titles.values()):
-                event.first_mentioned["verbatim"]["titles"] = occurrence(revision, result=verbatim_title_results)
+    if event.titles \
+       and event.trace[article_title][first_or_index].get("verbatim", {}).get("titles", False) == None:
+        verbatim_title_results = {}
+        for event_bibkey, event_title in event.titles.items():
+            if to_alnum(to_ascii(to_lower(event_title))) in revision_text_lower_ascii_alnum:
+                verbatim_title_results[event_bibkey] = scroll_to_url(revision.url, event_title)
+        if len(verbatim_title_results) == len(event.titles.values()):
+            event.trace[article_title][first_or_index]["verbatim"]["titles"] = occurrence(revision, result=verbatim_title_results)
                 
     ##############################################################################################
 
     #VERBATIM EVENT DOIS
-    if event.dois and not event.first_mentioned["verbatim"].get("dois", None):
-        verbatim_doi_results = {event_doi:scroll_to_url(revision.url, event_doi) for event_doi in event.dois if event_doi and to_lower(event_doi) in revision_text_lower}
+    if event.dois \
+       and event.trace[article_title][first_or_index].get("verbatim", {}).get("dois", False) == None:
+        verbatim_doi_results = {}
+        for event_bibkey, event_doi in event.dois.items():
+            if event_doi and to_lower(event_doi) in revision_text_lower:
+                verbatim_doi_results[event_bibkey] = scroll_to_url(revision.url, event_doi)
         if len(verbatim_doi_results) == len(event.dois):
-            event.first_mentioned["verbatim"]["dois"] = occurrence(revision, result=verbatim_doi_results)
+            event.trace[article_title][first_or_index]["verbatim"]["dois"] = occurrence(revision, result=verbatim_doi_results)
 
     ##############################################################################################
 
     #VERBATIM EVENT PMIDS
-    if event.pmids and not event.first_mentioned["verbatim"].get("pmids", None):
-        verbatim_pmid_results = {event_pmid:scroll_to_url(revision.url, event_pmid) for event_pmid in event.pmids if event_pmid and event_pmid in revision_text_lower}
+    if event.pmids \
+       and event.trace[article_title][first_or_index].get("verbatim", {}).get("pmids", False) == None:
+        verbatim_pmid_results = {}
+        for event_bibkey, event_pmid in event.pmids.items():
+            if event_pmid and event_pmid in revision_text_lower:
+                verbatim_pmid_results[event_bibkey] = scroll_to_url(revision.url, event_pmid)
         if len(verbatim_pmid_results) == len(event.pmids):
-            event.first_mentioned["verbatim"]["pmids"] = occurrence(revision, result=verbatim_pmid_results)
+            event.trace[article_title][first_or_index]["verbatim"]["pmids"] = occurrence(revision, result=verbatim_pmid_results)
 
     #############################################################################################
 
     #RELAXED REFERENCE SEARCH
     if event.titles:
-        if not event.first_mentioned["relaxed"].get("ned <= " + str(NED_LOW), None) or \
-           not event.first_mentioned["relaxed"].get("ned <= " + str(NED_MID), None) or \
-           not event.first_mentioned["relaxed"].get("ned <= " + str(NED_HIGH), None) or \
-           not event.first_mentioned["relaxed"].get("ned_and_ratio", None) or \
-           not event.first_mentioned["relaxed"].get("ned_and_jaccard", None) or \
-           not event.first_mentioned["relaxed"].get("ned_and_skat", None):
+        if any([event.trace[article_title][first_or_index].get("relaxed", {}).get(key, False) == None for key in heuristics["relaxed"].keys()]):
             
             relaxed_results = {event_bibkey:{} for event_bibkey in event.titles}
 
@@ -140,29 +147,32 @@ def analyse(event,
                     if normalised_edit_distance < relaxed_results[event_bibkey].get("ned_high", (None, NED_HIGH))[1]:
                         relaxed_results[event_bibkey]["ned_high"] = (source_text, normalised_edit_distance)
 
-            if not event.first_mentioned["relaxed"].get("ned <= " + str(NED_LOW), None) and all([relaxed_results[event_bibkey].get("ned_low", False) for event_bibkey in event.titles]):
+            if event.trace[article_title][first_or_index].get("relaxed", {}).get("ned <= " + str(NED_LOW), False) == None \
+               and all([relaxed_results[event_bibkey].get("ned_low", False) for event_bibkey in event.titles]):
                 relaxed_title_results_low = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["ned_low"][0],
                                                                           "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["ned_low"][0])},
                                                            "normalised_edit_distance <= " + str(NED_LOW):relaxed_results[event_bibkey]["ned_low"][1]
                                                            } for event_bibkey in event.titles}
-                event.first_mentioned["relaxed"]["ned <= " + str(NED_LOW)] = occurrence(revision, result=relaxed_title_results_low)
+                event.trace[article_title][first_or_index]["relaxed"]["ned <= " + str(NED_LOW)] = occurrence(revision, result=relaxed_title_results_low)
                 
-            if not event.first_mentioned["relaxed"].get("ned <= " + str(NED_MID), None) and all([relaxed_results[event_bibkey].get("ned_mid", False) for event_bibkey in event.titles]):
+            if event.trace[article_title][first_or_index].get("relaxed", {}).get("ned <= " + str(NED_MID), False) == None \
+               and all([relaxed_results[event_bibkey].get("ned_mid", False) for event_bibkey in event.titles]):
                 relaxed_title_results_mid = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["ned_mid"][0],
                                                                           "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["ned_mid"][0])},
                                                            "normalised_edit_distance <= " + str(NED_MID):relaxed_results[event_bibkey]["ned_mid"][1]
                                                            } for event_bibkey in event.titles}
-                event.first_mentioned["relaxed"]["ned <= " + str(NED_MID)] = occurrence(revision, result=relaxed_title_results_mid)
+                event.trace[article_title][first_or_index]["relaxed"]["ned <= " + str(NED_MID)] = occurrence(revision, result=relaxed_title_results_mid)
                 
-            if not event.first_mentioned["relaxed"].get("ned <= " + str(NED_HIGH), None) and all([relaxed_results[event_bibkey].get("ned_high", False) for event_bibkey in event.titles]):
+            if event.trace[article_title][first_or_index].get("relaxed", {}).get("ned <= " + str(NED_HIGH), False) == None \
+               and all([relaxed_results[event_bibkey].get("ned_high", False) for event_bibkey in event.titles]):
                 relaxed_title_results_high = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["ned_high"][0],
                                                                            "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["ned_high"][0])},
                                                             "normalised_edit_distance <= " + str(NED_HIGH):relaxed_results[event_bibkey]["ned_high"][1]
                                                             } for event_bibkey in event.titles}
-                event.first_mentioned["relaxed"]["ned <= " + str(NED_HIGH)] = occurrence(revision, result=relaxed_title_results_high)
+                event.trace[article_title][first_or_index]["relaxed"]["ned <= " + str(NED_HIGH)] = occurrence(revision, result=relaxed_title_results_high)
 
             #AUTHORS
-            if event.authors:
+            if event.authors and event.trace[article_title][first_or_index].get("relaxed", {}).get("ned <= " + str(NED_HIGH), False):
                 for event_bibkey, event_authors in event.authors.items():
                     
                     event_authors = [to_ascii(author) for author in event_authors]
@@ -182,29 +192,32 @@ def analyse(event,
                         if skat_score >= relaxed_results[event_bibkey].get("skat", (None, SKAT))[1] and relaxed_results[event_bibkey].get("ned_high", (None, None))[0] == source_text:
                             relaxed_results[event_bibkey]["skat"] = (source_text, skat_score, relaxed_results[event_bibkey].get("ned_high")[1])
 
-                    if not event.first_mentioned["relaxed"].get("ned_and_ratio", None) and all([relaxed_results[event_bibkey].get("exact", False) for event_bibkey in event.authors]):
+                    if event.trace[article_title][first_or_index].get("relaxed", {}).get("ned_and_ratio", False) == None \
+                       and all([relaxed_results[event_bibkey].get("exact", False) for event_bibkey in event.authors]):
                         events_in_references_by_authors_exact_match = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["exact"][0],
                                                                                                     "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["exact"][0])},
                                                                                      "ratio_score": relaxed_results[event_bibkey]["exact"][1],
                                                                                      "normalised_edit_distance <= " + str(NED_HIGH):relaxed_results[event_bibkey]["exact"][2]
                                                                                      } for event_bibkey in event.authors}
-                        event.first_mentioned["relaxed"]["ned_and_ratio"] = occurrence(revision, result=events_in_references_by_authors_exact_match)
+                        event.trace[article_title][first_or_index]["relaxed"]["ned_and_ratio"] = occurrence(revision, result=events_in_references_by_authors_exact_match)
 
-                    if not event.first_mentioned["relaxed"].get("ned_and_jaccard", None) and all([relaxed_results[event_bibkey].get("jaccard", False) for event_bibkey in event.authors]):
+                    if event.trace[article_title][first_or_index].get("relaxed", {}).get("ned_and_jaccard", False) == None \
+                       and all([relaxed_results[event_bibkey].get("jaccard", False) for event_bibkey in event.authors]):
                         events_in_references_by_authors_jaccard = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["jaccard"][0],
                                                                                                 "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["jaccard"][0])},
                                                                                  "jaccard_score": relaxed_results[event_bibkey]["jaccard"][1],
                                                                                  "normalised_edit_distance <= " + str(NED_HIGH):relaxed_results[event_bibkey]["jaccard"][2],
                                                                                  } for event_bibkey in event.authors}
-                        event.first_mentioned["relaxed"]["ned_and_jaccard"] = occurrence(revision, result=events_in_references_by_authors_jaccard)
+                        event.trace[article_title][first_or_index]["relaxed"]["ned_and_jaccard"] = occurrence(revision, result=events_in_references_by_authors_jaccard)
 
-                    if not event.first_mentioned["relaxed"].get("ned_and_skat", None) and all([relaxed_results[event_bibkey].get("skat", False) for event_bibkey in event.authors]):
+                    if event.trace[article_title][first_or_index].get("relaxed", {}).get("ned_and_skat", False) == None \
+                       and all([relaxed_results[event_bibkey].get("skat", False) for event_bibkey in event.authors]):
                         events_in_references_by_authors_skat = {event_bibkey:{"source_text":{"raw":relaxed_results[event_bibkey]["skat"][0],
                                                                                              "goto":scroll_to_url(revision.url, relaxed_results[event_bibkey]["skat"][0])},
                                                                               "skat_score": relaxed_results[event_bibkey]["skat"][1],
                                                                               "normalised_edit_distance <= " + str(NED_HIGH):relaxed_results[event_bibkey]["skat"][2]
                                                                               } for event_bibkey in event.authors}
-                        event.first_mentioned["relaxed"]["ned_and_skat"] = occurrence(revision, result=events_in_references_by_authors_skat)
+                        event.trace[article_title][first_or_index]["relaxed"]["ned_and_skat"] = occurrence(revision, result=events_in_references_by_authors_skat)
 
     return event
 
@@ -239,6 +252,14 @@ if __name__ == "__main__":
     argument_parser.add_argument("-lang", "--language",
                                  default="en",
                                  help="en or de, defaults to en.")
+    argument_parser.add_argument("-m", "--mode",
+                                 default="first_mentioned",
+                                 help="'first_mentioned' to find first trace of events, 'full_trace' for all revisions")
+    argument_parser.add_argument("-he", "--heuristics",
+                                 default=("{'verbatim':{'titles':None,'dois':None,'pmids':None},"
+                                           "'relaxed':{'ned <= ' + str(NED_LOW):None,'ned <= ' + str(NED_MID):None,'ned <= ' + str(NED_HIGH):None,"
+                                                      "'ned_and_ratio':None,'ned_and_jaccard':None,'ned_and_skat':None}}"),
+                                 help="Heuristics used to match event, e.g. '{'verbatim':{'titles':None,'dois':None,'pmids':None}}'")
     argument_parser.add_argument("-ned", "--normalised_edit_distance_thresholds",
                                  nargs="+",
                                  type=int,
@@ -262,10 +283,12 @@ if __name__ == "__main__":
     article_directory = args["articledir"]
     event_file = args["eventfile"]
     output_directory = args["outputdir"] + sep + str(datetime.now())[:-7].replace(":","_").replace("-","_").replace(" ","_")
-    articles = args["articlelist"]
+    article_titles = args["articlelist"]
     conditions = args["conditions"]
     equalling = args["equalling"]
     language = args["language"]
+    mode = args["mode"] if args["mode"] in ["first_mentioned", "full_trace"] else "first_mentioned"
+    heuristics = args["heuristics"]
     thresholds = {"NORMALISED_EDIT_DISTANCE_THRESHOLDS":args["normalised_edit_distance_thresholds"],
                   "RATIO_SCORE_THRESHOLD":args["ratio_score_threshold"],
                   "JACCARD_SCORE_THRESHOLD":args["jaccard_score_threshold"],
@@ -275,25 +298,27 @@ if __name__ == "__main__":
 
     logger = get_logger(output_directory)
     
-    if not articles: articles = flatten_list_of_lists(load(open(args["articlefile"])).values())
+    if not article_titles: articles = flatten_list_of_lists(load(open(args["articlefile"])).values())
 
     bibliography = Bibliography("../data/tracing-innovations-lit.bib")
     accountlist = AccountList("../data/CRISPR_accounts.csv")
 
-    logger.info("Analysing articles [" + ", ".join(articles) + "]")
+    logger.info("Analysing articles [" + ", ".join(article_titles) + "]")
     logger.info("Using event file: " + basename(event_file))
-
     logger.info("Using events with conditions: " + ", ".join(conditions if conditions else ["-"]))
     logger.info("Equalling events to attributes: " + ", ".join(equalling if equalling else ["-"]))
+    logger.info("Trace mode: " + mode)
     logger.info("Using the below thresholds:")
     for threshold in thresholds:
         logger.info(threshold + ": " + str(thresholds[threshold]))    
 
-    for article in articles:
+    eventlist = EventList(event_file, bibliography, accountlist, conditions, equalling)
+    
+    for article_title in article_titles:
 
-        logger.info(article)
+        logger.info(article_title)
 
-        filename = quote(article.replace(" ","_"), safe="")
+        filename = quote(article_title.replace(" ","_"), safe="")
         filepath = article_directory + sep + filename + "_" + language
         if not exists(filepath):
             logger.info(filepath + " does not exist.")
@@ -303,32 +328,26 @@ if __name__ == "__main__":
         revisions = article.yield_revisions()
         revision = next(revisions, None)
 
-        eventlist = EventList(event_file, bibliography, accountlist, conditions, equalling)
-
-        print(len(eventlist.events))
+        print("Number of events:", len(eventlist.events))
 
         NED_LOW = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][0]
         NED_MID = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][1]
         NED_HIGH = thresholds["NORMALISED_EDIT_DISTANCE_THRESHOLDS"][2]
 
-        for event in eventlist.events:
-            event.first_mentioned = {
-                "verbatim":{
-                    "titles":None,
-                    "dois":None,
-                    "pmids":None},
-                "relaxed":{
-                    "ned <= " + str(NED_LOW):None,
-                    "ned <= " + str(NED_MID):None,
-                    "ned <= " + str(NED_HIGH):None,
-                    "ned_and_ratio":None,
-                    "ned_and_jaccard":None,
-                    "ned_and_skat":None}
-                        }
+        if mode == "first_mentioned":
+            for event in eventlist.events:
+                event.trace[article_title] = {"first_mentioned":eval(heuristics)}
+        else:
+            for event in eventlist.events:
+                event.trace[article_title] = {}
 
-        while revision:
+        while revision.index < 50:
 
             print(revision.index)
+
+            if mode == "full_trace":
+                for event in eventlist.events:
+                    event.trace[article_title][revision.index] = eval(heuristics)
 
             #FIX REVISION URL BY REPLACING SPACES WITH UNDERSCORES
             revision.url = revision.url.replace(" ", "_")
@@ -366,12 +385,15 @@ if __name__ == "__main__":
                                                   referenced_author_sets_ascii,
                                                   referenced_pmids,
                                                   language,
-                                                  thresholds)
+                                                  thresholds,
+                                                  article_title,
+                                                  mode if mode == "first_mentioned" else revision.index,
+                                                  eval(heuristics))
                                                  for event in eventlist.events])
 
             revision = next(revisions, None)
 
         logger.info("Done.")
 
-        eventlist.write_text(output_directory + sep + filename + "_" + language + "." + "txt")
-        eventlist.write_json(output_directory + sep + filename + "_" + language + "." + "json")
+    eventlist.write_text(output_directory + sep + "output" + "." + "txt")
+    eventlist.write_json(output_directory + sep + "output" + "." + "json")
