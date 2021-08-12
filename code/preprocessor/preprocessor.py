@@ -1,7 +1,8 @@
 from .tokenizer import Tokenizer
 from .sentenizer import Sentenizer
-from .utils import stopwords
+from .utils import stopwords, contractions
 from re import sub
+from os.path import exists
 
 class Preprocessor:
     """
@@ -14,17 +15,11 @@ class Preprocessor:
     """
     def __init__(self, language, filterwords = []):
 
-        self.tokenizer = Tokenizer("preprocessor/data/abbreviations_" + language + ".txt", filterwords)
-        self.sentenizer = Sentenizer("preprocessor/data/abbreviations_" + language + ".txt")
-        self.stopwords = stopwords("preprocessor/data/stopwords_" + language + ".txt")
-        try:
-            with open("preprocessor/data/contractions_" + language + ".txt") as file:
-                lines = list(file.readlines())
-                self.contractions = [line.strip().split("-") for line in lines] + [[word[0].upper() + word[1:] for word in line.strip().split("-")] for line in lines]
-        except FileNotFoundError:
-            with open("code/preprocessor/data/contractions_" + language + ".txt") as file:
-                lines = list(file.readlines())
-                self.contractions = [line.strip().split("-") for line in lines] + [[word[0].upper() + word[1:] for word in line.strip().split("-")] for line in lines]
+        prefix = "code/" if exists("code") else ""
+        self.tokenizer = Tokenizer(prefix + "preprocessor/data/abbreviations_" + language + ".txt", filterwords)
+        self.sentenizer = Sentenizer(prefix + "preprocessor/data/abbreviations_" + language + ".txt")
+        self.stopwords = stopwords(prefix + "preprocessor/data/stopwords_" + language + ".txt")
+        self.contractions = contractions(prefix + "preprocessor/data/contractions_" + language + ".txt")
 
     def __enter__(self):
         return self
@@ -79,12 +74,13 @@ class Preprocessor:
         """
         for contraction in self.contractions:
             phrase = phrase.replace(contraction[0], contraction[1])
-        #eliminate quotation marks and apostrophes
-        """
-        phrase = phrase.replace("”", " ").replace("“", " ")
-        phrase = phrase.replace("'"," ").replace("'"," ")
-        phrase = phrase.replace("\""," ")
-        """
+        #eliminate quotation marks
+        # ['"', '`', '«', '»', '´', '‘', '’', '‚', '‛', '“', '”', '„', '‟', '‹', '›']
+        for character in [chr(int(c, 16)) for c in ["0022","0060","00AB","00BB","00B4",
+                                                    "2018","2019","201A","201B","201C","201D","201E","201F",
+                                                    "2039","203A"]]:
+            phrase = phrase.replace(character, " ")
+
         #eliminate double and multiple full stops
         phrase = sub("(\.+ *){2,}", " ", phrase)
         return phrase

@@ -224,7 +224,8 @@ def analyse(event,
 if __name__ == "__main__":
 
     #Regex for matching DOIS (https://www.crossref.org/blog/dois-and-matching-regular-expressions)
-    DOI_REGEX = "10.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"
+    DOI_REGEXs = ["10\.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+",
+                 "doi:10\.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"]
 
     argument_parser = ArgumentParser()
 
