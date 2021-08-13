@@ -6,7 +6,10 @@ class Tokenizer:
 
     def __init__(self, abbreviations_filepath, filterwords = []):
         self.abbreviations_filepath = abbreviations_filepath
-        self.abbreviations_and_filterwords = set([word.replace(".","\.") for word in abbreviations(abbreviations_filepath)]).union(set(filterwords))
+        self.abbreviations_dictionary = {abbreviation: md5(abbreviation.encode()).hexdigest()
+                                         for abbreviation in abbreviations(abbreviations_filepath)}
+        self.inverted_abbreviations_dictionary = {v:k for k,v in self.abbreviations_dictionary.items()}
+        self.filterwords = filterwords
 
     def tokenize(self, string):
         """
@@ -15,24 +18,28 @@ class Tokenizer:
         from any preceding or following characters by insertion of a space before and after them.
         
         Args:
-            sentence: A string representation of a sentence.
+            string: The string to tokenize.
 
         Returns:
-            A list of strings representing the sentence, including punctuation.
+            A list of tokens extracted from the string, including punctuation.
         """
-        strings_to_escape = {}
-        for pattern in self.abbreviations_and_filterwords:
-            for string_to_escape in re.findall(" " + pattern, string):
-                hashed_string_to_escape = md5(string_to_escape.encode()).hexdigest()
-                string = string.replace(string_to_escape, " " + hashed_string_to_escape)
-                strings_to_escape[hashed_string_to_escape] = string_to_escape
+        for abbreviation in self.abbreviations_dictionary:
+            if abbreviation in string:
+                string = string.replace(abbreviation, self.abbreviations_dictionary[abbreviation])
+
+        masked_filterwords = {}
+        for filterword in self.filterwords:
+            for filterword_to_mask in re.findall(filterword, string):
+                masked_filterword = md5(filterword_to_mask.encode()).hexdigest()
+                masked_filterwords[masked_filterword] = filterword_to_mask
+                string = string.replace(filterword_to_mask, masked_filterword)
+
         for mark in [".","!","?",", ",": ",";", "(", ")","[","]","{","}","/","\\","'","\""]:
             string = string.replace(mark, " " + mark + " ")
 
-        split_string = re.split("[ \n]+", string.strip(), flags=re.M)
+        tokens = re.split("[ \n]+", string.strip(), flags=re.M)
 
-        for i in range(len(split_string)):
-            for string_to_escape in strings_to_escape:
-                split_string[i] = split_string[i].replace(string_to_escape, strings_to_escape[string_to_escape])
-
-        return [string.strip() for string in split_string]
+        return [self.inverted_abbreviations_dictionary.get(masked_filterwords.get(token, token),
+                                                           masked_filterwords.get(token, token))
+                .strip()
+                for token in tokens]

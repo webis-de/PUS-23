@@ -6,7 +6,8 @@ class Sentenizer:
 
     def __init__(self, abbreviations_filepath):
         self.abbreviations_filepath = abbreviations_filepath
-        self.abbreviation_dictionary = {" " + abbreviation:" " + md5(abbreviation.encode()).hexdigest() for abbreviation in abbreviations(abbreviations_filepath)}
+        self.abbreviation_dictionary = {" " + abbreviation:" " + md5(abbreviation.encode()).hexdigest()
+                                        for abbreviation in abbreviations(abbreviations_filepath)}
         self.inverted_abbreviation_dictionary = {v:k for k,v in self.abbreviation_dictionary.items()}
 
     def sentenize(self, text):

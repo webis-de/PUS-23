@@ -18,7 +18,7 @@ if __name__ == "__main__":
     s = "Barrangou R (2015). The roles of CRISPR-Cas systems in adaptive immunity and beyond. Current Opinion in Immunology. 32: 36–41. doi:10.1016/j.coi.2014.12.008. PMID 25574773"
     
     #Regex for matching DOIS (https://www.crossref.org/blog/dois-and-matching-regular-expressions)
-    DOI_REGEXs = ["10\.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+", "doi:10\.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"]
+    DOI_REGEX = "doi:10\.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"
 
     #SELECT PROCESSING
     PROCESSING = ["", "_raw", "_preprocessor"][2]
@@ -32,8 +32,7 @@ if __name__ == "__main__":
     INDEX = 1589 #randint(0, len(open(FILEPATH).readlines()) - 1)
 
     preprocessor = Preprocessor(LANGUAGE,
-                                ["Clustered Regularly Interspaced Short Palindromic Repeats"] \
-                                + DOI_REGEXs)
+                                [DOI_REGEX, "Clustered Regularly Interspaced Short Palindromic Repeats"])
 
     with open("revision_extraction" + PROCESSING + ".txt", "w", encoding="utf-8") as file:        
         revision = Article(FILEPATH).get_revision(INDEX, REVID)
@@ -45,7 +44,10 @@ if __name__ == "__main__":
             TEXT = revision.get_text().strip() + "\n"
         if PROCESSING == "_preprocessor":
             #TOKENIZED USING PREPROCESSOR
-            TEXT = "|".join(preprocessor.preprocess(revision.get_text().strip() + "\n", lower=False, stopping=False, sentenize=False, tokenize=True)[0])
+            foo = revision.get_text().strip()
+            TEXT = "|".join(preprocessor.preprocess(revision.get_text().strip() + "\n",
+                                                    lower=False, stopping=False,
+                                                    sentenize=True, tokenize=False))
         preprocessing_end = datetime.now()
         print("Preprocessing: ", preprocessing_end - preprocessing_start)
 
