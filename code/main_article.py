@@ -342,7 +342,7 @@ if __name__ == "__main__":
             for event in eventlist.events:
                 event.trace[article_title] = {}
 
-        while revision.index < 50:
+        while revision:
 
             print(revision.index)
 
