@@ -45,9 +45,9 @@ if __name__ == "__main__":
         if PROCESSING == "_preprocessor":
             #TOKENIZED USING PREPROCESSOR
             foo = revision.get_text().strip()
-            TEXT = "|".join(preprocessor.preprocess(revision.get_text().strip() + "\n",
+            TEXT = str(preprocessor.preprocess(revision.get_text().strip() + "\n",
                                                     lower=False, stopping=False,
-                                                    sentenize=True, tokenize=False))
+                                                    sentenize=False, tokenize=True))
         preprocessing_end = datetime.now()
         print("Preprocessing: ", preprocessing_end - preprocessing_start)
 

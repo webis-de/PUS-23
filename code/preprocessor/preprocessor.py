@@ -44,19 +44,12 @@ class Preprocessor:
         """
         phrase = self.clean(phrase)
 
-        if sentenize:
-            phrase = self.sentenizer.sentenize(phrase)
-        else:
-            phrase = [phrase]
+        phrase = self.sentenizer.sentenize(phrase) if sentenize else [phrase]
 
-        if tokenize:
-            if stopping:
-                phrase = [[token for token in self.tokenizer.tokenize(sentence) if token != "" and token not in self.stopwords] for sentence in phrase]
-            else:
-                phrase = [[token for token in self.tokenizer.tokenize(sentence) if token != ""] for sentence in phrase]
+        phrase = [[token for token in self.tokenizer.tokenize(sentence) if token and (not stopping or token not in self.stopwords)]
+                  for sentence in phrase] if tokenize else phrase
 
-        if lower:
-            phrase = [[token.lower() for token in item] if type(item) == list else item.lower() for item in phrase]
+        phrase = [[token.lower() for token in item] if type(item) == list else item.lower() for item in phrase] if lower else phrase
                 
         return phrase
 

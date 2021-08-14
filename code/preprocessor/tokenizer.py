@@ -6,8 +6,10 @@ class Tokenizer:
 
     def __init__(self, abbreviations_filepath, filterwords = []):
         self.abbreviations_filepath = abbreviations_filepath
-        self.abbreviations_dictionary = {abbreviation: md5(abbreviation.encode()).hexdigest()
-                                         for abbreviation in abbreviations(abbreviations_filepath)}
+        self.abbreviations_dictionary = {}
+        for abbreviation in abbreviations(abbreviations_filepath):
+            self.abbreviations_dictionary[" " + abbreviation] = md5(abbreviation.encode()).hexdigest()
+            self.abbreviations_dictionary["(" + abbreviation] = "(" + md5(abbreviation.encode()).hexdigest()
         self.inverted_abbreviations_dictionary = {v:k for k,v in self.abbreviations_dictionary.items()}
         self.filterwords = filterwords
 
