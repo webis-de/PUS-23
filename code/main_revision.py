@@ -45,9 +45,9 @@ if __name__ == "__main__":
         if PROCESSING == "_preprocessor":
             #TOKENIZED USING PREPROCESSOR
             foo = revision.get_text().strip()
-            TEXT = str(preprocessor.preprocess(revision.get_text().strip() + "\n",
-                                                    lower=False, stopping=False,
-                                                    sentenize=False, tokenize=True))
+            TEXT = preprocessor.preprocess(revision.get_text().strip() + "\n",
+                                           lower=False, stopping=False,
+                                           sentenize=True, tokenize=True)
         preprocessing_end = datetime.now()
         print("Preprocessing: ", preprocessing_end - preprocessing_start)
 
@@ -62,7 +62,8 @@ if __name__ == "__main__":
         heading("\nTEXT", file)
         if PROCESSING: file.write("Processing text took : " + str(preprocessing_end - preprocessing_start) + "\n\n")
 
-        file.write(TEXT)
+        for item in TEXT:
+            file.write("|".join(item) + "\n")
 
         if not PROCESSING:
 

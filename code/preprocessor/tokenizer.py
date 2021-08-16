@@ -6,11 +6,11 @@ class Tokenizer:
 
     def __init__(self, abbreviations_filepath, filterwords = []):
         self.abbreviations_filepath = abbreviations_filepath
-        self.abbreviations_dictionary = {}
+        self.abbreviation_dictionary = {}
         for abbreviation in abbreviations(abbreviations_filepath):
-            self.abbreviations_dictionary[" " + abbreviation] = md5(abbreviation.encode()).hexdigest()
-            self.abbreviations_dictionary["(" + abbreviation] = "(" + md5(abbreviation.encode()).hexdigest()
-        self.inverted_abbreviations_dictionary = {v:k for k,v in self.abbreviations_dictionary.items()}
+            self.abbreviation_dictionary[" " + abbreviation] = " " + md5(abbreviation.encode()).hexdigest()
+            self.abbreviation_dictionary["(" + abbreviation] = "(" + md5(abbreviation.encode()).hexdigest()
+        self.inverted_abbreviation_dictionary = {v.strip():k for k,v in self.abbreviation_dictionary.items()}
         self.filterwords = filterwords
 
     def tokenize(self, string):
@@ -25,9 +25,9 @@ class Tokenizer:
         Returns:
             A list of tokens extracted from the string, including punctuation.
         """
-        for abbreviation in self.abbreviations_dictionary:
+        for abbreviation in self.abbreviation_dictionary:
             if abbreviation in string:
-                string = string.replace(abbreviation, self.abbreviations_dictionary[abbreviation])
+                string = string.replace(abbreviation, self.abbreviation_dictionary[abbreviation])
 
         masked_filterwords = {}
         for filterword in self.filterwords:
@@ -41,7 +41,7 @@ class Tokenizer:
 
         tokens = re.split("[ \n]+", string.strip(), flags=re.M)
 
-        return [self.inverted_abbreviations_dictionary.get(masked_filterwords.get(token, token),
+        return [self.inverted_abbreviation_dictionary.get(masked_filterwords.get(token, token),
                                                            masked_filterwords.get(token, token))
                 .strip()
                 for token in tokens]
