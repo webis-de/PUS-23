@@ -17,7 +17,7 @@ class Preprocessor:
 
         prefix = "code/" if exists("code") else ""
         self.tokenizer = Tokenizer(prefix + "preprocessor/data/abbreviations_" + language + ".txt", filterwords)
-        self.sentenizer = Sentenizer(prefix + "preprocessor/data/abbreviations_" + language + ".txt")
+        self.sentenizer = Sentenizer(prefix + "preprocessor/data/abbreviations_" + language + ".txt", filterwords)
         self.stopwords = stopwords(prefix + "preprocessor/data/stopwords_" + language + ".txt")
         self.contractions = contractions(prefix + "preprocessor/data/contractions_" + language + ".txt")
 

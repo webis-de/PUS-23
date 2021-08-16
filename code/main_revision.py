@@ -18,7 +18,7 @@ if __name__ == "__main__":
     s = "Barrangou R (2015). The roles of CRISPR-Cas systems in adaptive immunity and beyond. Current Opinion in Immunology. 32: 36–41. doi:10.1016/j.coi.2014.12.008. PMID 25574773"
     
     #Regex for matching DOIS (https://www.crossref.org/blog/dois-and-matching-regular-expressions)
-    DOI_REGEX = "doi:10\.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"
+    DOI_REGEX = "10\.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"
 
     #SELECT PROCESSING
     PROCESSING = ["", "_raw", "_preprocessor"][2]
@@ -47,7 +47,7 @@ if __name__ == "__main__":
             foo = revision.get_text().strip()
             TEXT = preprocessor.preprocess(revision.get_text().strip() + "\n",
                                            lower=False, stopping=False,
-                                           sentenize=True, tokenize=True)
+                                           sentenize=True, tokenize=False)
         preprocessing_end = datetime.now()
         print("Preprocessing: ", preprocessing_end - preprocessing_start)
 
@@ -63,7 +63,7 @@ if __name__ == "__main__":
         if PROCESSING: file.write("Processing text took : " + str(preprocessing_end - preprocessing_start) + "\n\n")
 
         for item in TEXT:
-            file.write("|".join(item) + "\n")
+            file.write("|".join(item) if type(item) == list else item + "\n")
 
         if not PROCESSING:
 
