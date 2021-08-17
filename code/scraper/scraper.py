@@ -44,7 +44,7 @@ class Scraper:
         """
         self.directory = directory
         if not exists(directory): makedirs(directory)
-        self.logger = self._logger(directory)
+        self.logger,self.logging_handlers = self._logger(directory)
         self.headers = {'user-agent': 'Modzilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0'}
         self.language = language
         self.api_url = "https://" + language + ".wikipedia.org/w/api.php"
@@ -67,7 +67,9 @@ class Scraper:
         """Logs the number of scraped and updated revisions when the instance is closed."""
         if self.updating: self.logger.info("Number of updates: " + str(self.update_count))
         self.logger.info("Done. Number of revisions: " + str(self.revision_count))
-
+        self.logger.removeHandler(self.logging_handlers[0])
+        self.logger.removeHandler(self.logging_handlers[1])
+        
     def _logger(self, directory):
         """Set up the logger for this scraper."""
         logger = logging.getLogger("scraper_logger")
@@ -81,7 +83,7 @@ class Scraper:
         file_handler.setFormatter(formatter)
         logger.addHandler(stream_handler)
         logger.addHandler(file_handler)
-        return logger
+        return logger,(stream_handler,file_handler)
 
     def _quote_filename(self, title):
         """
