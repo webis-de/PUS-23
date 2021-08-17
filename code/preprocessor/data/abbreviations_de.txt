@@ -1,8 +1,8 @@
-a.A.
-a.a.O.
-a.D.
-a.E.
-a.F.
+a. A.
+a. a. O.
+a. D.
+a. E.
+a. F.
 Abb.
 ABl.
 Abs.
@@ -14,18 +14,18 @@ Art.
 Aufl.
 Az.
 Bd.
-Beschl.v.
+Beschl. v.
 Bsp.
 bspw.
 BT-Drs.
 bzgl.
 bzw.
 ca.
-d.h.
+d. h.
 ders.
 dgl.
 dt.
-e.V.
+e. V.
 etc.
 evtl.
 f.
@@ -34,41 +34,41 @@ Fn.
 gem.
 ggf.
 grds.
-h.A.
-h.M.
+h. A.
+h. M.
 Hrsg.
 Hs.
-i.A.
-i.d.F.
-i.d.R.
-i.d.S.
-i.E.
-i.R.d.
-i.R.e.
-i.R.v.
-i.S.d.
-i.S.v.
-i.Ü.
-i.V.
-i.V.m.
+i. A.
+i. d. F.
+i. d. R.
+i. d. S.
+i. E.
+i. R. d.
+i. R. e.
+i. R. v.
+i. S. d.
+i. S. v.
+i. Ü.
+i. V.
+i. V. m.
 inkl.
 insb.
 lit.
-m.E.
-m.w.N.
+m. E.
+m. w. N.
 max.
 min.
 Mio.
 Mrd.
 MwSt.
-n.F.
-N.N.
+n. F.
+N. N.
 Nr.
-o.a.
-o.Ä.
-o.ä.
-o.g.
-p.a.
+o. a.
+o. Ä.
+o. ä.
+o. g.
+p. a.
 Pos.
 pp.
 rd.
@@ -77,30 +77,30 @@ Rs.
 Rspr.
 S.
 s.
-s.a.
-s.o.
-s.u.
+s. a.
+s. o.
+s. u.
 sog.
 Tab.
 Tel.
 Tsd.
-u.a.
-u.Ä.
+u. a.
+u. Ä.
 UAbs.
-u.a.m.
-u.E.
-u.U.
-Urt.v.
+u. a. m.
+u. E.
+u. U.
+Urt. v.
 usw.
-u.v.m.
-v.a.
-v.H.
+u. v. m.
+v. a.
+v. H.
 vgl.
 Vorb.
 vs.
-z.B.
-z.Hd.
-z.T.
+z. B.
+z. Hd.
+z. T.
 zz.
 zzt.
 Ziff.
