@@ -11,6 +11,7 @@ from os.path import basename, exists, sep
 from os import makedirs
 from json import load, dumps
 from urllib.parse import quote, unquote
+from re import split
 import logging
 
 ####################################################################
@@ -236,12 +237,11 @@ if __name__ == "__main__":
     argument_parser.add_argument("-od", "--outputdir",
                                  default="../analysis",
                                  help="The relative or absolute path to the directory the analysis will be saved.")
-    argument_parser.add_argument("-al", "--articlelist",
-                                 nargs="+",
-                                 help="The article titles to analyse.")
-    argument_parser.add_argument("-af", "--articlefile",
-                                 default="../data/articles_arno.json",
-                                 help="The file of article titles to analyse.")    
+    argument_parser.add_argument("-a", "--articles",
+                                 default="../data/relevant_articles/articles_arno.json",
+                                 help="Either the relative of abolute path to a JSON file of articles " + \
+                                      "or quoted string of comma-separated articles, " + \
+                                      "e.g. 'Cas9,The CRISPR JOURNAL'.")
     argument_parser.add_argument("-cond", "--conditions",
                                  nargs="+",
                                  default=[],
@@ -284,7 +284,6 @@ if __name__ == "__main__":
     article_directory = args["articledir"]
     event_file = args["eventfile"]
     output_directory = args["outputdir"] + sep + str(datetime.now())[:-7].replace(":","_").replace("-","_").replace(" ","_")
-    article_titles = args["articlelist"]
     conditions = args["conditions"]
     equalling = args["equalling"]
     language = args["language"]
@@ -299,7 +298,10 @@ if __name__ == "__main__":
 
     logger = get_logger(output_directory)
     
-    if not article_titles: articles = flatten_list_of_lists(load(open(args["articlefile"])).values())
+    if exists(args["articles"]):
+        article_titles = flatten_list_of_lists(load(open(args["articles"])).values())
+    else:
+        article_titles = [article.strip() for article in split(" *, *", args["articles"])]
 
     bibliography = Bibliography("../data/tracing-innovations-lit.bib")
     accountlist = AccountList("../data/CRISPR_accounts.csv")
