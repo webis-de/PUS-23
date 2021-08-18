@@ -23,13 +23,13 @@ if __name__ == "__main__":
     #SELECT PROCESSING
     PROCESSING = ["", "_raw", "_preprocessor"][2]
     #SELECT LANGUAGE
-    LANGUAGE = ["en", "de"][0]
+    LANGUAGE = ["en", "de"][1]
     #SELECT REVISION FILE
-    FILEPATH = "../articles/2021-03-01/CRISPR_" + LANGUAGE
+    FILEPATH = "../articles/CRISPR_de/CRISPR_" + LANGUAGE
     #SELECT REVID
     REVID = None
     #SELECT INDEX
-    INDEX = 1589 #randint(0, len(open(FILEPATH).readlines()) - 1)
+    INDEX = 150 #randint(0, len(open(FILEPATH).readlines()) - 1)
 
     preprocessor = Preprocessor(LANGUAGE,
                                 [DOI_REGEX, "Clustered Regularly Interspaced Short Palindromic Repeats"])
@@ -47,7 +47,7 @@ if __name__ == "__main__":
             foo = revision.get_text().strip()
             TEXT = preprocessor.preprocess(revision.get_text().strip() + "\n",
                                            lower=False, stopping=False,
-                                           sentenize=True, tokenize=False)
+                                           sentenize=True, tokenize=True)
         preprocessing_end = datetime.now()
         print("Preprocessing: ", preprocessing_end - preprocessing_start)
 
@@ -62,8 +62,11 @@ if __name__ == "__main__":
         heading("\nTEXT", file)
         if PROCESSING: file.write("Processing text took : " + str(preprocessing_end - preprocessing_start) + "\n\n")
 
-        for item in TEXT:
-            file.write("|".join(item) if type(item) == list else item + "\n")
+        if type(TEXT) == list:
+            for item in TEXT:
+                file.write(("┃".join(item) if type(item) == list else item) + "\n")
+        else:
+            file.write("TEXT")
 
         if not PROCESSING:
 

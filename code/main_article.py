@@ -312,10 +312,10 @@ if __name__ == "__main__":
     logger.info("Using the below thresholds:")
     for threshold in thresholds:
         logger.info(threshold + ": " + str(thresholds[threshold]))    
-
-    eventlist = EventList(event_file, bibliography, accountlist, conditions, equalling)
     
     for article_title in article_titles:
+
+        eventlist = EventList(event_file, bibliography, accountlist, conditions, equalling)
 
         logger.info(article_title)
 
@@ -396,5 +396,5 @@ if __name__ == "__main__":
 
         logger.info("Done.")
 
-    eventlist.write_text(output_directory + sep + "output" + "." + "txt")
-    eventlist.write_json(output_directory + sep + "output" + "." + "json")
+        eventlist.write_text(output_directory + sep + filename + "." + "txt")
+        eventlist.write_json(output_directory + sep + filename + "." + "json")
