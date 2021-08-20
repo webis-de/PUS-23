@@ -70,11 +70,7 @@ class Revision:
         return self.wikitext
     
     def get_text(self):
-        return self.etree_from_html()[0].xpath("string()").strip()
-        try:
-            return "".join(self.etree_from_html().xpath(".//div[@class='mw-parser-output']")[0].xpath("//text()")).strip()
-        except IndexError:
-            return "".join(self.etree_from_html().xpath(".//text()")).strip()
+        return self.etree_from_html().find_class('mw-parser-output')[0].xpath("string()").strip()
 
     def get_headings(self):
         #get all headlines
@@ -97,7 +93,7 @@ class Revision:
         return self.section_tree().get_tables()
 
     def get_categories(self):
-        return [(element.text, element.get("href")) for element in self.etree_from_html().xpath(".//div[@id='mw-normal-catlinks']//a")[1:]]
+        return [(element.text, element.get("href")) for element in self.etree_from_html().xpath("..//div[@id='mw-normal-catlinks']//a")[1:]]
 
     def get_references(self):
         return [Source(source) for source in self.etree_from_html().xpath(".//ol[@class='references']/li | .//ol/li/cite")]

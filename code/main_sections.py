@@ -6,9 +6,9 @@ from pprint import pprint, pformat
 # This file serves as an entry point to analyse Wikipedia sections.#
 ####################################################################
 
-article = Article("../articles/2021-03-01/CRISPR_en")
+article = Article("../articles/2021-08-16/en/CRISPR_gene_editing_en")
 
-revision = article.get_revision(index=1200)
+revision = article.get_revision(index=50)
 preprocessor = Preprocessor("en")
 
 with open("section_tree.txt", "w") as file:

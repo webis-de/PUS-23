@@ -21,15 +21,15 @@ if __name__ == "__main__":
     DOI_REGEX = "10\.\d{4,9}/[-\._;\(\)/:a-zA-Z0-9]+"
 
     #SELECT PROCESSING
-    PROCESSING = ["", "_raw", "_preprocessor"][2]
+    PROCESSING = ["", "_raw", "_preprocessor"][0]
     #SELECT LANGUAGE
-    LANGUAGE = ["en", "de"][1]
+    LANGUAGE = ["en", "de"][0]
     #SELECT REVISION FILE
-    FILEPATH = "../articles/CRISPR_de/CRISPR_" + LANGUAGE
+    FILEPATH = "../articles/2021-08-16/en/CRISPR_gene_editing_" + LANGUAGE
     #SELECT REVID
     REVID = None
     #SELECT INDEX
-    INDEX = 150 #randint(0, len(open(FILEPATH).readlines()) - 1)
+    INDEX = 50 #randint(0, len(open(FILEPATH).readlines()) - 1)
 
     preprocessor = Preprocessor(LANGUAGE,
                                 [DOI_REGEX, "Clustered Regularly Interspaced Short Palindromic Repeats"])
@@ -66,7 +66,7 @@ if __name__ == "__main__":
             for item in TEXT:
                 file.write(("┃".join(item) if type(item) == list else item) + "\n")
         else:
-            file.write("TEXT")
+            file.write(TEXT)
 
         if not PROCESSING:
 
