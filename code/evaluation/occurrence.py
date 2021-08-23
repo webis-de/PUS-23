@@ -1,7 +1,10 @@
 import matplotlib.pyplot as plt
 from json import load
-from os.path import dirname, sep
+from os.path import basename, dirname, sep
+from urllib.parse import quote, unquote
+from glob import glob
 import numpy as np
+from pprint import pprint
 
 #constants
 NO_MATCH_OR_NEGATIVE = 0.05
@@ -24,7 +27,17 @@ def stringify_delay(delay):
     else:
         return str(int(delay - ZERO))
 
+def parse_json_name(json_path):
+    return basename(json_path).split(".")[0]
+
+def parse_article_title(json_name):
+    return unquote(json_name).replace("_"," ")
+
 def occurrence(json_path, sort):
+
+    directory = dirname(json_path)
+    json_name = parse_json_name(json_path)
+    article_title = parse_article_title(json_name)
 
     with open(json_path) as file:
         data = [event for event in load(file) if event["bibentries"]]
@@ -42,111 +55,131 @@ def occurrence(json_path, sort):
         for publication_event in data:
             publication_events_by_account["ALL ACOUNT IDs"].append(publication_event)   
 
-    with open(dirname(json_path) + sep + "occurrence" + ("_by_account" if sort else "") + ".csv", "w") as file:
+    with open(directory + sep + json_name + "_" + "occurrence" + ("_by_account" if sort else "") + ".csv", "w") as file:
         for account_id, publication_events in publication_events_by_account.items():
 
             file.write("Account ID: " + str(account_id) + "\n")
             file.write("\n")
-            results = {"titles": {"data": [item for item in publication_events if item["first_mentioned"]["verbatim"]["titles"]],
+            results = {"titles": {"data": [item for item in publication_events if item["trace"][article_title]["first_mentioned"]["verbatim"]["titles"]],
                                   "note": "each title occurs verbatim in revision"},
-                       "dois": {"data": [item for item in publication_events if item["first_mentioned"]["verbatim"]["dois"]],
+                       "dois": {"data": [item for item in publication_events if item["trace"][article_title]["first_mentioned"]["verbatim"]["dois"]],
                                 "note":"each doi occurs verbatim in revision"},
-                       "pmids": {"data": [item for item in publication_events if item["first_mentioned"]["verbatim"]["pmids"]],
+                       "pmids": {"data": [item for item in publication_events if item["trace"][article_title]["first_mentioned"]["verbatim"]["pmids"]],
                                  "note":"each pmid occurs verbatim in a source (element in References or Further Reading)"},
-                       "ned <= 0.2": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned <= 0.2"]],
+                       "ned <= 0.2": {"data": [item for item in publication_events if item["trace"][article_title]["first_mentioned"]["relaxed"]["ned <= 0.2"]],
                                       "note":"for each title there is a source with a title with normalised edit distance <= 0.2"},
-                       "ned <= 0.3": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned <= 0.3"]],
+                       "ned <= 0.3": {"data": [item for item in publication_events if item["trace"][article_title]["first_mentioned"]["relaxed"]["ned <= 0.3"]],
                                       "note":"for each title there is a source with a title with normalised edit distance <= 0.3"},
-                       "ned <= 0.4": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned <= 0.4"]],
+                       "ned <= 0.4": {"data": [item for item in publication_events if item["trace"][article_title]["first_mentioned"]["relaxed"]["ned <= 0.4"]],
                                       "note":"for each title there is a source with a title with normalised edit distance <= 0.4"},
-                       "ned_and_ratio": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned_and_ratio"]],
+                       "ned_and_ratio": {"data": [item for item in publication_events if item["trace"][article_title]["first_mentioned"]["relaxed"]["ned_and_ratio"]],
                                      "note":"for each title there is a source with a title with normalised edit distance <= 0.4 and a list of authors with ratio >= 1.0"},
-                       "ned_and_jaccard": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned_and_jaccard"]],
+                       "ned_and_jaccard": {"data": [item for item in publication_events if item["trace"][article_title]["first_mentioned"]["relaxed"]["ned_and_jaccard"]],
                                            "note":"for each title there is a source with a title with normalised edit distance <= 0.4 and a list of authors with Jaccard Index >= 0.8"},
-                       "ned_and_skat": {"data": [item for item in publication_events if item["first_mentioned"]["relaxed"]["ned_and_skat"]],
+                       "ned_and_skat": {"data": [item for item in publication_events if item["trace"][article_title]["first_mentioned"]["relaxed"]["ned_and_skat"]],
                                         "note":"for each title there is a source with a title with normalised edit distance <= 0.4 and a list of authors with Skat >= 0.8"},
-                       "any verbatim": {"data": [item for item in publication_events if any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]])],
+                       "any verbatim": {"data": [item for item in publication_events if any([item["trace"][article_title]["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]])],
                                         "note":"any of the verbatim strategies above"},
-                       "verbatim|ned <= 0.2": {"data": [item for item in publication_events if any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["first_mentioned"]["relaxed"]["ned <= 0.2"]],
+                       "verbatim|ned <= 0.2": {"data": [item for item in publication_events if any([item["trace"][article_title]["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["trace"][article_title]["first_mentioned"]["relaxed"]["ned <= 0.2"]],
                                                "note":"any of the verbatim strategies or title edit distance less or equal 0.2"},
-                       "verbatim|ned <= 0.3": {"data": [item for item in publication_events if any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["first_mentioned"]["relaxed"]["ned <= 0.3"]],
+                       "verbatim|ned <= 0.3": {"data": [item for item in publication_events if any([item["trace"][article_title]["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["trace"][article_title]["first_mentioned"]["relaxed"]["ned <= 0.3"]],
                                                "note":"any of the verbatim strategies or title edit distance less or equal 0.3"},
-                       "verbatim|ned <= 0.4": {"data": [item for item in publication_events if any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["first_mentioned"]["relaxed"]["ned <= 0.4"]],
+                       "verbatim|ned <= 0.4": {"data": [item for item in publication_events if any([item["trace"][article_title]["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["trace"][article_title]["first_mentioned"]["relaxed"]["ned <= 0.4"]],
                                                "note":"any of the verbatim strategies or title edit distance less or equal 0.4"},
-                       "verbatim|ned_and_ratio": {"data": [item for item in publication_events if any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["first_mentioned"]["relaxed"]["ned_and_ratio"]],
+                       "verbatim|ned_and_ratio": {"data": [item for item in publication_events if any([item["trace"][article_title]["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["trace"][article_title]["first_mentioned"]["relaxed"]["ned_and_ratio"]],
                                                   "note":"any of the verbatim strategies or title edit distance less or equal 0.4 and a list of authors with ratio >= 1.0"},
-                       "verbatim|ned_and_jaccard": {"data": [item for item in publication_events if any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["first_mentioned"]["relaxed"]["ned_and_jaccard"]],
+                       "verbatim|ned_and_jaccard": {"data": [item for item in publication_events if any([item["trace"][article_title]["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["trace"][article_title]["first_mentioned"]["relaxed"]["ned_and_jaccard"]],
                                                     "note":"any of the verbatim strategies or title edit distance less or equal 0.4 and a list of authors with Jaccard Index >= 0.8"},
-                       "verbatim|ned_and_skat": {"data": [item for item in publication_events if any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["first_mentioned"]["relaxed"]["ned_and_skat"]],
+                       "verbatim|ned_and_skat": {"data": [item for item in publication_events if any([item["trace"][article_title]["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or item["trace"][article_title]["first_mentioned"]["relaxed"]["ned_and_skat"]],
                                                  "note":"any of the verbatim strategies or title edit distance less or equal 0.4 and a list of authors with Skat >= 0.8"},
                        "verbatim|ned <= 0.2|ned_and_jaccard|ned_and_skat": {"data":  [item for item in publication_events if
-                                                                                      any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or
-                                                                                      any([item["first_mentioned"]["relaxed"][key] for key in ["ned <= 0.2","ned_and_jaccard","ned_and_skat"]])
+                                                                                      any([item["trace"][article_title]["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or
+                                                                                      any([item["trace"][article_title]["first_mentioned"]["relaxed"][key] for key in ["ned <= 0.2","ned_and_jaccard","ned_and_skat"]])
                                                                                       ],
                                                                             "note":"any of the verbatim strategies or title edit distance less or equal 0.2 or title edit distance less or equal 0.4 and a list of authors with Skat >= 0.8 or Jaccard Index >= 0.8"},
                        "verbatim|ned <= 0.2|ned_and_skat": {"data":[item for item in publication_events if
-                                                                    any([item["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or
-                                                                    any([item["first_mentioned"]["relaxed"][key] for key in ["ned <= 0.2","ned_and_skat"]])
+                                                                    any([item["trace"][article_title]["first_mentioned"]["verbatim"][key] for key in ["titles","dois","pmids"]]) or
+                                                                    any([item["trace"][article_title]["first_mentioned"]["relaxed"][key] for key in ["ned <= 0.2","ned_and_skat"]])
                                                                     ],
                                                             "note":"any of the verbatim strategies or title edit distance less or equal 0.2 or title edit distance less or equal 0.4 and a list of authors with Skat >= 0.8"}
                        }
 
-            file.write("number of events" + "," + str(len(publication_events)) + "\n")
-            file.write("\n")
-            file.write("Strategy Employed to Identify First Occurrence" + "," + "Absolute" + "," + "Relative" + "," + "Notes" + "\n")
-            file.write("--- Verbatim Match Measures ---" + "\n")
+            file_string = ""
+            
+            file_string += "number of events" + "," + str(len(publication_events)) + "\n"
+            file_string += "\n"
+            file_string += "Strategy Employed to Identify First Occurrence" + "," + "Absolute" + "," + "Relative" + "," + "Notes" + "\n"
+            file_string += "--- Verbatim Match Measures ---" + "\n"
             for key,value in results.items():
                 if key == "any verbatim":
-                    file.write("--- Combined Measures ---" + "\n")
-                file.write(key + "," + str(len(value["data"])) + "," + str(round(len(value["data"])/len(publication_events)*100, 2)) + "," + value["note"] + "\n")
+                    file_string += "--- Combined Measures ---" + "\n"
+                file_string += key + "," + str(len(value["data"])) + "," + str(round(len(value["data"])/len(publication_events)*100, 2)) + "," + value["note"] + "\n"
                 if key == "pmids":
-                    file.write("--- Relaxed Match Measures ---" + "\n")
-            file.write("\n")
+                    file_string += "--- Relaxed Match Measures ---" + "\n"
+            file_string += "\n"
+            file.write(file_string)
 
-def calculate_delays(json_file, skip_no_result):
+            print(article_title + "\n" + ("="*len(article_title)))
+            file_string_data = [item.split(",") for item in file_string.split("\n")]
+            for line in file_string_data:
+                print("".join([item.ljust(len(file_string_data[2][line.index(item)]) + 2, " ") for item in line]))
+                
+    return article_title + "\n\n" + file_string
+
+def calculate_delays(json_path, skip_no_result):
+
+    article_title = parse_article_title(parse_json_name(json_path))
 
     #select events with bibentries and (if skip_no_result) with matches, sort by event_year
-    data = sorted([event for event in load(open(json_file)) if event["bibentries"] and (any(list(event["first_mentioned"]["verbatim"].values()) + list(event["first_mentioned"]["relaxed"].values())) if skip_no_result else True)],
+    data = sorted([event for event in load(open(json_path)) if event["bibentries"] and (any(list(event["trace"][article_title]["first_mentioned"]["verbatim"].values()) + list(event["trace"][article_title]["first_mentioned"]["relaxed"].values())) if skip_no_result else True)],
                   key=lambda event: int(event["event_year"]))
 
     for event in data:
         for strategy in ["verbatim", "relaxed"]:
-            for method in event["first_mentioned"][strategy]:
-                if event["first_mentioned"][strategy][method]:
-                    event["first_mentioned"][method] = calculate_delay(int(event["first_mentioned"][strategy][method]["timestamp"][:4]),int(event["event_year"]))
+            for method in event["trace"][article_title]["first_mentioned"][strategy]:
+                if event["trace"][article_title]["first_mentioned"][strategy][method]:
+                    event["trace"][article_title]["first_mentioned"][method] = calculate_delay(int(event["trace"][article_title]["first_mentioned"][strategy][method]["timestamp"][:4]),int(event["event_year"]))
                 else:
-                    event["first_mentioned"][method] = calculate_delay(None,int(event["event_year"]))
-            del event["first_mentioned"][strategy]
+                    event["trace"][article_title]["first_mentioned"][method] = calculate_delay(None,int(event["event_year"]))
+            del event["trace"][article_title]["first_mentioned"][strategy]
 
     return data
 
-def write_delay_table(json_file, data, skip_no_result):
+def write_delay_table(json_path, data, skip_no_result):
+
+    directory = dirname(json_path)
+    json_name = parse_json_name(json_path)
+    article_title = parse_article_title(json_name)
 
     header = ["bibkey","event_year","verbatim_title","verbatim_doi","verbatim_pmid","ned <= 0.2","ned <= 0.3","ned <= 0.4","ned_and_ratio","ned_and_jaccard","ned_and_skat"]
 
-    with open(dirname(json_file) + sep + "occurrence" + "_by_bibkey" + ("_all" if not skip_no_result else "") + ".csv", "w") as file:
+    with open(directory + sep + json_name + "_" + "occurrence" + "_by_bibkey" + ("_all" if not skip_no_result else "") + ".csv", "w") as file:
         file.write(",".join(header) + "\n")
 
         for event in data:
             file.write(list(event["bibentries"].keys())[0] + "," + \
                        str(event["event_year"]) + "," + \
-                       stringify_delay(event["first_mentioned"]["titles"]) + "," + \
-                       stringify_delay(event["first_mentioned"]["dois"]) + "," + \
-                       stringify_delay(event["first_mentioned"]["pmids"]) + "," + \
-                       stringify_delay(event["first_mentioned"]["ned <= 0.2"]) + "," + \
-                       stringify_delay(event["first_mentioned"]["ned <= 0.3"]) + "," + \
-                       stringify_delay(event["first_mentioned"]["ned <= 0.4"]) + "," + \
-                       stringify_delay(event["first_mentioned"]["ned_and_ratio"]) + "," + \
-                       stringify_delay(event["first_mentioned"]["ned_and_jaccard"]) + "," + \
-                       stringify_delay(event["first_mentioned"]["ned_and_skat"]) + "\n")
+                       stringify_delay(event["trace"][article_title]["first_mentioned"]["titles"]) + "," + \
+                       stringify_delay(event["trace"][article_title]["first_mentioned"]["dois"]) + "," + \
+                       stringify_delay(event["trace"][article_title]["first_mentioned"]["pmids"]) + "," + \
+                       stringify_delay(event["trace"][article_title]["first_mentioned"]["ned <= 0.2"]) + "," + \
+                       stringify_delay(event["trace"][article_title]["first_mentioned"]["ned <= 0.3"]) + "," + \
+                       stringify_delay(event["trace"][article_title]["first_mentioned"]["ned <= 0.4"]) + "," + \
+                       stringify_delay(event["trace"][article_title]["first_mentioned"]["ned_and_ratio"]) + "," + \
+                       stringify_delay(event["trace"][article_title]["first_mentioned"]["ned_and_jaccard"]) + "," + \
+                       stringify_delay(event["trace"][article_title]["first_mentioned"]["ned_and_skat"]) + "\n")
 
-def plot_delays(json_file, data, methods):
+def plot_delays(json_path, data, methods):
 
+    directory = dirname(json_path)
+    json_name = parse_json_name(json_path)
+    article_title = parse_article_title(json_name)
+    
     data_map = {method:[] for method in methods}
 
     for event in data:
         for method in methods:
-            data_map[method].append(event["first_mentioned"][method])
+            data_map[method].append(event["trace"][article_title]["first_mentioned"][method])
 
     width = 0.8 / len(methods)
     x = np.arange(len(data))
@@ -161,19 +194,23 @@ def plot_delays(json_file, data, methods):
         plt.bar(x + width*i, delays, width=width, label=method)
         i += 1
     plt.legend()
-    plt.savefig(dirname(json_file) + sep + "delays.png")
+    plt.savefig(directory + sep + json_name + "_" + "delays.png")
 
 if __name__ == "__main__":
 
-    from path import JSON
+    json_paths = sorted(glob("../../analysis/bibliography/2021_08_20/publication-events-highly-cited/first/*.json"))
 
-    occurrence(JSON, False)
+    with open(dirname(json_paths[0]) + sep + "_.csv", "w") as overlook_csv:
+        
+        for json_path in json_paths:
 
-    delays = calculate_delays(JSON, True)
-    delays_all = calculate_delays(JSON, False)
+            overlook_csv.write(occurrence(json_path, False))
 
-    write_delay_table(JSON, delays, True)
-    write_delay_table(JSON, delays_all, False)
+            delays = calculate_delays(json_path, True)
+            delays_all = calculate_delays(json_path, False)
 
-    methods = ["titles","dois","pmids"]
-    plot_delays(JSON, delays, methods)
+            write_delay_table(json_path, delays, True)
+            write_delay_table(json_path, delays_all, False)
+
+            methods = ["titles","dois","pmids"]
+            plot_delays(json_path, delays, methods)
