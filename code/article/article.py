@@ -15,7 +15,6 @@ class Article:
         filepath: The path to the JSON file.
         filename: The name of the JSON file.
         name: The name of the article.
-        revisions: The individual revisions of the article.
         timestamps: The timestamps of all revisions.
     """
     def __init__(self, filepath):
@@ -26,7 +25,6 @@ class Article:
         self.filepath = filepath
         self.filename = basename(filepath)
         self.name = " ".join(self.filename.split("_")[:-1])
-        self.revisions = []
         self.timestamps = []
 
     def get_revisions(self, first = 0, final = float("inf")):
@@ -41,6 +39,7 @@ class Article:
         Returns:
             A list of revisions.
         """
+        revisions = []
         with open(self.filepath) as file:
             for line in enumerate(file):
                 if line[0] < first:
@@ -48,9 +47,9 @@ class Article:
                 if line[0] > final:
                     break
                 revision = loads(line[1])
-                self.revisions.append(Revision(**revision))
-        self.timestamps = [revision.timestamp.string for revision in self.revisions]
-        return self.revisions
+                revisions.append(Revision(**revision))
+        self.timestamps = [revision.timestamp.string for revision in revisions]
+        return revisions
 
     def get_revision(self, index = None, revid = None):
         """
@@ -61,7 +60,7 @@ class Article:
             revid: The revid of the revision.
 
         Returns:
-            A revision; None if index or revid does not match.
+            A revision; None if neither index or revid match.
         """
         revisions = self.yield_revisions()
         revision = next(revisions)
@@ -151,10 +150,10 @@ class Article:
                  'title2':[timestamp3,timestamp4,timestamp8,...]},
              ...}
         """
-        if not self.revisions: self.get_revisions()
+        revisions = self.get_revisions()
         tracks = {field:{field_value:[] for field_value in bibliography.field_values(field) if field_value} for field in fields}
         count = 0
-        for revision in self.revisions:
+        for revision in revisions:
             count += 1
             print(count)
             text = "".join(["".join(source.get_text()) for source in revision.get_further_reading() + revision.get_references()]).lower()
@@ -179,10 +178,10 @@ class Article:
                  "..."},
             }
         """
-        if not self.revisions: self.get_revisions()
+        revisions = self.get_revisions()
         tracks = {"(" + ",".join(phrase_list)[:20] + "(...)" * (",".join(phrase_list)[10:] != "") + ")":{phrase:[] for phrase in phrase_list} for phrase_list in phrase_lists}
         count = 0
-        for revision in self.revisions:
+        for revision in revisions:
             count += 1
             print(count)
             #text = "".join(["".join(reference.itertext()) for reference in revision.get_references()]).lower()
@@ -204,7 +203,7 @@ class Article:
                             ...}).
             directory: The directory to which the file will be written.
         """
-        if not self.revisions: self.get_revisions()
+        revisions = self.get_revisions()
         bibkey = track[0]
         bibkey_value_dictionary = track[1]
         filename = self.name.lower() + "_wikipedia_revision_history_" + bibkey + ".txt"
@@ -224,7 +223,7 @@ class Article:
                            ...}).
             directory: The directory to which the plot will be saved.
         """
-        if not self.revisions: self.get_revisions()
+        revisions = self.get_revisions()
         track_name = track[0]
         value_dictionary = track[1]
         plt.figure(figsize=(int(len(self.timestamps) * 0.15), int(len(value_dictionary)) * 0.12), dpi=75)
@@ -242,7 +241,7 @@ class Article:
     def plot_revision_distribution_to_file(self, directory):
         """
         Plot the distribution of revisions across the entire revision timespan to file.
-        Revisions are accumulated per month
+        Revisions are accumulated per month.
 
         Args:
             directory: The directory to which the plot will be saved.

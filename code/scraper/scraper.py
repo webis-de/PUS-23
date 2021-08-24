@@ -18,13 +18,13 @@ class Scraper:
         directory: The directory to which scraped revisions will be saved.
         logger: The logger this Scraper uses.
         headers: Header for GET request.
-        title: The title of the Wikipedia page.
         language: The language of the Wikipedia article.
         filename: The name of the file under which the revisions will be saved,
                   which is a concatenation of <title>_<language>
                   The title is automatically formated to avoid path issues.
         api_url: The URL of Wikimedia API as per language.
         page_id: ID of the Wikipedia page.
+        title: The title of the Wikipedia page.
         article_url: The URL of the Wikipedia article.
         parameters: Parameters for the get request to the Wikipedia REST API.
         rvcontinue: Concatenation of timestamp, pipe (|) and revid of the next revision,
@@ -44,7 +44,7 @@ class Scraper:
         """
         self.directory = directory
         if not exists(directory): makedirs(directory)
-        self.logger,self.logging_handlers = self._logger(directory)
+        self.logger,self.logging_handlers = self._logger()
         self.headers = {'user-agent': 'Modzilla/5.0 (X11; Ubuntu; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/81.0'}
         self.language = language
         self.api_url = "https://" + language + ".wikipedia.org/w/api.php"
@@ -64,14 +64,24 @@ class Scraper:
         return self
 
     def __exit__(self, type, value, traceback):
-        """Logs the number of scraped and updated revisions when the instance is closed."""
+        """
+        Logs the number of scraped and updated revisions when the instance is closed.
+        Closes and removes the logging handlers.
+        """
         if self.updating: self.logger.info("Number of updates: " + str(self.update_count))
         self.logger.info("Done. Number of revisions: " + str(self.revision_count))
+        self.logging_handlers[0].close()
+        self.logging_handlers[1].close()
         self.logger.removeHandler(self.logging_handlers[0])
         self.logger.removeHandler(self.logging_handlers[1])
         
-    def _logger(self, directory):
-        """Set up the logger for this scraper."""
+    def _logger(self):
+        """
+        Set up the logger for this scraper.
+
+        Returns:
+            A tuple of this logger and the associated stream and file handler.
+        """
         logger = logging.getLogger("scraper_logger")
         formatter = logging.Formatter("%(asctime)s >>> %(message)s", "%F %H:%M:%S")
         logger.setLevel(logging.DEBUG)

@@ -194,11 +194,11 @@ class TestScraper(unittest.TestCase):
             
         full_scrape_file_checksum = self.file_checksum(FILEPATH)
         full_article = Article(FILEPATH)
-        full_article.get_revisions()
-        full_article_revisions_checksum = self.revisions_checksum(full_article.revisions)
-        self.assertEqual(full_article.revisions[0].index, 0)
-        self.assertEqual(full_article.revisions[7].index, 7)
-        self.assertEqual(full_article.revisions[14].index, 14)
+        revisions = full_article.get_revisions()
+        full_article_revisions_checksum = self.revisions_checksum(revisions)
+        self.assertEqual(revisions[0].index, 0)
+        self.assertEqual(revisions[7].index, 7)
+        self.assertEqual(revisions[14].index, 14)
         remove(FILEPATH)
         
         #scrape first five revisions
@@ -212,11 +212,11 @@ class TestScraper(unittest.TestCase):
             number_of_updated_scraped_revisions = scraper.revision_count
         update_scrape_file_checksum = self.file_checksum(FILEPATH)
         update_article = Article(FILEPATH)
-        update_article.get_revisions()
-        update_scrape_revisions_checksum = self.revisions_checksum(update_article.revisions)
-        self.assertEqual(update_article.revisions[0].index, 0)
-        self.assertEqual(update_article.revisions[11].index, 11)
-        self.assertEqual(update_article.revisions[14].index, 14)
+        revisions = update_article.get_revisions()
+        update_scrape_revisions_checksum = self.revisions_checksum(revisions)
+        self.assertEqual(revisions[0].index, 0)
+        self.assertEqual(revisions[11].index, 11)
+        self.assertEqual(revisions[14].index, 14)
 
         self.assertEqual(full_article_revisions_checksum, update_scrape_revisions_checksum)
 
