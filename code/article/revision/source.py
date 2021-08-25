@@ -217,25 +217,11 @@ class Source:
         Returns:
             A dictionary of found identifiers (values as strings) 
             Emty if nothing found.
-        Comment:
-            Arno-style search and parsing without regex and in one dict comprehension (may be faster)
         """
         return {
             'DOI': self.get_dois()[0] if self.get_dois() else '',
             'PMID': self.get_pmids()[0] if self.get_pmids() else '',
             'PMC': self.get_pmcs()[0] if self.get_pmcs() else '',
         }
-        # OLD VERSION, but please don't delete
-        # d = {k:'' for k in ['DOI','PMC','PMID']}
-        # tags = self.html.xpath(".//a[@rel='nofollow']")
-        # d.update({'DOI' if 'doi.org' in tag.get('href') 
-        #     else 'PMC' if 'pmc' in tag.get('href') 
-        #     else 'PMID':
-        #                  tag.get('href').split('/')[-1].replace("%2F","/") if 'doi.org' in tag.get('href')
-        #             else tag.get('href').split('/')[-1].split('PMC')[-1] if 'pmc' in tag.get('href')
-        #             else tag.get('href').split('/')[-1].split('?')[0] # = 'pubmed'
-        #     for tag in tags 
-        #     if any(i in tag.get('href') for i in ['doi.org','pmc','pubmed'])})
-        # return d
 
     
