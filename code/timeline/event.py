@@ -113,3 +113,20 @@ class Event:
 
     def __ne__(self, other):
         return not self == other
+
+    def __hash__(self):
+        hashcode = 0
+        if self.equalling:
+            for value in self.equalling:
+                value = eval("self." + value)
+                if type(value) == list:
+                    for item in value:
+                        hashcode = hashcode ^ hash(item)
+                elif type(value) == dict:
+                    for key in value:
+                        hashcode = hashcode ^ hash(key)
+                else:
+                    hashcode = hashcode ^ hash(value)
+        else:
+            hashcode = hash(self.event_id)
+        return hashcode
