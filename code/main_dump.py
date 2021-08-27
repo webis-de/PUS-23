@@ -12,6 +12,7 @@ from datetime import datetime
 from os.path import basename
 from re import findall
 from glob import glob
+from pprint import pprint
 
 class WikipediaDumpReader(object):
 
@@ -38,21 +39,22 @@ class WikipediaDumpReader(object):
     def __iter__(self):
         read_revisions = False
         for event, element in self.xml_iterator:
-            if element.tag.endswith("title"):
-                revision_result = {"title":element.text} 
-            if element.tag.endswith("ns"):
+            if element.tag.split("}")[-1] == "title":
+                revision = {"title":element.text} 
+            elif element.tag.split("}")[-1] == "ns":
                 read_revisions = element.text == "0"
-            if element.tag.endswith("revision") and read_revisions:
+            elif element.tag.split("}")[-1] == "revision" and read_revisions:
                 for subelement in element:
-                    if subelement.tag.endswith("id"):
-                        revision_result["revid"] = subelement.text
-                    if subelement.tag.endswith("timestamp"):
-                        revision_result["timestamp"] = Timestamp(subelement.text).string
-                    if subelement.tag.endswith("text"):
-                        revision_result["text"] = subelement.text
-                yield revision_result
+                    if subelement.tag.split("}")[-1] == "id":
+                        revision["revid"] = subelement.text
+                    if subelement.tag.split("}")[-1] == "timestamp":
+                        revision["timestamp"] = Timestamp(subelement.text).string
+                    if subelement.tag.split("}")[-1] == "text":
+                        revision["text"] = subelement.text
+                yield revision
                 element.clear()
-            if not read_revisions: element.clear()
+            else:
+                if not read_revisions: element.clear()
 
 def get_logger(filename):
     """Set up the logger."""
@@ -69,31 +71,33 @@ def process(filenpath, publication_events):
     start = datetime.now()
     revision_count = 0
     publication_count = 0
-    fileprefix = "../analysis/dump/" + basename(filenpath).split(".")[0]
+    fileprefix = "../analysis/dump/" + basename(filenpath).split(".bz2")[0]
     with open(fileprefix + "_results.csv", "w", newline="") as csvfile:
         logger, logging_file_handler = get_logger(fileprefix + "_log.txt")
         csv_writer = csv.writer(csvfile, delimiter=",")
         with WikipediaDumpReader(filenpath) as dr:
-            for revision_result in dr:
+            for revision in dr:
+                revision_count += 1
+                if revision_count % 1000 == 0:
+                    logger.info(str(revision_count) + "," + str(publication_count))
                 for publication_event in publication_events:
                     bibkey = list(publication_event.bibentries.keys())[0]
                     doi = publication_event.dois[bibkey]
                     pmid = publication_event.pmids[bibkey]
-                    if revision_result["text"] \
-                       and ((doi and doi in revision_result["text"]) \
-                            or (pmid and pmid in revision_result["text"])):
+                    if revision["text"] \
+                       and ((doi and doi in revision["text"]) \
+                            or (pmid and pmid in revision["text"])):
                         publication_count += 1
                         eventlist = "|".join([key for key,value in publication_event.trace.items() if value])
                         csv_writer.writerow([bibkey,
                                              doi,
                                              pmid,
-                                             revision_result["title"],
-                                             revision_result["revid"],
-                                             revision_result["timestamp"],
+                                             revision["title"],
+                                             revision["revid"],
+                                             revision["timestamp"],
                                              eventlist])
-                revision_count += 1
-                if revision_count % 1000 == 0:
-                    logger.info(str(revision_count) + "," + str(publication_count))
+                        csvfile.flush()
+
         logger.info(str(revision_count) + "," + str(publication_count))
         end = datetime.now()
         duration = end - start
@@ -106,22 +110,22 @@ def process(filenpath, publication_events):
 
 if __name__ == "__main__":
 
-    corpus_path_prefix = ("../../../../../corpora/corpora-thirdparty/corpus-wikipedia/" +
+    corpus_path_prefix = ("/media/wolfgang/Ceph/corpora/corpora-thirdparty/corpus-wikipedia/" +
                           "wikimedia-history-snapshots/enwiki-20210620/")
 
-    filenpaths = [corpus_path_prefix + file for file in
-                  ["enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
-                   "enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
-                  #"enwiki-20210601-pages-meta-history13.xml-p10996375p11055008.bz2", # 1GB
-                  #"enwiki-20210601-pages-meta-history8.xml-p2607466p2641559.bz2",    # 2GB
-                  #"enwiki-20210601-pages-meta-history14.xml-p13148370p13184925.bz2", # 3GB
-                  #"enwiki-20210601-pages-meta-history9.xml-p3706897p3741659.bz2")    # 5GB
-                  #"enwiki-20210601-pages-meta-history8.xml-p2535881p2535914.bz2")    # 7GB
+    filepaths = [corpus_path_prefix + file for file in
+                  [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
+                   #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
+                   "enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2",   # 1GB
+                   #"enwiki-20210601-pages-meta-history8.xml-p2607466p2641559.bz2",    # 2GB
+                   #"enwiki-20210601-pages-meta-history14.xml-p13148370p13184925.bz2", # 3GB
+                   #"enwiki-20210601-pages-meta-history9.xml-p3706897p3741659.bz2")    # 5GB
+                   #"enwiki-20210601-pages-meta-history8.xml-p2535881p2535914.bz2")    # 7GB
                    ]
                   ]
 
     filepaths = sorted(glob(corpus_path_prefix + "*.bz2"))
-    print(len(filepaths), " BZ2 files.")
+    print(len(filepaths), "BZ2 file(s).")
     
     bibliography = Bibliography("../data/tracing-innovations-lit.bib")
     accountlist = AccountList("../data/CRISPR_accounts.csv")
@@ -159,8 +163,8 @@ if __name__ == "__main__":
         assert(publication_event.trace["wos"] == (publication_event in publication_events_wos))
         assert(publication_event.trace["accounts"] == (publication_event in publication_events_accounts))
 
-    print("Sanity check successful.")
+    print("Sanity check complete.", len(publication_events), "publication event(s).")
                 
-    with Pool(20) as pool:
-        pool.starmap(process, [(filenpath, publication_events) for filenpath in filenpaths])
+    with Pool() as pool:
+        pool.starmap(process, [(filenpath, publication_events) for filenpath in filepaths])
 
