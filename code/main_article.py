@@ -238,7 +238,7 @@ if __name__ == "__main__":
                                  default="../analysis",
                                  help="The relative or absolute path to the directory the analysis will be saved.")
     argument_parser.add_argument("-a", "--articles",
-                                 default="../data/relevant_articles/articles_arno.json",
+                                 default="../data/crispr_articles.json",
                                  help="Either the relative of abolute path to a JSON file of articles " + \
                                       "or quoted string of comma-separated articles, " + \
                                       "e.g. 'Cas9,The CRISPR JOURNAL'.")
@@ -303,7 +303,7 @@ if __name__ == "__main__":
     else:
         article_titles = [article.strip() for article in split(" *, *", args["articles"])]
 
-    bibliography = Bibliography("../data/tracing-innovations-lit.bib")
+    bibliography = Bibliography("../data/CRISPR_literature.bib")
     accountlist = AccountList("../data/CRISPR_accounts.csv")
 
     logger.info("Analysing articles [" + ", ".join(article_titles) + "]")

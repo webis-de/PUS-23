@@ -25,7 +25,7 @@ if __name__ == "__main__":
         else:
             print("NOT EQUALLING EVENTS.")
 
-        bibliography = Bibliography("../data/tracing-innovations-lit.bib")
+        bibliography = Bibliography("../data/CRISPR_literature.bib")
         accountlist = AccountList("../data/CRISPR_accounts.csv")
         eventlist = EventList("../data/CRISPR_publication-events.csv", bibliography, accountlist, conditions, equalling)
 

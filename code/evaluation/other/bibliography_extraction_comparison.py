@@ -15,7 +15,7 @@ def to_alnum(string):
 ARTICLE_DIRECTORY = "../articles/"
 ARTICLE = "CRISPR_en"
 
-bibliography = Bibliography("../data/tracing-innovations-lit.bib")
+bibliography = Bibliography("../data/CRISPR_literature.bib")
 article = Article(ARTICLE_DIRECTORY + ARTICLE)
 
 article.bibliography_analysis()
@@ -24,13 +24,13 @@ bibliography_titles = ([to_alnum(to_lower(to_ascii(title))).strip() for title in
 bibliography_dois = ([doi.lower() for doi in bibliography.dois if doi])
 bibliography_pmids = ([pmid for pmid in bibliography.pmids if pmid])
 
-print("Number of Titles in tracing-innovations-lit.bib:",len(bibliography_titles))
+print("Number of Titles in CRISPR_literature.bib:",len(bibliography_titles))
 print("Duplicates:", set([title for title in bibliography_titles if bibliography_titles.count(title) > 1]))
 print()
-print("Number of DOIs in tracing-innovations-lit.bib:",len(bibliography_dois))
+print("Number of DOIs in CRISPR_literature.bib:",len(bibliography_dois))
 print("Duplicates:", set([doi for doi in bibliography_dois if bibliography_dois.count(doi) > 1]))
 print()
-print("Number of PMIDs in tracing-innovations-lit.bib:",len(bibliography_pmids))
+print("Number of PMIDs in CRISPR_literature.bib:",len(bibliography_pmids))
 print("Duplicates:", set([pmid for pmid in bibliography_pmids if bibliography_pmids.count(pmid) > 1]))
 
 print()

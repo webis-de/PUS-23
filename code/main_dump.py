@@ -2,59 +2,15 @@ from article.revision.timestamp import Timestamp
 from bibliography.bibliography import Bibliography
 from timeline.eventlist import EventList
 from timeline.accountlist import AccountList
+from utility.wikipedia_dump_reader import WikipediaDumpReader
 from multiprocessing import Pool
-from xml.etree import ElementTree
-import bz2
 import csv
 import logging
 
 from datetime import datetime
-from os.path import basename
-from re import findall
+from os.path import basename, sep
 from glob import glob
 from pprint import pprint
-
-class WikipediaDumpReader(object):
-
-    def __init__(self, filepath):
-        self.filepath = filepath
-        self.bz2_file = bz2.open(self.filepath, "rb")
-        self.xml_iterator = ElementTree.iterparse(self.bz2_file)
-        self.namespaces = self._get_namespaces()
-
-    def __enter__(self):
-        """Makes the API autoclosable."""
-        return self
-
-    def __exit__(self, type, value, traceback):
-        """Close XML file handle."""
-        self.bz2_file.close()
-
-    def _get_namespaces(self):
-        namespaces = findall(r'\{.+?\}', next(self.xml_iterator)[1].tag)
-        return {"":"http://www.mediawiki.org/xml/export-0.10/",
-                "ns0":"http://www.mediawiki.org/xml/export-0.10/",
-                "xsi":"http://www.w3.org/2001/XMLSchema-instance"}
-
-    def __iter__(self):
-        read_revisions = False
-        for event, element in self.xml_iterator:
-            if element.tag.split("}")[-1] == "title":
-                revision = {"title":element.text} 
-            elif element.tag.split("}")[-1] == "ns":
-                read_revisions = element.text == "0"
-            elif element.tag.split("}")[-1] == "revision" and read_revisions:
-                for subelement in element:
-                    if subelement.tag.split("}")[-1] == "id":
-                        revision["revid"] = subelement.text
-                    if subelement.tag.split("}")[-1] == "timestamp":
-                        revision["timestamp"] = Timestamp(subelement.text).string
-                    if subelement.tag.split("}")[-1] == "text":
-                        revision["text"] = subelement.text
-                yield revision
-                element.clear()
-            else:
-                if not read_revisions: element.clear()
 
 def get_logger(filename):
     """Set up the logger."""
@@ -67,15 +23,15 @@ def get_logger(filename):
     logger.addHandler(logging_file_handler)
     return logger, logging_file_handler
 
-def process(filenpath, publication_events):
+def process(input_filenpath, output_directory, publication_events):
     start = datetime.now()
     revision_count = 0
     publication_count = 0
-    fileprefix = "../analysis/dump/" + basename(filenpath).split(".bz2")[0]
+    fileprefix = output_directory + sep + basename(input_filenpath).split(".bz2")[0]
     with open(fileprefix + "_results.csv", "w", newline="") as csvfile:
         logger, logging_file_handler = get_logger(fileprefix + "_log.txt")
         csv_writer = csv.writer(csvfile, delimiter=",")
-        with WikipediaDumpReader(filenpath) as dr:
+        with WikipediaDumpReader(input_filenpath) as dr:
             for revision in dr:
                 revision_count += 1
                 if revision_count % 1000 == 0:
@@ -94,7 +50,7 @@ def process(filenpath, publication_events):
                                              pmid,
                                              revision["title"],
                                              revision["revid"],
-                                             revision["timestamp"],
+                                             Timestamp(revision["timestamp"]).string,
                                              eventlist])
                         csvfile.flush()
 
@@ -106,17 +62,20 @@ def process(filenpath, publication_events):
         logger.removeHandler(logging_file_handler)
         with open("../analysis/dump/done.csv", "a", newline="") as done_file:
             done_file_writer = csv.writer(done_file, delimiter=",")
-            done_file_writer.writerow([basename(filenpath), revision_count, publication_count, duration])
+            done_file_writer.writerow([basename(input_filenpath),
+                                       revision_count,
+                                       publication_count,
+                                       duration])
 
 if __name__ == "__main__":
 
     corpus_path_prefix = ("/media/wolfgang/Ceph/corpora/corpora-thirdparty/corpus-wikipedia/" +
                           "wikimedia-history-snapshots/enwiki-20210620/")
 
-    filepaths = [corpus_path_prefix + file for file in
-                  [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
+    input_filepaths = [corpus_path_prefix + file for file in
+                  ["enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
                    #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
-                   "enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2",   # 1GB
+                   #"enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2",   # 1GB
                    #"enwiki-20210601-pages-meta-history8.xml-p2607466p2641559.bz2",    # 2GB
                    #"enwiki-20210601-pages-meta-history14.xml-p13148370p13184925.bz2", # 3GB
                    #"enwiki-20210601-pages-meta-history9.xml-p3706897p3741659.bz2")    # 5GB
@@ -124,10 +83,10 @@ if __name__ == "__main__":
                    ]
                   ]
 
-    filepaths = sorted(glob(corpus_path_prefix + "*.bz2"))
-    print(len(filepaths), "BZ2 file(s).")
+    #input_filepaths = sorted(glob(corpus_path_prefix + "*.bz2"))
+    print(len(input_filepaths), "BZ2 file(s).")
     
-    bibliography = Bibliography("../data/tracing-innovations-lit.bib")
+    bibliography = Bibliography("../data/CRISPR_literature.bib")
     accountlist = AccountList("../data/CRISPR_accounts.csv")
     publication_events_accounts = EventList("../data/CRISPR_publication-events.csv",
                                             bibliography,
@@ -166,5 +125,6 @@ if __name__ == "__main__":
     print("Sanity check complete.", len(publication_events), "publication event(s).")
                 
     with Pool() as pool:
-        pool.starmap(process, [(filenpath, publication_events) for filenpath in filepaths])
+        pool.starmap(process, [(input_filenpath, "../analysis/dump/", publication_events)
+                               for input_filenpath in input_filepaths])
 
