@@ -3,3 +3,4 @@ pybtex
 lxml
 matplotlib
 python-Levenshtein
+pyarrow

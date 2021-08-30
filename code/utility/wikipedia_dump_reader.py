@@ -1,5 +1,7 @@
 import bz2
 from xml.etree import ElementTree
+import pyarrow.parquet as pq
+import pyarrow as pa
 from re import findall
 
 class WikipediaDumpReader(object):
@@ -44,3 +46,11 @@ class WikipediaDumpReader(object):
                     element.clear()
             else:
                 element.clear()
+
+    def write_revisions_to_parquet(self, output_filepath):
+        revisions = {"title":[],"revid":[],"timestamp":[],"text":[]}
+        for revision in self:
+            for key,value in revision.items():
+                revisions[key].append(value)
+        table = pa.Table.from_pydict(revisions)
+        pq.write_table(table, output_filepath)

@@ -8,11 +8,11 @@ class TestRevision(unittest.TestCase):
     def setUpClass(cls):
         # Revision 51 (index 50) of CRISPR
         # https://en.wikipedia.org/w/index.php?title=CRISPR&oldid=369962884
-        with open("tests/revisions/revision1.json") as revision_file:
+        with open("tests/data/revision1.json") as revision_file:
             cls.revision1 = Revision(**loads(revision_file.readline()))
         # Revision 2092 (index 2091) of CRISPR
         # https://en.wikipedia.org/w/index.php?title=CRISPR&oldid=1009355338
-        with open("tests/revisions/revision2.json") as revision_file:
+        with open("tests/data/revision2.json") as revision_file:
             cls.revision2 = Revision(**loads(revision_file.readline()))
 
     def test_metadata_revision1(self):

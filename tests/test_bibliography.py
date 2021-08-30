@@ -6,7 +6,7 @@ class TestBibliography(unittest.TestCase):
 
     def test_bibliography(self):
         
-        bibliography = Bibliography("data" + sep + "tracing-innovations-lit.bib")
+        bibliography = Bibliography("data" + sep + "CRISPR_literature.bib")
         for bibentry in bibliography.bibentries.values():
             for author in bibentry.authors:
                 try:
