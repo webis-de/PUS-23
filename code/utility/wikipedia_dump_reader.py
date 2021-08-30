@@ -28,18 +28,19 @@ class WikipediaDumpReader(object):
         read_revisions = False
         for event, element in self.xml_iterator:
             if element.tag.split("}")[-1] == "title":
-                revision = {"title":element.text} 
+                title = element.text
             elif element.tag.split("}")[-1] == "ns":
                 read_revisions = element.text == "0"
-            elif element.tag.split("}")[-1] == "revision" and read_revisions:
-                for subelement in element:
-                    if subelement.tag.split("}")[-1] == "id":
-                        revision["revid"] = subelement.text
-                    if subelement.tag.split("}")[-1] == "timestamp":
-                        revision["timestamp"] = subelement.text
-                    if subelement.tag.split("}")[-1] == "text":
-                        revision["text"] = subelement.text
-                yield revision
-                element.clear()
+            elif read_revisions:
+                if element.tag.split("}")[-1] == "revision":
+                    for subelement in element:
+                        if subelement.tag.split("}")[-1] == "id":
+                            revid = subelement.text
+                        if subelement.tag.split("}")[-1] == "timestamp":
+                            timestamp = subelement.text
+                        if subelement.tag.split("}")[-1] == "text":
+                            text = subelement.text
+                    yield {"title":title, "revid":revid, "timestamp":timestamp, "text":text}
+                    element.clear()
             else:
-                if not read_revisions: element.clear()
+                element.clear()

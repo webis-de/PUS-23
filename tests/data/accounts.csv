@@ -1,0 +1,2 @@
+account_id,reference,scholar_citation_count,url,account_title,wos_ut,type ,genre ,dynamic,account_year,account_month,account_day,about,bib_keys,publisher_author,comment,doi,pmid,pmc,shortname,found_by,found_comment
+1,This is the reference for this account.,42,some_url,test account,123456789,narrative,paper,no,2021,8,30,This is the account description.,wolfgang:2021,Wolfgang Kircheis,-,doi:1.1001/1234567,12345678,,wolfgang_2021,Wolfgang,-

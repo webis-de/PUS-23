@@ -1,0 +1,2 @@
+event_id,event_year,event_month,event_day,account_id,sampled,event_text,type,subtype,actors,places,keywords,wos_keys,bib_keys,extracted_from,comment
+1,2021,8,30,1,,,publication,,,,,123456789,foo:2021,reference list,-

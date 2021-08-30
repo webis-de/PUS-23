@@ -73,8 +73,8 @@ if __name__ == "__main__":
                           "wikimedia-history-snapshots/enwiki-20210620/")
 
     input_filepaths = [corpus_path_prefix + file for file in
-                  ["enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
-                   #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
+                  [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
+                   "enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
                    #"enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2",   # 1GB
                    #"enwiki-20210601-pages-meta-history8.xml-p2607466p2641559.bz2",    # 2GB
                    #"enwiki-20210601-pages-meta-history14.xml-p13148370p13184925.bz2", # 3GB
@@ -124,7 +124,5 @@ if __name__ == "__main__":
 
     print("Sanity check complete.", len(publication_events), "publication event(s).")
                 
-    with Pool() as pool:
-        pool.starmap(process, [(input_filenpath, "../analysis/dump/", publication_events)
-                               for input_filenpath in input_filepaths])
+    process(input_filepaths[0], "../analysis/dump/", publication_events)
 
