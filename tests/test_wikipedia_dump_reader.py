@@ -72,7 +72,7 @@ class TestWikipediaDumpReader(unittest.TestCase):
             wdr.write_revisions_to_parquet(self.output_filepath)
 
         self.assertEqual(self.file_checksum(self.output_filepath),
-                         "6f062be57af3adba97456d0f212cf27961ca9983aa01c46e259ab353384aed7d")
+                         "87ed2903b1f9e733a7f83c14b09f5671b2b59c25515919f71922dfce1b741b21")
 
     def test_csv_analysis(self):
         events = {"bibkey":[],"doi":[],"pmid":[]}
