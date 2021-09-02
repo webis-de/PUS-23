@@ -3,6 +3,8 @@ from bibliography.bibliography import Bibliography
 from timeline.eventlist import EventList
 from timeline.accountlist import AccountList
 from utility.wikipedia_dump_reader import WikipediaDumpReader
+from lxml.etree import ElementTree
+import bz2
 import csv
 import logging
 
@@ -25,43 +27,28 @@ def get_logger(filename):
     return logger, logging_file_handler
 
 def read_and_unify_publication_eventlists():
-    publication_events = []
+    start = datetime.now()
+    publication_events = set()
     
     bibliography = Bibliography("../data/CRISPR_literature.bib")
     accountlist = AccountList("../data/CRISPR_accounts.csv")
-    publication_events_accounts = EventList("../data/CRISPR_publication-events.csv",
-                                            bibliography,
-                                            accountlist,
-                                            [],
-                                            ["bibentries"]).events
-    publication_events_wos = EventList("../data/CRISPR_publication-events-hochzitierte.csv",
-                                       bibliography,
-                                       accountlist,
-                                       [],
-                                       ["bibentries"]).events
+    publication_events_accounts = set(EventList("../data/CRISPR_publication-events.csv",
+                                                bibliography,
+                                                accountlist,
+                                                [],
+                                                ["bibentries"]).events)
+    publication_events_wos = set(EventList("../data/CRISPR_publication-events-hochzitierte.csv",
+                                           bibliography,
+                                           accountlist,
+                                           [],
+                                           ["bibentries"]).events)
 
-    for publication_event in publication_events_accounts:
-        if publication_event not in publication_events:
-            publication_event.trace["accounts"] = True
-            publication_event.trace["wos"] = False
-            publication_events.append(publication_event)
+    for publication_event in publication_events_accounts.union(publication_events_wos):
+        publication_event.trace["wos"] = (publication_event in publication_events_wos)
+        publication_event.trace["accounts"] = (publication_event in publication_events_accounts)
+        publication_events.add(publication_event)
 
-    for publication_event in publication_events_wos:
-        if publication_event in publication_events:
-            publication_events.remove(publication_event)
-            publication_event.trace["wos"] = True
-            publication_event.trace["accounts"] = True
-            publication_events.append(publication_event)
-        else:
-            publication_event.trace["wos"] = True
-            publication_event.trace["accounts"] = False
-            publication_events.append(publication_event)
-
-    for publication_event in publication_events:
-        assert(publication_event.trace["wos"] == (publication_event in publication_events_wos))
-        assert(publication_event.trace["accounts"] == (publication_event in publication_events_accounts))
-
-    print("Sanity check complete.", len(publication_events), "publication event(s).")
+    print(len(publication_events), "publication event(s).", datetime.now() - start)
 
     return publication_events
 
@@ -122,40 +109,74 @@ def process(revisions_dataframe, publications_dataframe, output_directory):
 
 if __name__ == "__main__":
 
-    corpus_path_prefix = ("/media/wolfgang/Ceph/corpora/corpora-thirdparty/corpus-wikipedia/" +
-                          "wikimedia-history-snapshots/enwiki-20210620/")
+
+
+    corpus_path_prefix = ("../dumps/")
 
     input_files = ["enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
-                   #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
-                   #"enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2",   # 1GB
-                   #"enwiki-20210601-pages-meta-history8.xml-p2607466p2641559.bz2",    # 2GB
-                   #"enwiki-20210601-pages-meta-history14.xml-p13148370p13184925.bz2", # 3GB
-                   #"enwiki-20210601-pages-meta-history9.xml-p3706897p3741659.bz2")    # 5GB
-                   #"enwiki-20210601-pages-meta-history8.xml-p2535881p2535914.bz2")    # 7GB
+                   "enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
+                   "enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
+                   "enwiki-20210601-pages-meta-history1.xml-p4291p4820.bz2",    # 2GB
                    ]
+    #publications = read_and_unify_publication_eventlists()
     
-    input_filepath = corpus_path_prefix + input_files[0]
+    input_filepath = corpus_path_prefix + input_files[1]
+
+##    with WikipediaDumpReader(input_filepath) as wdr:
+##        for rev in wdr.line_iter():
+##            print(rev)
+##            input()
 
     output_directory = "../analysis/dump"
 
-    output_filepath = output_directory + sep + basename(input_filepath).split(".bz2")[0] + "_revisions.parquet"
-
-    #input_filepaths = sorted(glob(corpus_path_prefix + "*.bz2"))
-    print(len(input_files), "BZ2 file(s).")
-
-    try:
-        publication_dataframe = pq.read_table(output_directory + sep + "publications.parquet").to_pandas()
-    except FileNotFoundError:
-        publication_events = read_and_unify_publication_eventlists()
-        write_publication_events_to_parquet(publication_events, output_directory + sep + "publications.parquet")
-        publication_dataframe = pq.read_table(output_directory + sep + "publications.parquet").to_pandas()
-
-    try:
-        revisions_dataframe = pq.read_table(output_filepath).to_pandas()
-    except FileNotFoundError:
+    start = datetime.now()
+    revision_count = 0
+    publication_count = 0
+    results = []
+    output_file_prefix = output_directory + sep + basename(input_filepath).split(".bz2")[0]
+    with open(output_file_prefix + "_results.csv", "w", newline="") as csvfile:
         with WikipediaDumpReader(input_filepath) as wdr:
-            wdr.write_revisions_to_parquet(output_filepath)
-        revisions_dataframe = pq.read_table(output_filepath).to_pandas()    
-                
-    process(revisions_dataframe, publication_dataframe, output_directory)
+            for revision in wdr.lxml_iter():
+                revision_count += 1
+                continue
+                title = revision["title"]
+                revid = revision["revid"]   
+                timestamp = revision["timestamp"]
+                text = revision["text"]
+                for publication in publications:
+                    bibkey = list(publication.bibentries.keys())[0]
+                    doi = publication.dois[bibkey]
+                    pmid = publication.pmids[bibkey]
+                    if text and ((doi and doi in text) or (pmid and pmid in text)):
+                        publication_count += 1
+                        eventlist = "|".join([key for key,value
+                                              in [("wos",wos),
+                                                  ("accounts",accounts)] if value])
+                        csv_writer.writerow([bibkey,
+                                             doi,
+                                             pmid,
+                                             title,
+                                             revid,
+                                             Timestamp(timestamp).string,
+                                             eventlist])
+                        csvfile.flush()
+    print(publication_count, revision_count, datetime.now() - start)
+
+##    output_filepath = output_directory + sep + basename(input_filepath).split(".bz2")[0] + "_revisions.parquet"
+##
+##    try:
+##        publication_dataframe = pq.read_table(output_directory + sep + "publications.parquet").to_pandas()
+##    except FileNotFoundError:
+##        publication_events = read_and_unify_publication_eventlists()
+##        write_publication_events_to_parquet(publication_events, output_directory + sep + "publications.parquet")
+##        publication_dataframe = pq.read_table(output_directory + sep + "publications.parquet").to_pandas()
+##
+##    try:
+##        revisions_dataframe = pq.read_table(output_filepath).to_pandas()
+##    except FileNotFoundError:
+##        with WikipediaDumpReader(input_filepath) as wdr:
+##            wdr.write_revisions_to_parquet(output_filepath)
+##        revisions_dataframe = pq.read_table(output_filepath).to_pandas()    
+##                
+##    process(revisions_dataframe, publication_dataframe, output_directory)
 

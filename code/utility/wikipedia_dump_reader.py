@@ -1,5 +1,6 @@
 import bz2
-from xml.etree import ElementTree
+from lxml.etree import ElementTree as LXMLET
+from xml.etree import ElementTree as XMLET
 import pyarrow.parquet as pq
 import pyarrow as pa
 from re import findall
@@ -9,8 +10,7 @@ class WikipediaDumpReader(object):
     def __init__(self, filepath):
         self.filepath = filepath
         self.bz2_file = bz2.open(self.filepath, "rb")
-        self.xml_iterator = ElementTree.iterparse(self.bz2_file)
-        self.namespaces = self._get_namespaces()
+        self.namespaces = {"":"http://www.mediawiki.org/xml/export-0.10/"}
 
     def __enter__(self):
         """Makes the API autoclosable."""
@@ -26,9 +26,10 @@ class WikipediaDumpReader(object):
                 "ns0":"http://www.mediawiki.org/xml/export-0.10/",
                 "xsi":"http://www.w3.org/2001/XMLSchema-instance"}
 
-    def __iter__(self):
+    def xml_iter(self):
         read_revisions = False
-        for event, element in self.xml_iterator:
+        xml = XMLET.iterparse(self.bz2_file)
+        for event, element in xml:
             if element.tag.split("}")[-1] == "title":
                 title = element.text
             elif element.tag.split("}")[-1] == "ns":
@@ -46,6 +47,51 @@ class WikipediaDumpReader(object):
                     element.clear()
             else:
                 element.clear()
+
+    def lxml_iter(self):
+        xml = LXMLET().parse(self.bz2_file)
+        for page in xml.findall("page", self.namespaces):
+            if page.find("ns", self.namespaces).text == "0":
+                title = page.find("title", self.namespaces).text
+                for revision in page.findall("revision", self.namespaces):
+                    yield {"title":title,
+                           "revid":revision.find("id", self.namespaces).text,
+                           "timestamp":revision.find("timestamp", self.namespaces).text,
+                           "text":revision.find("text", self.namespaces).text}
+
+    def line_iter(self):
+        with bz2.open(self.filepath, "rt") as bz2_file:
+            read_revisions = False
+            read_text = False
+            text = ""
+            
+            line = bz2_file.readline()
+
+            while line:
+                if read_text:
+                    if line.startswith("      <sha1"):
+                        yield {"title":title,
+                               "revid":revid,
+                               "timestamp":timestamp,
+                               "text":text}
+                        read_text = False
+                        text = ""
+                    else:
+                        text += line
+                else:
+                    if line.startswith("    <title"):
+                        title = line[11:-9]
+                    elif line.startswith("    <ns"):
+                        read_revisions = (line[8] == "0")
+                    elif read_revisions:
+                        if line.startswith("      <id"):
+                            revid = line[10:-6]
+                        elif line.startswith("      <timestamp"):
+                            timestamp = line[17:-13]
+                        elif read_revisions and line.startswith("      <text"):
+                            read_text = True
+
+                line = bz2_file.readline()                
 
     def write_revisions_to_parquet(self, output_filepath):
         revisions = {"title":[],"revid":[],"timestamp":[],"text":[]}
