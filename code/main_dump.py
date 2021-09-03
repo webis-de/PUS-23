@@ -60,22 +60,7 @@ def read_and_unify_publication_eventlists_for_tests():
     eventlist.events[0].trace = {"wos":True, "accounts":False}
     return eventlist.events
 
-def write_publication_events_to_parquet(publication_events, output_filepath):
-
-    publications = {"bibkey":[],"doi":[],"pmid":[],"wos":[],"accounts":[]}
-    
-    for publication_event in publication_events:
-        bibkey = list(publication_event.bibentries.keys())[0]
-        publications["bibkey"].append(bibkey)
-        publications["doi"].append(publication_event.dois[bibkey])
-        publications["pmid"].append(publication_event.pmids[bibkey])
-        publications["wos"].append(publication_event.trace["wos"])
-        publications["accounts"].append(publication_event.trace["accounts"])
-
-    table = pa.Table.from_pydict(publications)
-    pq.write_table(table, output_filepath)
-
-def process(input_filepath, output_directory, publication_map_dois, publication_map_pmids, doi_and_pmid_regex):
+def process(input_filepath, output_directory, publication_map, doi_and_pmid_regex):
     output_file_prefix = output_directory + sep + basename(input_filepath).split(".bz2")[0]
     with open(output_file_prefix + "_results.csv", "w", newline="") as csvfile:
         start = datetime.now()
@@ -88,21 +73,15 @@ def process(input_filepath, output_directory, publication_map_dois, publication_
                 revision_count += 1
                 if revision_count % 1000 == 0:
                     logger.info(str(publication_count) + "," + str(revision_count))
-                for result in re.findall(doi_and_pmid_regex, text):
+                for match in set(re.findall(doi_and_pmid_regex, text)):
                     publication_count += 1
-                    try:
-                        bibkey, doi, wos, accounts = publication_map_pmids[result]
-                        pmid = result
-                    except KeyError:
-                        bibkey, pmid, wos, accounts = publication_map_dois[result]
-                        doi = result
+                    bibkey, wos, accounts = publication_map[match]
                     
                     eventlist = "|".join([key for key,value
                                           in [("wos",wos),
                                               ("accounts",accounts)] if value])
                     csv_writer.writerow([bibkey,
-                                         doi,
-                                         pmid,
+                                         match,
                                          title,
                                          revid,
                                          Timestamp(timestamp).string,
@@ -132,10 +111,9 @@ if __name__ == "__main__":
 ##                   ]
 ##    input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
 
-    input_filepaths = glob("../../../../../corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/*.bz2")
+    input_filepaths = sorted(glob("../../../../../corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/*.bz2"))
 
-    publication_map_dois = {}
-    publication_map_pmids = {}
+    publication_map = {}
 
     for publication_event in read_and_unify_publication_eventlists():
         bibkey = list(publication_event.bibentries.keys())[0]
@@ -143,10 +121,10 @@ if __name__ == "__main__":
         pmid = publication_event.pmids[bibkey]
         wos = publication_event.trace["wos"]
         accounts = publication_event.trace["accounts"]
-        if doi: publication_map_dois[doi] = (bibkey, pmid, wos, accounts)
-        if pmid: publication_map_pmids[pmid] = (bibkey, doi, wos, accounts)
+        if doi: publication_map[doi] = (bibkey, wos, accounts)
+        if pmid: publication_map[pmid] = (bibkey, wos, accounts)
 
-    dois_and_pmids = list(publication_map_dois.keys()) + list(publication_map_pmids.keys())
+    dois_and_pmids = list(publication_map.keys())
 
     escaped_dois_and_pmids = [re.escape(item) for item in dois_and_pmids]
 
@@ -156,6 +134,6 @@ if __name__ == "__main__":
 
     with Pool() as pool:
         
-        pool.starmap(process, [(input_filepath, output_directory, publication_map_dois, publication_map_pmids, doi_and_pmid_regex)
+        pool.starmap(process, [(input_filepath, output_directory, publication_map, doi_and_pmid_regex)
                                for input_filepath in input_filepaths])
 
