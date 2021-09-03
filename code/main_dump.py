@@ -3,17 +3,14 @@ from bibliography.bibliography import Bibliography
 from timeline.eventlist import EventList
 from timeline.accountlist import AccountList
 from utility.wikipedia_dump_reader import WikipediaDumpReader
-from lxml.etree import ElementTree
-import bz2
 import csv
 import logging
+import re
 
 from datetime import datetime
 from os.path import basename, sep
 from glob import glob
-from pprint import pprint
-import pyarrow.parquet as pq
-import pyarrow as pa
+from multiprocessing import Pool
 
 def get_logger(filename):
     """Set up the logger."""
@@ -52,6 +49,17 @@ def read_and_unify_publication_eventlists():
 
     return publication_events
 
+def read_and_unify_publication_eventlists_for_tests():
+    bibliography = Bibliography("../tests/data/literature.bib")
+    accountlist = AccountList("../tests/data/accounts.csv")
+    eventlist = EventList("../tests/data/events.csv",
+                           bibliography,
+                           accountlist,
+                           [],
+                           ["bibentries"])
+    eventlist.events[0].trace = {"wos":True, "accounts":False}
+    return eventlist.events
+
 def write_publication_events_to_parquet(publication_events, output_filepath):
 
     publications = {"bibkey":[],"doi":[],"pmid":[],"wos":[],"accounts":[]}
@@ -67,88 +75,30 @@ def write_publication_events_to_parquet(publication_events, output_filepath):
     table = pa.Table.from_pydict(publications)
     pq.write_table(table, output_filepath)
 
-def process(revisions_dataframe, publications_dataframe, output_directory):
-    start = datetime.now()
-    revision_count = 0
-    publication_count = 0
+def process(input_filepath, output_directory, publication_map_dois, publication_map_pmids, doi_and_pmid_regex):
     output_file_prefix = output_directory + sep + basename(input_filepath).split(".bz2")[0]
     with open(output_file_prefix + "_results.csv", "w", newline="") as csvfile:
+        start = datetime.now()
+        revision_count = 0
+        publication_count = 0
         logger, logging_file_handler = get_logger(output_file_prefix + "_log.txt")
         csv_writer = csv.writer(csvfile, delimiter=",")
-        for revision_index,title,revid,timestamp,text in revisions_dataframe.itertuples():
-            revision_count = revision_index + 1
-            if revision_count % 1000 == 0:
-                logger.info(str(revision_count) + "," + str(publication_count))
-            for publication_index,bibkey,doi,pmid,wos,accounts in publications_dataframe.itertuples():
-                if text and ((doi and doi in text) or (pmid and pmid in text)):
-                    publication_count += 1
-                    eventlist = "|".join([key for key,value
-                                          in [("wos",wos),
-                                              ("accounts",accounts)] if value])
-                    csv_writer.writerow([bibkey,
-                                         doi,
-                                         pmid,
-                                         title,
-                                         revid,
-                                         Timestamp(timestamp).string,
-                                         eventlist])
-                    csvfile.flush()
-
-        logger.info(str(revision_count) + "," + str(publication_count))
-        end = datetime.now()
-        duration = end - start
-        logger.info(duration)
-        logging_file_handler.close()
-        logger.removeHandler(logging_file_handler)
-        with open("../analysis/dump/done.csv", "a", newline="") as done_file:
-            done_file_writer = csv.writer(done_file, delimiter=",")
-            done_file_writer.writerow([basename(input_filepath),
-                                       revision_count,
-                                       publication_count,
-                                       duration])
-
-if __name__ == "__main__":
-
-
-
-    corpus_path_prefix = ("../dumps/")
-
-    input_files = ["enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
-                   "enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
-                   "enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
-                   "enwiki-20210601-pages-meta-history1.xml-p4291p4820.bz2",    # 2GB
-                   ]
-    #publications = read_and_unify_publication_eventlists()
-    
-    input_filepath = corpus_path_prefix + input_files[1]
-
-##    with WikipediaDumpReader(input_filepath) as wdr:
-##        for rev in wdr.line_iter():
-##            print(rev)
-##            input()
-
-    output_directory = "../analysis/dump"
-
-    start = datetime.now()
-    revision_count = 0
-    publication_count = 0
-    results = []
-    output_file_prefix = output_directory + sep + basename(input_filepath).split(".bz2")[0]
-    with open(output_file_prefix + "_results.csv", "w", newline="") as csvfile:
         with WikipediaDumpReader(input_filepath) as wdr:
-            for revision in wdr.lxml_iter():
+            for title,revid,timestamp,text in wdr.line_iter():
                 revision_count += 1
-                continue
-                title = revision["title"]
-                revid = revision["revid"]   
-                timestamp = revision["timestamp"]
-                text = revision["text"]
-                for publication in publications:
-                    bibkey = list(publication.bibentries.keys())[0]
-                    doi = publication.dois[bibkey]
-                    pmid = publication.pmids[bibkey]
-                    if text and ((doi and doi in text) or (pmid and pmid in text)):
+                if revision_count % 1000 == 0:
+                    logger.info(str(publication_count) + "," + str(revision_count))
+                for result in re.finditer(doi_and_pmid_regex, text):
+                    match = result.group()
+                    if match:
                         publication_count += 1
+                        try:
+                            bibkey, doi, wos, accounts = publication_map_pmids[match]
+                            pmid = match
+                        except KeyError:
+                            bibkey, pmid, wos, accounts = publication_map_dois[match]
+                            doi = match
+                        
                         eventlist = "|".join([key for key,value
                                               in [("wos",wos),
                                                   ("accounts",accounts)] if value])
@@ -160,23 +110,52 @@ if __name__ == "__main__":
                                              Timestamp(timestamp).string,
                                              eventlist])
                         csvfile.flush()
-    print(publication_count, revision_count, datetime.now() - start)
+        logger.info(str(publication_count) + "," + str(revision_count))
+        end = datetime.now()
+        duration = end - start
+        logger.info(duration)
+        logging_file_handler.close()
+        logger.removeHandler(logging_file_handler)
+        with open(output_directory + sep + "done.csv", "a", newline="") as done_file:
+            done_file_writer = csv.writer(done_file, delimiter=",")
+            done_file_writer.writerow([basename(input_filepath),
+                                       publication_count,
+                                       revision_count,
+                                       duration])
 
-##    output_filepath = output_directory + sep + basename(input_filepath).split(".bz2")[0] + "_revisions.parquet"
-##
-##    try:
-##        publication_dataframe = pq.read_table(output_directory + sep + "publications.parquet").to_pandas()
-##    except FileNotFoundError:
-##        publication_events = read_and_unify_publication_eventlists()
-##        write_publication_events_to_parquet(publication_events, output_directory + sep + "publications.parquet")
-##        publication_dataframe = pq.read_table(output_directory + sep + "publications.parquet").to_pandas()
-##
-##    try:
-##        revisions_dataframe = pq.read_table(output_filepath).to_pandas()
-##    except FileNotFoundError:
-##        with WikipediaDumpReader(input_filepath) as wdr:
-##            wdr.write_revisions_to_parquet(output_filepath)
-##        revisions_dataframe = pq.read_table(output_filepath).to_pandas()    
-##                
-##    process(revisions_dataframe, publication_dataframe, output_directory)
+if __name__ == "__main__":
+
+##    corpus_path_prefix = ("../dumps/")
+##    input_files = ["enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
+##                   "enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
+##                   "enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
+##                   #"enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
+##                   #"enwiki-20210601-pages-meta-history1.xml-p4291p4820.bz2",    # 2GB
+##                   ]
+##    input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
+
+    input_filepaths = glob()
+
+    publication_map_dois = {}
+    publication_map_pmids = {}
+
+    for publication_event in read_and_unify_publication_eventlists():
+        bibkey = list(publication_event.bibentries.keys())[0]
+        doi = publication_event.dois[bibkey]
+        pmid = publication_event.pmids[bibkey]
+        wos = publication_event.trace["wos"]
+        accounts = publication_event.trace["accounts"]
+        if doi: publication_map_dois[doi] = (bibkey, pmid, wos, accounts)
+        if pmid: publication_map_pmids[pmid] = (bibkey, doi, wos, accounts)
+
+    joined_dois_and_pmids = "|".join(list(publication_map_dois.keys()) + list(publication_map_pmids.keys()))
+
+    doi_and_pmid_regex = re.compile(joined_dois_and_pmids)
+
+    output_directory = "../analysis/dump"
+
+    with Pool() as pool:
+        
+        pool.starmap(process, [(input_filepath, output_directory, publication_map_dois, publication_map_pmids, doi_and_pmid_regex)
+                               for input_filepath in input_filepaths])
 

@@ -43,7 +43,7 @@ class WikipediaDumpReader(object):
                             timestamp = subelement.text
                         if subelement.tag.split("}")[-1] == "text":
                             text = subelement.text
-                    yield {"title":title, "revid":revid, "timestamp":timestamp, "text":text}
+                    yield (title,revid,timestamp,text)
                     element.clear()
             else:
                 element.clear()
@@ -54,10 +54,10 @@ class WikipediaDumpReader(object):
             if page.find("ns", self.namespaces).text == "0":
                 title = page.find("title", self.namespaces).text
                 for revision in page.findall("revision", self.namespaces):
-                    yield {"title":title,
-                           "revid":revision.find("id", self.namespaces).text,
-                           "timestamp":revision.find("timestamp", self.namespaces).text,
-                           "text":revision.find("text", self.namespaces).text}
+                    yield (title,
+                           revision.find("id", self.namespaces).text,
+                           revision.find("timestamp", self.namespaces).text,
+                           revision.find("text", self.namespaces).text)
 
     def line_iter(self):
         with bz2.open(self.filepath, "rt") as bz2_file:
@@ -70,10 +70,10 @@ class WikipediaDumpReader(object):
             while line:
                 if read_text:
                     if line.startswith("      <sha1"):
-                        yield {"title":title,
-                               "revid":revid,
-                               "timestamp":timestamp,
-                               "text":text}
+                        yield (title,
+                               revid,
+                               timestamp,
+                               text)
                         read_text = False
                         text = ""
                     else:
