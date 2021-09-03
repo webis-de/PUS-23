@@ -88,28 +88,26 @@ def process(input_filepath, output_directory, publication_map_dois, publication_
                 revision_count += 1
                 if revision_count % 1000 == 0:
                     logger.info(str(publication_count) + "," + str(revision_count))
-                for result in re.finditer(doi_and_pmid_regex, text):
-                    match = result.group()
-                    if match:
-                        publication_count += 1
-                        try:
-                            bibkey, doi, wos, accounts = publication_map_pmids[match]
-                            pmid = match
-                        except KeyError:
-                            bibkey, pmid, wos, accounts = publication_map_dois[match]
-                            doi = match
-                        
-                        eventlist = "|".join([key for key,value
-                                              in [("wos",wos),
-                                                  ("accounts",accounts)] if value])
-                        csv_writer.writerow([bibkey,
-                                             doi,
-                                             pmid,
-                                             title,
-                                             revid,
-                                             Timestamp(timestamp).string,
-                                             eventlist])
-                        csvfile.flush()
+                for result in re.findall(doi_and_pmid_regex, text):
+                    publication_count += 1
+                    try:
+                        bibkey, doi, wos, accounts = publication_map_pmids[result]
+                        pmid = result
+                    except KeyError:
+                        bibkey, pmid, wos, accounts = publication_map_dois[result]
+                        doi = result
+                    
+                    eventlist = "|".join([key for key,value
+                                          in [("wos",wos),
+                                              ("accounts",accounts)] if value])
+                    csv_writer.writerow([bibkey,
+                                         doi,
+                                         pmid,
+                                         title,
+                                         revid,
+                                         Timestamp(timestamp).string,
+                                         eventlist])
+                    csvfile.flush()
         logger.info(str(publication_count) + "," + str(revision_count))
         end = datetime.now()
         duration = end - start
@@ -126,15 +124,15 @@ def process(input_filepath, output_directory, publication_map_dois, publication_
 if __name__ == "__main__":
 
 ##    corpus_path_prefix = ("../dumps/")
-##    input_files = ["enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
-##                   "enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
-##                   "enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
-##                   #"enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
+##    input_files = [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
+##                   #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
+##                   #"enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
+##                   "enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
 ##                   #"enwiki-20210601-pages-meta-history1.xml-p4291p4820.bz2",    # 2GB
 ##                   ]
 ##    input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
 
-    input_filepaths = glob()
+    input_filepaths = glob("../../../../../corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/*.bz2")
 
     publication_map_dois = {}
     publication_map_pmids = {}
@@ -148,9 +146,11 @@ if __name__ == "__main__":
         if doi: publication_map_dois[doi] = (bibkey, pmid, wos, accounts)
         if pmid: publication_map_pmids[pmid] = (bibkey, doi, wos, accounts)
 
-    joined_dois_and_pmids = "|".join(list(publication_map_dois.keys()) + list(publication_map_pmids.keys()))
+    dois_and_pmids = list(publication_map_dois.keys()) + list(publication_map_pmids.keys())
 
-    doi_and_pmid_regex = re.compile(joined_dois_and_pmids)
+    escaped_dois_and_pmids = [re.escape(item) for item in dois_and_pmids]
+
+    doi_and_pmid_regex = re.compile("|".join(escaped_dois_and_pmids))
 
     output_directory = "../analysis/dump"
 
