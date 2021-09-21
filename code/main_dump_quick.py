@@ -5,7 +5,7 @@ from timeline.accountlist import AccountList
 from utility.wikipedia_dump_reader import WikipediaDumpReader
 import csv
 import logging
-import re
+import regex
 
 from datetime import datetime
 from os.path import basename, exists, sep
@@ -101,7 +101,7 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
                     skip = False
                 if title == old_title and skip:
                     continue
-                match = re.search(doi_and_pmid_regex, text)
+                match = regex.search(doi_and_pmid_regex, text)
                 if match:
                     skip = True
                     match = match.group()
@@ -143,10 +143,18 @@ if __name__ == "__main__":
 ##                   ]
 ##    input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
 
-    with open("../analysis/dump_quick/done.csv") as file:
-        done_input_filepaths = [line.split(",")[0] for line in file.readlines()]
+    output_directory = "../analysis/dump_quick"
+    done_filepath = output_directory + sep + "done.csv"
+    
+    if exists(done_filepath):
+        with open(done_filepath) as file:
+            done_input_filepaths = [line.split(",")[0] for line in file.readlines()]
+    else:
+        done_input_filepaths = []
 
-    input_filepaths = sorted(glob("../../../../../corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/*.bz2"))
+    input_filepaths = sorted(glob("../../../../../" +
+                                  "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/" +
+                                  "*.bz2"))
 
     publication_map = {"dois":{}, "pmids":{}}
 
@@ -162,14 +170,10 @@ if __name__ == "__main__":
     dois = list(publication_map["dois"].keys())
     pmids = list(publication_map["pmids"].keys())
 
-    escaped_dois = [re.escape(item) for item in dois]
-    escaped_pmids = [re.escape(item) for item in pmids]
+    escaped_dois = [regex.escape(item) for item in dois]
+    escaped_pmids = [regex.escape(item) for item in pmids]
 
-    doi_and_pmid_regex = re.compile("|".join(escaped_dois) + "|" + "(" + "pmid = " + "(" + "|".join(escaped_pmids) + ")" + ")")
-
-    print("|".join(escaped_dois) + "|" + "(" + "pmid = " + "(" + "|".join(escaped_pmids) + ")" + ")")
-
-    output_directory = "../analysis/dump_quick"
+    doi_and_pmid_regex = regex.compile("|".join(escaped_dois) + "|" + "(" + "pmid = " + "(" + "|".join(escaped_pmids) + ")" + ")")
 
     publication_map.update(publication_map["dois"])
     publication_map.update(publication_map["pmids"])

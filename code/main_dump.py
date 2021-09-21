@@ -132,12 +132,19 @@ if __name__ == "__main__":
 ##                   #"enwiki-20210601-pages-meta-history1.xml-p4291p4820.bz2",    # 2GB
 ##                   ]
 ##    input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
+    
+    output_directory = "../analysis/dump"
+    done_filepath = output_directory + sep + "done.csv"
+    
+    if exists(done_filepath):
+        with open(done_filepath) as file:
+            done_input_filepaths = [line.split(",")[0] for line in file.readlines()]
+    else:
+        done_input_filepaths = []
 
-    with open("../analysis/dump/done.csv") as file:
-        done_input_filepaths = [line.split(",")[0] for line in file.readlines()]
-
-    input_filepaths = sorted(glob("../../../../../corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/*.bz2"))
-
+    input_filepaths = sorted(glob("../../../../../" +
+                                  "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/" +
+                                  "*.bz2"))
     publication_map = {}
 
     for publication_event in read_and_unify_publication_eventlists():
@@ -154,8 +161,6 @@ if __name__ == "__main__":
     escaped_dois_and_pmids = [re.escape(item) for item in dois_and_pmids]
 
     doi_and_pmid_regex = re.compile("|".join(escaped_dois_and_pmids))
-
-    output_directory = "../analysis/dump"
 
     with Pool() as pool:
 
