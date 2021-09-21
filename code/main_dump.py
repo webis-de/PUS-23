@@ -5,7 +5,7 @@ from timeline.accountlist import AccountList
 from utility.wikipedia_dump_reader import WikipediaDumpReader
 import csv
 import logging
-import re
+import regex as re
 
 from datetime import datetime
 from os.path import basename, exists, sep
@@ -95,7 +95,11 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
                     continue
                 if revision_count % 1000 == 0:
                     logger.info(str(publication_count) + "," + str(revision_count))
-                for match in set(re.findall(doi_and_pmid_regex, text)):
+                for match in [re.search(doi_and_pmid_regex, text)]:
+                    if match:
+                        match = match.group()
+                    else:
+                        continue
                     publication_count += 1
                     bibkey, wos, accounts = publication_map[match]
 
@@ -124,14 +128,21 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
 
 if __name__ == "__main__":
 
-##    corpus_path_prefix = ("../dumps/")
-##    input_files = [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
-##                   #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
-##                   #"enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
-##                   "enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
-##                   #"enwiki-20210601-pages-meta-history1.xml-p4291p4820.bz2",    # 2GB
-##                   ]
-##    input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
+    test = False
+
+    if test:
+        corpus_path_prefix = ("../dumps/")
+        input_files = [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
+                       #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
+                       "enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
+                       #"enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
+                       #"enwiki-20210601-pages-meta-history1.xml-p4291p4820.bz2",    # 2GB
+                       ]
+        input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
+    else:
+        input_filepaths = sorted(glob("../../../../../" +
+                                      "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/" +
+                                      "*.bz2"))
     
     output_directory = "../analysis/dump"
     done_filepath = output_directory + sep + "done.csv"
@@ -141,10 +152,7 @@ if __name__ == "__main__":
             done_input_filepaths = [line.split(",")[0] for line in file.readlines()]
     else:
         done_input_filepaths = []
-
-    input_filepaths = sorted(glob("../../../../../" +
-                                  "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/" +
-                                  "*.bz2"))
+        
     publication_map = {}
 
     for publication_event in read_and_unify_publication_eventlists():

@@ -134,14 +134,21 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
 
 if __name__ == "__main__":
 
-##    corpus_path_prefix = ("../dumps/")
-##    input_files = [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
-##                   #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
-##                   #"enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
-##                   "enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
-##                   #"enwiki-20210601-pages-meta-history1.xml-p4291p4820.bz2",    # 2GB
-##                   ]
-##    input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
+    test = False
+
+    if test:
+        corpus_path_prefix = ("../dumps/")
+        input_files = [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
+                       #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
+                       "enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
+                       #"enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
+                       #"enwiki-20210601-pages-meta-history1.xml-p4291p4820.bz2",    # 2GB
+                       ]
+        input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
+    else:
+        input_filepaths = sorted(glob("../../../../../" +
+                                      "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/" +
+                                      "*.bz2"))
 
     output_directory = "../analysis/dump_quick"
     done_filepath = output_directory + sep + "done.csv"
@@ -151,10 +158,6 @@ if __name__ == "__main__":
             done_input_filepaths = [line.split(",")[0] for line in file.readlines()]
     else:
         done_input_filepaths = []
-
-    input_filepaths = sorted(glob("../../../../../" +
-                                  "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/" +
-                                  "*.bz2"))
 
     publication_map = {"dois":{}, "pmids":{}}
 
