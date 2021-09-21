@@ -8,7 +8,7 @@ import logging
 import re
 
 from datetime import datetime
-from os.path import basename, sep
+from os.path import basename, exists, sep
 from glob import glob
 from multiprocessing import Pool
 
@@ -17,7 +17,7 @@ def get_logger(filename):
     logger = logging.getLogger("dump_logger")
     formatter = logging.Formatter("%(asctime)s >>> %(message)s", "%F %H:%M:%S")
     logger.setLevel(logging.DEBUG)
-    logging_file_handler = logging.FileHandler(filename, "w")
+    logging_file_handler = logging.FileHandler(filename, "a")
     logging_file_handler.setFormatter(formatter)
     logging_file_handler.setLevel(logging.DEBUG)
     logger.addHandler(logging_file_handler)
@@ -26,7 +26,7 @@ def get_logger(filename):
 def read_and_unify_publication_eventlists():
     start = datetime.now()
     publication_events = set()
-    
+
     bibliography = Bibliography("../data/CRISPR_literature.bib")
     accountlist = AccountList("../data/CRISPR_accounts.csv")
     publication_events_accounts = set(EventList("../data/CRISPR_publication-events.csv",
@@ -60,23 +60,45 @@ def read_and_unify_publication_eventlists_for_tests():
     eventlist.events[0].trace = {"wos":True, "accounts":False}
     return eventlist.events
 
-def process(input_filepath, output_directory, publication_map, doi_and_pmid_regex):
+def process(input_filepath, output_directory, publication_map, doi_and_pmid_regex, done_input_filepaths):
+    if basename(input_filepath) in done_input_filepaths:
+        with open(output_directory + sep + "done_update.txt", "a") as update_file:
+            update_file.write("Analysis of file " + basename(input_filepath) + " already complete.\n")
+        return
     output_file_prefix = output_directory + sep + basename(input_filepath).split(".bz2")[0]
-    with open(output_file_prefix + "_results.csv", "w", newline="") as csvfile:
+    csv_filepath = output_file_prefix + "_results.csv"
+    log_filepath = output_file_prefix + "_log.txt"
+    start_publication_count = 0
+    start_revision_count = 0
+    if exists(log_filepath):
+        with open(log_filepath) as file:
+            last_log_line = file.readlines()[-1]
+            try:
+                start_publication_count = int(last_log_line.split(",")[0].strip().split(" >>> ")[-1])
+                start_revision_count  = int(last_log_line.split(",")[-1].strip())
+            except ValueError:
+                pass
+        with open(output_directory + sep + "done_update.txt", "a") as update_file:
+            update_file.write("Analysis of file " + basename(input_filepath) + " already started. " + \
+                              "Starting from " + str(start_publication_count) + " publications and " + \
+                              str(start_revision_count) + " revisions.\n")
+    with open(csv_filepath, "a", newline="") as csvfile:
         start = datetime.now()
         revision_count = 0
-        publication_count = 0
-        logger, logging_file_handler = get_logger(output_file_prefix + "_log.txt")
+        publication_count = max([0, start_publication_count])
+        logger, logging_file_handler = get_logger(log_filepath)
         csv_writer = csv.writer(csvfile, delimiter=",")
         with WikipediaDumpReader(input_filepath) as wdr:
             for title,revid,timestamp,text in wdr.line_iter():
                 revision_count += 1
+                if start_revision_count and revision_count <= start_revision_count:
+                    continue
                 if revision_count % 1000 == 0:
                     logger.info(str(publication_count) + "," + str(revision_count))
                 for match in set(re.findall(doi_and_pmid_regex, text)):
                     publication_count += 1
                     bibkey, wos, accounts = publication_map[match]
-                    
+
                     eventlist = "|".join([key for key,value
                                           in [("wos",wos),
                                               ("accounts",accounts)] if value])
@@ -111,6 +133,9 @@ if __name__ == "__main__":
 ##                   ]
 ##    input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
 
+    with open("../analysis/dump/done.csv") as file:
+        done_input_filepaths = [line.split(",")[0] for line in file.readlines()]
+
     input_filepaths = sorted(glob("../../../../../corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/*.bz2"))
 
     publication_map = {}
@@ -133,7 +158,11 @@ if __name__ == "__main__":
     output_directory = "../analysis/dump"
 
     with Pool() as pool:
-        
-        pool.starmap(process, [(input_filepath, output_directory, publication_map, doi_and_pmid_regex)
+
+        pool.starmap(process, [(input_filepath,
+                                output_directory,
+                                publication_map,
+                                doi_and_pmid_regex,
+                                done_input_filepaths)
                                for input_filepath in input_filepaths])
 
