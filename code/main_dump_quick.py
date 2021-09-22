@@ -97,8 +97,6 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
                     continue
                 if revision_count % 1000 == 0:
                     logger.info(str(publication_count) + "," + str(revision_count))
-                if revision_count < 19000:
-                    continue
                 if title != old_title:
                     skip = False
                 if title == old_title and skip:
