@@ -95,11 +95,7 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
                     continue
                 if revision_count % 1000 == 0:
                     logger.info(str(publication_count) + "," + str(revision_count))
-                for match in [re.search(doi_and_pmid_regex, text)]:
-                    if match:
-                        match = match.group()
-                    else:
-                        continue
+                for match in re.findall(doi_and_pmid_regex, text):
                     publication_count += 1
                     bibkey, wos, accounts = publication_map[match]
 
@@ -134,9 +130,9 @@ if __name__ == "__main__":
         corpus_path_prefix = ("../dumps/")
         input_files = [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
                        #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
-                       "enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
-                       #"enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
-                       #"enwiki-20210601-pages-meta-history1.xml-p4291p4820.bz2",    # 2GB
+                       #"enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
+                       "enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
+                       #"enwiki-20210601-pages-meta-history1.xml-p10133p11053.bz2",    # 2GB
                        ]
         input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
     else:
@@ -170,12 +166,22 @@ if __name__ == "__main__":
 
     doi_and_pmid_regex = re.compile("|".join(escaped_dois_and_pmids))
 
-    with Pool() as pool:
+    multi = True
 
-        pool.starmap(process, [(input_filepath,
-                                output_directory,
-                                publication_map,
-                                doi_and_pmid_regex,
-                                done_input_filepaths)
-                               for input_filepath in input_filepaths])
+    if multi:
+        with Pool() as pool:
 
+            pool.starmap(process, [(input_filepath,
+                                    output_directory,
+                                    publication_map,
+                                    doi_and_pmid_regex,
+                                    done_input_filepaths)
+                                   for input_filepath in input_filepaths])
+    else:
+        for input_filepath in input_filepaths:
+
+            process(input_filepath,
+                    output_directory,
+                    publication_map,
+                    doi_and_pmid_regex,
+                    done_input_filepaths)

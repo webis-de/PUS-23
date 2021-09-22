@@ -5,7 +5,7 @@ from timeline.accountlist import AccountList
 from utility.wikipedia_dump_reader import WikipediaDumpReader
 import csv
 import logging
-import re as regex
+import regex as re
 
 from datetime import datetime
 from os.path import basename, exists, sep
@@ -97,11 +97,13 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
                     continue
                 if revision_count % 1000 == 0:
                     logger.info(str(publication_count) + "," + str(revision_count))
+                if revision_count < 19000:
+                    continue
                 if title != old_title:
                     skip = False
                 if title == old_title and skip:
                     continue
-                match = regex.search(doi_and_pmid_regex, text)
+                match = re.search(doi_and_pmid_regex, text)
                 if match:
                     skip = True
                     match = match.group()
@@ -140,9 +142,9 @@ if __name__ == "__main__":
         corpus_path_prefix = ("../dumps/")
         input_files = [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
                        #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
-                       "enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
-                       #"enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
-                       #"enwiki-20210601-pages-meta-history1.xml-p4291p4820.bz2",    # 2GB
+                       #"enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
+                       "enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
+                       #"enwiki-20210601-pages-meta-history1.xml-p10133p11053.bz2",    # 2GB
                        ]
         input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
     else:
@@ -173,21 +175,32 @@ if __name__ == "__main__":
     dois = list(publication_map["dois"].keys())
     pmids = list(publication_map["pmids"].keys())
 
-    escaped_dois = [regex.escape(item) for item in dois]
-    escaped_pmids = [regex.escape(item) for item in pmids]
+    escaped_dois = [re.escape(item) for item in dois]
+    escaped_pmids = [re.escape(item) for item in pmids]
 
-    doi_and_pmid_regex = regex.compile("|".join(escaped_dois) + "|" + "(" + "pmid = " + "(" + "|".join(escaped_pmids) + ")" + ")")
+    doi_and_pmid_regex = re.compile("|".join(escaped_dois) + "|" + "(pmid = (" + ("|".join(escaped_pmids)) + "))")
 
     publication_map.update(publication_map["dois"])
     publication_map.update(publication_map["pmids"])
     del publication_map["dois"]
     del publication_map["pmids"]
 
-    for input_filepath in input_filepaths:
+    multi = True
 
-        process(input_filepath,
-                output_directory,
-                publication_map,
-                doi_and_pmid_regex,
-                done_input_filepaths)
+    if multi:
+        with Pool(7) as pool:
 
+            pool.starmap(process, [(input_filepath,
+                                    output_directory,
+                                    publication_map,
+                                    doi_and_pmid_regex,
+                                    done_input_filepaths)
+                                   for input_filepath in input_filepaths])
+    else:
+        for input_filepath in input_filepaths:
+
+            process(input_filepath,
+                    output_directory,
+                    publication_map,
+                    doi_and_pmid_regex,
+                    done_input_filepaths)
