@@ -5,7 +5,7 @@ from timeline.accountlist import AccountList
 from utility.wikipedia_dump_reader import WikipediaDumpReader
 import csv
 import logging
-import regex
+import re as regex
 
 from datetime import datetime
 from os.path import basename, exists, sep
@@ -183,12 +183,11 @@ if __name__ == "__main__":
     del publication_map["dois"]
     del publication_map["pmids"]
 
-    with Pool() as pool:
+    for input_filepath in input_filepaths:
 
-        pool.starmap(process, [(input_filepath,
-                                output_directory,
-                                publication_map,
-                                doi_and_pmid_regex,
-                                done_input_filepaths)
-                               for input_filepath in input_filepaths])
+        process(input_filepath,
+                output_directory,
+                publication_map,
+                doi_and_pmid_regex,
+                done_input_filepaths)
 
