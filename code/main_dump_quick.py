@@ -9,6 +9,7 @@ import regex as re
 
 from datetime import datetime
 from os.path import basename, exists, sep
+from os import makedirs
 from glob import glob
 from multiprocessing import Pool
 
@@ -60,14 +61,15 @@ def read_and_unify_publication_eventlists_for_tests():
     eventlist.events[0].trace = {"wos":True, "accounts":False}
     return eventlist.events
 
-def process(input_filepath, output_directory, publication_map, doi_and_pmid_regex, done_input_filepaths):
+def process(input_filepath, output_directory, publication_map, doi_and_pmid_regex, done_input_filepaths, quick = False):
+    output_file_prefix = output_directory + sep + basename(input_filepath).split(".bz2")[0]
+    csv_filepath = output_file_prefix + "_results.csv"
+    log_filepath = output_file_prefix + "_log.txt"
+    regex_function = re.search if quick else re.findall
     if basename(input_filepath) in done_input_filepaths:
         with open(output_directory + sep + "done_update.txt", "a") as update_file:
             update_file.write("Analysis of file " + basename(input_filepath) + " already complete.\n")
         return
-    output_file_prefix = output_directory + sep + basename(input_filepath).split(".bz2")[0]
-    csv_filepath = output_file_prefix + "_results.csv"
-    log_filepath = output_file_prefix + "_log.txt"
     start_publication_count = 0
     start_revision_count = 0
     if exists(log_filepath):
@@ -97,27 +99,30 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
                     continue
                 if revision_count % 1000 == 0:
                     logger.info(str(publication_count) + "," + str(revision_count))
-                if title != old_title:
-                    skip = False
-                if title == old_title and skip:
-                    continue
-                match = re.search(doi_and_pmid_regex, text)
-                if match:
-                    skip = True
-                    match = match.group()
-                    publication_count += 1
-                    bibkey, wos, accounts = publication_map[match]
-
-                    eventlist = "|".join([key for key,value
-                                          in [("wos",wos),
-                                              ("accounts",accounts)] if value])
-                    csv_writer.writerow([bibkey,
-                                         match,
-                                         title,
-                                         revid,
-                                         Timestamp(timestamp).string,
-                                         eventlist])
-                    csvfile.flush()
+                matches = regex_function(doi_and_pmid_regex, text)
+                if quick:
+                    matches = [matches]
+                    if title != old_title:
+                        skip = False
+                    if title == old_title and skip:
+                        continue
+                for match in matches:
+                    if match:
+                        if quick:
+                            skip = True
+                            match = match.group()
+                        publication_count += 1
+                        bibkey, wos, accounts = publication_map[match]
+                        eventlist = "|".join([key for key,value
+                                              in [("wos",wos),
+                                                  ("accounts",accounts)] if value])
+                        csv_writer.writerow([bibkey,
+                                             match,
+                                             title,
+                                             revid,
+                                             Timestamp(timestamp).string,
+                                             eventlist])
+                        csvfile.flush()
                 old_title = title
         logger.info(str(publication_count) + "," + str(revision_count))
         end = datetime.now()
@@ -135,6 +140,8 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
 if __name__ == "__main__":
 
     test = False
+    multi = True
+    quick = True
 
     if test:
         corpus_path_prefix = ("../dumps/")
@@ -150,7 +157,8 @@ if __name__ == "__main__":
                                       "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/" +
                                       "*.bz2"))
 
-    output_directory = "../analysis/dump_quick"
+    output_directory = "../analysis/dump" + ("_quick" if quick else "")
+    if not exists(output_directory): makedirs(output_directory)
     done_filepath = output_directory + sep + "done.csv"
     
     if exists(done_filepath):
@@ -159,7 +167,10 @@ if __name__ == "__main__":
     else:
         done_input_filepaths = []
 
-    publication_map = {"dois":{}, "pmids":{}}
+    if quick:
+        publication_map = {"dois":{}, "pmids":{}}
+    else:
+        publication_map = {}
 
     for publication_event in read_and_unify_publication_eventlists():
         bibkey = list(publication_event.bibentries.keys())[0]
@@ -167,32 +178,37 @@ if __name__ == "__main__":
         pmid = publication_event.pmids[bibkey]
         wos = publication_event.trace["wos"]
         accounts = publication_event.trace["accounts"]
-        if doi: publication_map["dois"][doi] = (bibkey, wos, accounts)
-        if pmid: publication_map["pmids"][pmid] = (bibkey, wos, accounts)
+        if quick:
+            if doi: publication_map["dois"][doi] = (bibkey, wos, accounts)
+            if pmid: publication_map["pmids"][pmid] = (bibkey, wos, accounts)
+        else:
+            if doi: publication_map[doi] = (bibkey, wos, accounts)
+            if pmid: publication_map[pmid] = (bibkey, wos, accounts)
 
-    dois = list(publication_map["dois"].keys())
-    pmids = list(publication_map["pmids"].keys())
-
-    escaped_dois = [re.escape(item) for item in dois]
-    escaped_pmids = [re.escape(item) for item in pmids]
-
-    doi_and_pmid_regex = re.compile("|".join(escaped_dois) + "|" + "(pmid = (" + ("|".join(escaped_pmids)) + "))")
-
-    publication_map.update(publication_map["dois"])
-    publication_map.update(publication_map["pmids"])
-    del publication_map["dois"]
-    del publication_map["pmids"]
-
-    multi = True
+    if quick:
+        dois = list(publication_map["dois"].keys())
+        pmids = list(publication_map["pmids"].keys())
+        escaped_dois = [re.escape(item) for item in dois]
+        escaped_pmids = [re.escape(item) for item in pmids]
+        doi_and_pmid_regex = re.compile("|".join(escaped_dois) + "|" + "(pmid = (" + ("|".join(escaped_pmids)) + "))")
+        publication_map.update(publication_map["dois"])
+        publication_map.update(publication_map["pmids"])
+        del publication_map["dois"]
+        del publication_map["pmids"]
+    else:
+        dois_and_pmids = list(publication_map.keys())
+        escaped_dois_and_pmids = [re.escape(item) for item in dois_and_pmids]
+        doi_and_pmid_regex = re.compile("|".join(escaped_dois_and_pmids))
 
     if multi:
-        with Pool(7) as pool:
+        with Pool(5) as pool:
 
             pool.starmap(process, [(input_filepath,
                                     output_directory,
                                     publication_map,
                                     doi_and_pmid_regex,
-                                    done_input_filepaths)
+                                    done_input_filepaths,
+                                    quick)
                                    for input_filepath in input_filepaths])
     else:
         for input_filepath in input_filepaths:
@@ -201,4 +217,5 @@ if __name__ == "__main__":
                     output_directory,
                     publication_map,
                     doi_and_pmid_regex,
-                    done_input_filepaths)
+                    done_input_filepaths,
+                    quick)
