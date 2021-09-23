@@ -139,7 +139,7 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
 
 if __name__ == "__main__":
 
-    test = False
+    test = True
     multi = True
     quick = True
 
@@ -157,7 +157,7 @@ if __name__ == "__main__":
                                       "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/" +
                                       "*.bz2"))
 
-    output_directory = "../analysis/dump_test" + ("_quick" if quick else "")
+    output_directory = "../analysis/dump" + ("_quick" if quick else "")
     if not exists(output_directory): makedirs(output_directory)
     done_filepath = output_directory + sep + "done.csv"
     
