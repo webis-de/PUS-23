@@ -70,6 +70,9 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
         with open(output_directory + sep + "done_update.txt", "a") as update_file:
             update_file.write("Analysis of file " + basename(input_filepath) + " already complete.\n")
         return
+    if exists(log_filepath):
+        print(input_filepath + " is already being analysed. Skipping.")
+        return
     start_publication_count = 0
     start_revision_count = 0
     if exists(log_filepath):
@@ -139,7 +142,7 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
 
 if __name__ == "__main__":
 
-    test = True
+    test = False
     multi = True
     quick = True
 
