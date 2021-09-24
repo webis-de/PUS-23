@@ -2,6 +2,5 @@ requests
 pybtex
 lxml
 matplotlib
-python-Levenshtein
 pyarrow
 regex
