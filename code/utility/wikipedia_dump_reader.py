@@ -7,10 +7,11 @@ from re import findall
 
 class WikipediaDumpReader(object):
 
-    def __init__(self, filepath):
+    def __init__(self, filepath, article_titles = []):
         self.filepath = filepath
         self.bz2_file = bz2.open(self.filepath, "rb")
         self.namespaces = {"":"http://www.mediawiki.org/xml/export-0.10/"}
+        self.article_titles = set(article_titles)
 
     def __enter__(self):
         """Makes the API autoclosable."""
@@ -63,11 +64,10 @@ class WikipediaDumpReader(object):
         with bz2.open(self.filepath, "rt") as bz2_file:
             read_revisions = False
             read_text = False
+            title = None
             text = ""
-            
-            line = bz2_file.readline()
 
-            while line:
+            for line in bz2_file.readlines():
                 if read_text:
                     if line.startswith("      <sha1"):
                         yield (title,
@@ -81,6 +81,8 @@ class WikipediaDumpReader(object):
                 else:
                     if line.startswith("    <title"):
                         title = line[11:-9]
+                    elif title and self.article_titles and title not in self.article_titles:
+                        continue
                     elif line.startswith("    <ns"):
                         read_revisions = (line[8] == "0")
                     elif read_revisions:
@@ -89,9 +91,7 @@ class WikipediaDumpReader(object):
                         elif line.startswith("      <timestamp"):
                             timestamp = line[17:-13]
                         elif read_revisions and line.startswith("      <text"):
-                            read_text = True
-
-                line = bz2_file.readline()                
+                            read_text = True               
 
     def write_revisions_to_parquet(self, output_filepath):
         revisions = {"title":[],"revid":[],"timestamp":[],"text":[]}
