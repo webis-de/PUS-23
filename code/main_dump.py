@@ -71,7 +71,13 @@ def read_and_increment_index_counter():
         file.write(str(index + 1))
     return index
 
-def process(input_filepath, output_directory, publication_map, doi_and_pmid_regex, done_input_filepaths, quick = False):
+def process(input_filepath,
+            output_directory,
+            publication_map,
+            doi_and_pmid_regex,
+            done_input_filepaths,
+            article_titles,
+            quick = False):
     output_file_prefix = output_directory + sep + basename(input_filepath).split(".bz2")[0]
     csv_filepath = output_file_prefix + "_results.csv"
     log_filepath = output_file_prefix + "_log.txt"
@@ -80,10 +86,6 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
         with open(output_directory + sep + "done_update.txt", "a") as update_file:
             update_file.write("Analysis of file " + basename(input_filepath) + " already complete.\n")
         return
-##    if exists(log_filepath):
-##        with open(output_directory + sep + "done_update.txt", "a") as update_file:
-##            update_file.write(basename(input_filepath) + " is already being analysed. Skipping.\n")
-##        return
     start_publication_count = 0
     start_revision_count = 0
     if exists(log_filepath):
@@ -106,7 +108,7 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
         csv_writer = csv.writer(csvfile, delimiter=",")
         old_title = None
         skip = False
-        with WikipediaDumpReader(input_filepath) as wdr:
+        with WikipediaDumpReader(input_filepath, article_titles) as wdr:
             for title,revid,timestamp,text in wdr.line_iter():
                 revision_count += 1
                 if start_revision_count and revision_count <= start_revision_count:
@@ -150,14 +152,16 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
                                        publication_count,
                                        revision_count,
                                        duration])
+            done_file.flush()
 
 if __name__ == "__main__":
-
-    index = read_and_increment_index_counter()
 
     test = False
     multi = False
     quick = True
+
+    with open("../data/CRISPR_articles.txt") as article_titles_file:
+        article_titles = [article_title.strip() for article_title in article_titles_file.readlines()]
 
     if test:
         corpus_path_prefix = ("../dumps/")
@@ -204,7 +208,7 @@ if __name__ == "__main__":
                        "enwiki-20210601-pages-meta-history6.xml-p1017780p1035309.bz2"]
         input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
 
-    output_directory = "../analysis/dump" + ("_quick" if quick else "")
+    output_directory = "../analysis/dump" + ("_quick" if quick else "_thorough")
     if not exists(output_directory): makedirs(output_directory)
     done_filepath = output_directory + sep + "done.csv"
     
@@ -214,10 +218,7 @@ if __name__ == "__main__":
     else:
         done_input_filepaths = []
 
-    if quick:
-        publication_map = {"dois":{}, "pmids":{}}
-    else:
-        publication_map = {}
+    publication_map = {"dois":{}, "pmids":{}}
 
     for publication_event in read_and_unify_publication_eventlists():
         bibkey = list(publication_event.bibentries.keys())[0]
@@ -225,27 +226,19 @@ if __name__ == "__main__":
         pmid = publication_event.pmids[bibkey]
         wos = publication_event.trace["wos"]
         accounts = publication_event.trace["accounts"]
-        if quick:
-            if doi: publication_map["dois"][doi] = (bibkey, wos, accounts)
-            if pmid: publication_map["pmids"][pmid] = (bibkey, wos, accounts)
-        else:
-            if doi: publication_map[doi] = (bibkey, wos, accounts)
-            if pmid: publication_map[pmid] = (bibkey, wos, accounts)
 
-    if quick:
-        dois = list(publication_map["dois"].keys())
-        pmids = list(publication_map["pmids"].keys())
-        escaped_dois = [re.escape(item) for item in dois]
-        escaped_pmids = [re.escape(item) for item in pmids]
-        doi_and_pmid_regex = re.compile("|".join(escaped_dois) + "|" + "(pmid = (" + ("|".join(escaped_pmids)) + "))")
-        publication_map.update(publication_map["dois"])
-        publication_map.update(publication_map["pmids"])
-        del publication_map["dois"]
-        del publication_map["pmids"]
-    else:
-        dois_and_pmids = list(publication_map.keys())
-        escaped_dois_and_pmids = [re.escape(item) for item in dois_and_pmids]
-        doi_and_pmid_regex = re.compile("|".join(escaped_dois_and_pmids))
+        if doi: publication_map["dois"][doi] = (bibkey, wos, accounts)
+        if pmid: publication_map["pmids"][pmid] = (bibkey, wos, accounts)
+
+    dois = list(publication_map["dois"].keys())
+    pmids = list(publication_map["pmids"].keys())
+    escaped_dois = [re.escape(item) for item in dois]
+    escaped_pmids = [re.escape(item) for item in pmids]
+    doi_and_pmid_regex = re.compile("|".join(escaped_dois) + "|" + "(pmid = (" + ("|".join(escaped_pmids)) + "))")
+    publication_map.update(publication_map["dois"])
+    publication_map.update(publication_map["pmids"])
+    del publication_map["dois"]
+    del publication_map["pmids"]
 
     if multi:
         with Pool(3) as pool:
@@ -255,12 +248,15 @@ if __name__ == "__main__":
                                     publication_map,
                                     doi_and_pmid_regex,
                                     done_input_filepaths,
+                                    article_titles,
                                     quick)
                                    for input_filepath in input_filepaths])
     else:
-        process(input_filepaths[index],
-                output_directory,
-                publication_map,
-                doi_and_pmid_regex,
-                done_input_filepaths,
-                quick)
+        for input_filepath in input_filepaths:
+            process(input_filepath,
+                    output_directory,
+                    publication_map,
+                    doi_and_pmid_regex,
+                    done_input_filepaths,
+                    article_titles,
+                    quick)
