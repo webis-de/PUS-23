@@ -67,7 +67,7 @@ class WikipediaDumpReader(object):
             title = None
             text = ""
 
-            for line in bz2_file.readlines():
+            for line in bz2_file:
                 if read_text:
                     if line.startswith("      <sha1"):
                         yield (title,

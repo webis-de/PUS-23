@@ -81,7 +81,6 @@ def process(input_filepath,
     output_file_prefix = output_directory + sep + basename(input_filepath).split(".bz2")[0]
     csv_filepath = output_file_prefix + "_results.csv"
     log_filepath = output_file_prefix + "_log.txt"
-    regex_function = re.search if quick else re.findall
     if basename(input_filepath) in done_input_filepaths:
         with open(output_directory + sep + "done_update.txt", "a") as update_file:
             update_file.write("Analysis of file " + basename(input_filepath) + " already complete.\n")
@@ -89,13 +88,18 @@ def process(input_filepath,
     start_publication_count = 0
     start_revision_count = 0
     if exists(log_filepath):
+        return
         with open(log_filepath) as file:
-            last_log_line = file.readlines()[-1]
             try:
-                start_publication_count = int(last_log_line.split(",")[0].strip().split(" >>> ")[-1])
-                start_revision_count  = int(last_log_line.split(",")[-1].strip())
-            except ValueError:
+                last_log_line = file.readlines()[-1]
+                try:
+                    start_publication_count = int(last_log_line.split(",")[0].strip().split(" >>> ")[-1])
+                    start_revision_count  = int(last_log_line.split(",")[-1].strip())
+                except ValueError:
+                    pass
+            except IndexError:
                 pass
+
         with open(output_directory + sep + "done_update.txt", "a") as update_file:
             update_file.write("Analysis of file " + basename(input_filepath) + " already started. " + \
                               "Starting from " + str(start_publication_count) + " publications and " + \
@@ -115,18 +119,15 @@ def process(input_filepath,
                     continue
                 if revision_count % 1000 == 0:
                     logger.info(str(publication_count) + "," + str(revision_count))
-                matches = regex_function(doi_and_pmid_regex, text)
                 if quick:
-                    matches = [matches]
                     if title != old_title:
                         skip = False
                     if title == old_title and skip:
                         continue
+                matches = re.finditer(doi_and_pmid_regex, text)
                 for match in matches:
                     if match:
-                        if quick:
-                            skip = True
-                            match = match.group().replace("pmid = ", "")
+                        match = match.group().replace("pmid = ", "")
                         publication_count += 1
                         bibkey, wos, accounts = publication_map[match]
                         eventlist = "|".join([key for key,value
@@ -139,6 +140,9 @@ def process(input_filepath,
                                              Timestamp(timestamp).string,
                                              eventlist])
                         csvfile.flush()
+                        if quick:
+                            skip = True
+                            break
                 old_title = title
         logger.info(str(publication_count) + "," + str(revision_count))
         end = datetime.now()
@@ -158,18 +162,18 @@ if __name__ == "__main__":
 
     test = False
     multi = False
-    quick = True
+    quick = False
 
     with open("../data/CRISPR_articles.txt") as article_titles_file:
         article_titles = [article_title.strip() for article_title in article_titles_file.readlines()]
 
     if test:
         corpus_path_prefix = ("../dumps/")
-        input_files = [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
-                       #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
-                       #"enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
+        input_files = ["enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
+                       "enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
+                       "enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
                        "enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
-                       #"enwiki-20210601-pages-meta-history1.xml-p10133p11053.bz2",    # 2GB
+                       "enwiki-20210601-pages-meta-history1.xml-p10133p11053.bz2",    # 2GB
                        ]
         input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
     else:
@@ -206,7 +210,7 @@ if __name__ == "__main__":
                        "enwiki-20210601-pages-meta-history25.xml-p61990437p62316505.bz2",
                        "enwiki-20210601-pages-meta-history6.xml-p1355452p1384261.bz2",
                        "enwiki-20210601-pages-meta-history6.xml-p1017780p1035309.bz2"]
-        input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
+        input_filepaths = glob(corpus_path_prefix + "*.bz2")
 
     output_directory = "../analysis/dump" + ("_quick" if quick else "_thorough")
     if not exists(output_directory): makedirs(output_directory)
@@ -234,7 +238,7 @@ if __name__ == "__main__":
     pmids = list(publication_map["pmids"].keys())
     escaped_dois = [re.escape(item) for item in dois]
     escaped_pmids = [re.escape(item) for item in pmids]
-    doi_and_pmid_regex = re.compile("|".join(escaped_dois) + "|" + "(pmid = (" + ("|".join(escaped_pmids)) + "))")
+    doi_and_pmid_regex = re.compile("|".join(escaped_dois) + "|" + "((" + ("|".join(escaped_pmids)) + "))")
     publication_map.update(publication_map["dois"])
     publication_map.update(publication_map["pmids"])
     del publication_map["dois"]
