@@ -61,6 +61,16 @@ def read_and_unify_publication_eventlists_for_tests():
     eventlist.events[0].trace = {"wos":True, "accounts":False}
     return eventlist.events
 
+def read_and_increment_index_counter():
+    if not exists("index.txt"):
+        index = 0
+    else:
+        with open("index.txt") as file:
+            index = int(file.readline().strip())
+    with open("index.txt", "w") as file:
+        file.write(str(index + 1))
+    return index
+
 def process(input_filepath, output_directory, publication_map, doi_and_pmid_regex, done_input_filepaths, quick = False):
     output_file_prefix = output_directory + sep + basename(input_filepath).split(".bz2")[0]
     csv_filepath = output_file_prefix + "_results.csv"
@@ -70,9 +80,10 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
         with open(output_directory + sep + "done_update.txt", "a") as update_file:
             update_file.write("Analysis of file " + basename(input_filepath) + " already complete.\n")
         return
-    if exists(log_filepath):
-        print(input_filepath + " is already being analysed. Skipping.")
-        return
+##    if exists(log_filepath):
+##        with open(output_directory + sep + "done_update.txt", "a") as update_file:
+##            update_file.write(basename(input_filepath) + " is already being analysed. Skipping.\n")
+##        return
     start_publication_count = 0
     start_revision_count = 0
     if exists(log_filepath):
@@ -113,7 +124,7 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
                     if match:
                         if quick:
                             skip = True
-                            match = match.group()
+                            match = match.group().replace("pmid = ", "")
                         publication_count += 1
                         bibkey, wos, accounts = publication_map[match]
                         eventlist = "|".join([key for key,value
@@ -142,8 +153,10 @@ def process(input_filepath, output_directory, publication_map, doi_and_pmid_rege
 
 if __name__ == "__main__":
 
+    index = read_and_increment_index_counter()
+
     test = False
-    multi = True
+    multi = False
     quick = True
 
     if test:
@@ -156,9 +169,40 @@ if __name__ == "__main__":
                        ]
         input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
     else:
-        input_filepaths = sorted(glob("../../../../../" +
-                                      "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/" +
-                                      "*.bz2"))
+        corpus_path_prefix = "../../../../../" + \
+                             "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/"
+        input_files = ["enwiki-20210601-pages-meta-history17.xml-p23066522p23205332.bz2",
+                       "enwiki-20210601-pages-meta-history15.xml-p14579289p14700220.bz2",
+                       "enwiki-20210601-pages-meta-history5.xml-p882959p896171.bz2",
+                       "enwiki-20210601-pages-meta-history4.xml-p332127p339619.bz2",
+                       "enwiki-20210601-pages-meta-history22.xml-p43153318p43347630.bz2",
+                       "enwiki-20210601-pages-meta-history7.xml-p1590075p1614173.bz2",
+                       "enwiki-20210601-pages-meta-history20.xml-p31308443p31478739.bz2",
+                       "enwiki-20210601-pages-meta-history9.xml-p3951543p4007490.bz2",
+                       "enwiki-20210601-pages-meta-history3.xml-p169261p172243.bz2",
+                       "enwiki-20210601-pages-meta-history17.xml-p21612343p21751382.bz2",
+                       "enwiki-20210601-pages-meta-history6.xml-p1175912p1198012.bz2",
+                       "enwiki-20210601-pages-meta-history18.xml-p25649925p25685213.bz2",
+                       "enwiki-20210601-pages-meta-history5.xml-p852009p867775.bz2",
+                       "enwiki-20210601-pages-meta-history5.xml-p558392p564706.bz2",
+                       "enwiki-20210601-pages-meta-history23.xml-p45000268p45249741.bz2",
+                       "enwiki-20210601-pages-meta-history18.xml-p26042566p26199196.bz2",
+                       "enwiki-20210601-pages-meta-history15.xml-p15900064p16014771.bz2",
+                       "enwiki-20210601-pages-meta-history15.xml-p15316383p15431510.bz2",
+                       "enwiki-20210601-pages-meta-history23.xml-p45249742p45424599.bz2",
+                       "enwiki-20210601-pages-meta-history21.xml-p39426700p39596341.bz2",
+                       "enwiki-20210601-pages-meta-history25.xml-p59825024p60146730.bz2",
+                       "enwiki-20210601-pages-meta-history7.xml-p2070088p2101074.bz2",
+                       "enwiki-20210601-pages-meta-history7.xml-p1542750p1567572.bz2",
+                       "enwiki-20210601-pages-meta-history23.xml-p47022097p47215605.bz2",
+                       "enwiki-20210601-pages-meta-history4.xml-p440275p450342.bz2",
+                       "enwiki-20210601-pages-meta-history2.xml-p89852p93801.bz2",
+                       "enwiki-20210601-pages-meta-history13.xml-p9666995p9774395.bz2",
+                       "enwiki-20210601-pages-meta-history7.xml-p1710362p1739385.bz2",
+                       "enwiki-20210601-pages-meta-history25.xml-p61990437p62316505.bz2",
+                       "enwiki-20210601-pages-meta-history6.xml-p1355452p1384261.bz2",
+                       "enwiki-20210601-pages-meta-history6.xml-p1017780p1035309.bz2"]
+        input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
 
     output_directory = "../analysis/dump" + ("_quick" if quick else "")
     if not exists(output_directory): makedirs(output_directory)
@@ -204,7 +248,7 @@ if __name__ == "__main__":
         doi_and_pmid_regex = re.compile("|".join(escaped_dois_and_pmids))
 
     if multi:
-        with Pool(5) as pool:
+        with Pool(3) as pool:
 
             pool.starmap(process, [(input_filepath,
                                     output_directory,
@@ -214,11 +258,9 @@ if __name__ == "__main__":
                                     quick)
                                    for input_filepath in input_filepaths])
     else:
-        for input_filepath in input_filepaths:
-
-            process(input_filepath,
-                    output_directory,
-                    publication_map,
-                    doi_and_pmid_regex,
-                    done_input_filepaths,
-                    quick)
+        process(input_filepaths[index],
+                output_directory,
+                publication_map,
+                doi_and_pmid_regex,
+                done_input_filepaths,
+                quick)
