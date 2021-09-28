@@ -125,9 +125,9 @@ def process(input_filepath,
                     if title == old_title and skip:
                         continue
                 matches = re.finditer(doi_and_pmid_regex, text)
-                for match in matches:
+                for match in sorted(set([match.group() for match in re.finditer(doi_and_pmid_regex, text)])):
                     if match:
-                        match = match.group().replace("pmid = ", "")
+                        match = match.replace("pmid = ", "")
                         publication_count += 1
                         bibkey, wos, accounts = publication_map[match]
                         eventlist = "|".join([key for key,value
