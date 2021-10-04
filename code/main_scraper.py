@@ -21,7 +21,7 @@ if __name__ == "__main__":
                                  help="The relative or absolute path to the directory " + \
                                       "to which the revisions will be saved.")
     argument_parser.add_argument("-a", "--articles",
-                                 default="../data/relevant_articles/articles_arno.json",
+                                 default="../data/relevant_articles/CRISPR_articles.json",
                                  help="Either the relative of abolute path to a JSON file of articles " + \
                                       "or quoted string of comma-separated articles, " + \
                                       "e.g. 'Cas9,The CRISPR JOURNAL'.")
@@ -45,7 +45,10 @@ if __name__ == "__main__":
     ARTICLES = args["articles"]
     try:
         with open(ARTICLES) as file:
-            wikipedia_articles = flatten_list_of_lists(load(file).values())
+            if ".json" in ARTICLES:
+                wikipedia_articles = flatten_list_of_lists(load(file).values())
+            if ".txt" in ARTICLES:
+                wikipedia_articles = [line.strip() for line in file.readlines()]
     except FileNotFoundError:
         wikipedia_articles = [article.strip() for article in split(" *, *", ARTICLES)]
 
