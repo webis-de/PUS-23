@@ -125,8 +125,10 @@ def process(input_filepath,
                     if title == old_title and skip:
                         continue
                 matches = re.finditer(doi_and_pmid_regex, text)
-                for match in sorted(set([match.group() for match in re.finditer(doi_and_pmid_regex, text)])):
+                for match in re.finditer(doi_and_pmid_regex, text):
+                for match in sorted(set([item.group() for item in re.finditer(doi_and_pmid_regex, text)])):
                     if match:
+                        match = match.group().replace("pmid = ", "")
                         match = match.replace("pmid = ", "")
                         publication_count += 1
                         bibkey, wos, accounts = publication_map[match]
@@ -169,11 +171,12 @@ if __name__ == "__main__":
 
     if test:
         corpus_path_prefix = ("../dumps/")
-        input_files = ["enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
-                       "enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
-                       "enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
-                       "enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
-                       "enwiki-20210601-pages-meta-history1.xml-p10133p11053.bz2",    # 2GB
+        input_files = [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
+                       #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
+                       #"enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
+                       #"enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
+                       #"enwiki-20210601-pages-meta-history1.xml-p10133p11053.bz2",    # 2GB
+                       "enwiki-20210601-pages-meta-history11.xml-p6324364p6396854.bz2" # broken results CSV
                        ]
         input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
     else:
@@ -212,7 +215,7 @@ if __name__ == "__main__":
                        "enwiki-20210601-pages-meta-history6.xml-p1017780p1035309.bz2"]
         input_filepaths = glob(corpus_path_prefix + "*.bz2")
 
-    output_directory = "../analysis/dump" + ("_quick" if quick else "_thorough")
+    output_directory = "../analysis/dump_test"
     if not exists(output_directory): makedirs(output_directory)
     done_filepath = output_directory + sep + "done.csv"
     
