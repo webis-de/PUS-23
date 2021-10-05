@@ -5,6 +5,7 @@ from json import loads, dump
 import matplotlib.pyplot as plt
 from unicodedata import normalize
 from Levenshtein import distance
+from urllib.parse import unquote
 
 class Article:
     """
@@ -24,7 +25,7 @@ class Article:
         """
         self.filepath = filepath
         self.filename = basename(filepath)
-        self.name = " ".join(self.filename.split("_")[:-1])
+        self.name = unquote(" ".join(self.filename.split("_")[:-1]))
         self.timestamps = []
 
     def get_revisions(self, first = 0, final = float("inf")):
