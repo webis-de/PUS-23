@@ -1,3 +1,4 @@
+from article.article import Article
 from article.revision.timestamp import Timestamp
 from bibliography.bibliography import Bibliography
 from timeline.eventlist import EventList
@@ -12,6 +13,8 @@ from os.path import basename, exists, sep
 from os import makedirs
 from glob import glob
 from multiprocessing import Pool
+import matplotlib.pyplot as plt
+from time import sleep
 
 def get_logger(filename):
     """Set up the logger."""
@@ -71,6 +74,13 @@ def read_and_increment_index_counter():
         file.write(str(index + 1))
     return index
 
+def get_dates():
+    dates = []
+    for year in range(2001,2022):
+        for month in range(1, 13):
+            dates.append(str(month).rjust(2, "0") + "/" + str(year))
+    return dates
+
 def process(input_filepath,
             output_directory,
             publication_map,
@@ -125,10 +135,10 @@ def process(input_filepath,
                     if title == old_title and skip:
                         continue
                 matches = re.finditer(doi_and_pmid_regex, text)
-                for match in re.finditer(doi_and_pmid_regex, text):
+                #for match in re.finditer(doi_and_pmid_regex, text):
                 for match in sorted(set([item.group() for item in re.finditer(doi_and_pmid_regex, text)])):
                     if match:
-                        match = match.group().replace("pmid = ", "")
+                        #match = match.group().replace("pmid = ", "")
                         match = match.replace("pmid = ", "")
                         publication_count += 1
                         bibkey, wos, accounts = publication_map[match]
@@ -166,104 +176,145 @@ if __name__ == "__main__":
     multi = False
     quick = False
 
-    with open("../data/CRISPR_articles.txt") as article_titles_file:
-        article_titles = [article_title.strip() for article_title in article_titles_file.readlines()]
+##    with open("../data/CRISPR_articles.txt") as article_titles_file:
+##        article_titles = [article_title.strip() for article_title in article_titles_file.readlines()]
+##
+##    if test:
+##        corpus_path_prefix = ("../dumps/")
+##        input_files = [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
+##                       #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
+##                       #"enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
+##                       #"enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
+##                       #"enwiki-20210601-pages-meta-history1.xml-p10133p11053.bz2",    # 2GB
+##                       "enwiki-20210601-pages-meta-history11.xml-p6324364p6396854.bz2" # broken results CSV
+##                       ]
+##        input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
+##    else:
+##        corpus_path_prefix = "../../../../../" + \
+##                             "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/"
+##        input_filepaths = glob(corpus_path_prefix + "*.bz2")
+##
+##    output_directory = "../analysis/dump_test"
+##    if not exists(output_directory): makedirs(output_directory)
+##    
+##    done_filepath = output_directory + sep + "done.csv"
+##    if exists(done_filepath):
+##        with open(done_filepath) as file:
+##            done_input_filepaths = [line.split(",")[0] for line in file.readlines()]
+##    else:
+##        done_input_filepaths = []
 
-    if test:
-        corpus_path_prefix = ("../dumps/")
-        input_files = [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
-                       #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
-                       #"enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
-                       #"enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
-                       #"enwiki-20210601-pages-meta-history1.xml-p10133p11053.bz2",    # 2GB
-                       "enwiki-20210601-pages-meta-history11.xml-p6324364p6396854.bz2" # broken results CSV
-                       ]
-        input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
-    else:
-        corpus_path_prefix = "../../../../../" + \
-                             "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/"
-        input_files = ["enwiki-20210601-pages-meta-history17.xml-p23066522p23205332.bz2",
-                       "enwiki-20210601-pages-meta-history15.xml-p14579289p14700220.bz2",
-                       "enwiki-20210601-pages-meta-history5.xml-p882959p896171.bz2",
-                       "enwiki-20210601-pages-meta-history4.xml-p332127p339619.bz2",
-                       "enwiki-20210601-pages-meta-history22.xml-p43153318p43347630.bz2",
-                       "enwiki-20210601-pages-meta-history7.xml-p1590075p1614173.bz2",
-                       "enwiki-20210601-pages-meta-history20.xml-p31308443p31478739.bz2",
-                       "enwiki-20210601-pages-meta-history9.xml-p3951543p4007490.bz2",
-                       "enwiki-20210601-pages-meta-history3.xml-p169261p172243.bz2",
-                       "enwiki-20210601-pages-meta-history17.xml-p21612343p21751382.bz2",
-                       "enwiki-20210601-pages-meta-history6.xml-p1175912p1198012.bz2",
-                       "enwiki-20210601-pages-meta-history18.xml-p25649925p25685213.bz2",
-                       "enwiki-20210601-pages-meta-history5.xml-p852009p867775.bz2",
-                       "enwiki-20210601-pages-meta-history5.xml-p558392p564706.bz2",
-                       "enwiki-20210601-pages-meta-history23.xml-p45000268p45249741.bz2",
-                       "enwiki-20210601-pages-meta-history18.xml-p26042566p26199196.bz2",
-                       "enwiki-20210601-pages-meta-history15.xml-p15900064p16014771.bz2",
-                       "enwiki-20210601-pages-meta-history15.xml-p15316383p15431510.bz2",
-                       "enwiki-20210601-pages-meta-history23.xml-p45249742p45424599.bz2",
-                       "enwiki-20210601-pages-meta-history21.xml-p39426700p39596341.bz2",
-                       "enwiki-20210601-pages-meta-history25.xml-p59825024p60146730.bz2",
-                       "enwiki-20210601-pages-meta-history7.xml-p2070088p2101074.bz2",
-                       "enwiki-20210601-pages-meta-history7.xml-p1542750p1567572.bz2",
-                       "enwiki-20210601-pages-meta-history23.xml-p47022097p47215605.bz2",
-                       "enwiki-20210601-pages-meta-history4.xml-p440275p450342.bz2",
-                       "enwiki-20210601-pages-meta-history2.xml-p89852p93801.bz2",
-                       "enwiki-20210601-pages-meta-history13.xml-p9666995p9774395.bz2",
-                       "enwiki-20210601-pages-meta-history7.xml-p1710362p1739385.bz2",
-                       "enwiki-20210601-pages-meta-history25.xml-p61990437p62316505.bz2",
-                       "enwiki-20210601-pages-meta-history6.xml-p1355452p1384261.bz2",
-                       "enwiki-20210601-pages-meta-history6.xml-p1017780p1035309.bz2"]
-        input_filepaths = glob(corpus_path_prefix + "*.bz2")
-
-    output_directory = "../analysis/dump_test"
-    if not exists(output_directory): makedirs(output_directory)
-    done_filepath = output_directory + sep + "done.csv"
-    
-    if exists(done_filepath):
-        with open(done_filepath) as file:
-            done_input_filepaths = [line.split(",")[0] for line in file.readlines()]
-    else:
-        done_input_filepaths = []
-
-    publication_map = {"dois":{}, "pmids":{}}
-
-    for publication_event in read_and_unify_publication_eventlists():
+    publication_map = {}
+    dois = []
+    pmids = []
+    bibkeys = []
+    unified_publication_events = read_and_unify_publication_eventlists()
+    for publication_event in unified_publication_events:
         bibkey = list(publication_event.bibentries.keys())[0]
+        bibkeys.append(bibkey)
         doi = publication_event.dois[bibkey]
         pmid = publication_event.pmids[bibkey]
         wos = publication_event.trace["wos"]
         accounts = publication_event.trace["accounts"]
+        if doi:
+            dois.append(re.escape(doi))
+            publication_map[doi] = (bibkey, wos, accounts)
+        if pmid:
+            pmids.append(re.escape(pmid))
+            publication_map[pmid] = (bibkey, wos, accounts)
+    
+    doi_and_pmid_regex = re.compile("|".join(dois) + "|" + "(pmid = (" + ("|".join(pmids)) + "))")
 
-        if doi: publication_map["dois"][doi] = (bibkey, wos, accounts)
-        if pmid: publication_map["pmids"][pmid] = (bibkey, wos, accounts)
+    article_filenames = sorted(glob("../articles/2021-10-04_wikitext_only/en/*_en"))
 
-    dois = list(publication_map["dois"].keys())
-    pmids = list(publication_map["pmids"].keys())
-    escaped_dois = [re.escape(item) for item in dois]
-    escaped_pmids = [re.escape(item) for item in pmids]
-    doi_and_pmid_regex = re.compile("|".join(escaped_dois) + "|" + "((" + ("|".join(escaped_pmids)) + "))")
-    publication_map.update(publication_map["dois"])
-    publication_map.update(publication_map["pmids"])
-    del publication_map["dois"]
-    del publication_map["pmids"]
+    print(article_filenames)
 
-    if multi:
-        with Pool(3) as pool:
+    dates = get_dates()[:-7]
 
-            pool.starmap(process, [(input_filepath,
-                                    output_directory,
-                                    publication_map,
-                                    doi_and_pmid_regex,
-                                    done_input_filepaths,
-                                    article_titles,
-                                    quick)
-                                   for input_filepath in input_filepaths])
-    else:
-        for input_filepath in input_filepaths:
-            process(input_filepath,
-                    output_directory,
-                    publication_map,
-                    doi_and_pmid_regex,
-                    done_input_filepaths,
-                    article_titles,
-                    quick)
+    results = {date:{} for date in dates}
+
+    for index,article_filename in enumerate(article_filenames, 1):
+        article = Article(article_filename)
+        for date in dates:
+            results[date][article.name] = {bibkey:False for bibkey in bibkeys}
+
+    fig, ax = plt.subplots()
+    fig.set_dpi(100.0)
+    fig.set_figheight(80)
+    fig.set_figwidth(50)
+    with open("results.csv", "w") as csvfile:
+        for article_filename in article_filenames:
+            article = Article(article_filename)
+            print(article.name)
+            revisions = article.yield_revisions()
+            date_revision_map = {date:False for date in dates}
+            for revision in revisions:
+                month = str(revision.timestamp.month).rjust(2, "0")
+                year = str(revision.timestamp.year)
+                date = month + "/" + year
+                date_revision_map[date] = True
+
+                #print(revision.index, revision.url)
+
+                for match in sorted(set([item.group().replace("pmid = ", "") for item in re.finditer(doi_and_pmid_regex, revision.get_wikitext())])):
+                    bibkey, wos, accounts = publication_map[match]
+                    results[date][article.name][bibkey] = 1 if wos else 2
+
+            for i in range(1, len(dates)):
+                if not date_revision_map[dates[i]] and date_revision_map[dates[i-1]]:
+                    results[dates[i]] = results[dates[i-1]]
+                    date_revision_map[dates[i]] = True
+
+            csv_writer = csv.writer(csvfile, delimiter=",")
+            line = []
+            for date in dates:
+                wos_count = 0
+                acc_count = 0
+                for bibkey in results[date][article.name]:
+                    if results[date][article.name][bibkey] == 1:
+                        wos_count += 1
+                    if results[date][article.name][bibkey] == 2:
+                        acc_count += 1
+                line.append(str(wos_count) + "/" + str(wos_count + acc_count))
+            csv_writer.writerow([article.name] + line)
+
+            data = {'x': dates,
+                    'y': [article.name for y in dates],
+                    'c': [((len([value for value in results[date][article.name].values() if value in [1]])/
+                            len([value for value in results[date][article.name].values() if value in [1,2]]))
+                           if len([value for value in results[date][article.name].values() if value in [1,2]]) > 0 else 0)
+                          for date in dates],
+                    'd': [len([value for value in results[date][article.name].values() if value in [1,2]]) for date in dates]}
+        
+            ax.scatter('x', 'y', c='c', s='d', data=data, cmap='Greys')
+                
+        csv_writer = csv.writer(csvfile, delimiter=",")
+        csv_writer.writerow([""] + dates)
+        
+        ax.set(xlabel='Months', ylabel='Name of Article')
+        ax.tick_params(axis='x', labelrotation=90)
+        ax.margins(x=0.005, y=0.005)
+        plt.subplots_adjust(left=0.09, right=0.9975, bottom=0.0125, top=0.999)
+        plt.savefig("results.png")
+        plt.savefig("results.jpg")
+
+##    if multi:
+##        with Pool(3) as pool:
+##
+##            pool.starmap(process, [(input_filepath,
+##                                    output_directory,
+##                                    publication_map,
+##                                    doi_and_pmid_regex,
+##                                    done_input_filepaths,
+##                                    article_titles,
+##                                    quick)
+##                                   for input_filepath in input_filepaths])
+##    else:
+##        for input_filepath in input_filepaths:
+##            process(input_filepath,
+##                    output_directory,
+##                    publication_map,
+##                    doi_and_pmid_regex,
+##                    done_input_filepaths,
+##                    article_titles,
+##                    quick)

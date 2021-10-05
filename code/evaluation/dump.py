@@ -8,7 +8,7 @@ def scroll_to_url(article_name, revid, string):
             + "&oldid=" + revid
             + "#:~:text=" + quote(string))
 
-filepaths = glob("../../analysis/dump_thorough/*results.csv")
+filepaths = glob("../../analysis/dump_articles_analysis/*results.csv")
 
 results = {}
 corpus_map = {}
@@ -62,25 +62,6 @@ for article_name in results:
                                                                                      "final_pmid_match":final_pmid_match,
                                                                                      "first_doi_match":first_doi_match,
                                                                                      "final_doi_match":final_doi_match}
-                                                                           
-      
-###collate results in results.csv
-##with open("results.csv", "w", newline="") as coalated_file:
-##    csv_writer = writer(coalated_file, delimiter=",")
-##    for article_name in results:
-##        first_time_article_name = True
-##        for bibkey in results[article_name]:
-##            first_time_bibkey = True
-##            for doi_or_pmid in results[article_name][bibkey]:
-##                for revid,timestamp,corpus in results[article_name][bibkey][doi_or_pmid]:
-##                    csv_writer.writerow([article_name if first_time_article_name else "",
-##                                         bibkey if first_time_bibkey else "",
-##                                         doi_or_pmid,
-##                                         revid,
-##                                         timestamp,
-##                                         corpus])
-##                    first_time_article_name = False
-##                first_time_bibkey = False
 
 #map (revid,timestamp,corpus) tuples to count
 for article_name in results:
@@ -96,10 +77,11 @@ results = {article_name:{bibkey:results[article_name][bibkey]
                                               reverse=True)}
            for article_name in results}
 
-#print to results.txt
-with open("results_basic.txt", "w") as file:
+#write to txt
+with open("dumps_articles_analysis.txt", "w") as file:
     file.write(pformat(results, sort_dicts=False))
-with open("results_basic.csv", "w") as file:
+#write to csv
+with open("dumps_articles_analysis.csv", "w") as file:
     csv_writer = writer(file, delimiter=",")
     for article_name in results:
         first_time_article_name = True
@@ -150,13 +132,3 @@ with open("results_basic.csv", "w") as file:
                                                pmid) if pmid else "",
                                  "---"])
             first_time_article_name = False
-            
-##with open("wikipedia_dump_analysis.txt", "w") as file:
-##    for article_name in results:
-##        file.write(article_name + "\n")
-##        for bibkey in results[article_name]:
-##            file.write("\t" + "bibkey: ".ljust(11, " ") + bibkey + "\n")
-##            for doi_or_pmid in results[article_name][bibkey]:
-##                file.write("\t" + ("PMID:" if doi_or_pmid.isnumeric() else "DOI:").ljust(11, " ") + doi_or_pmid + "\n")
-##                for key,value in results[article_name][bibkey][doi_or_pmid].items():
-##                    file.write("\t" + key.ljust(11, " ") + value.replace("|", ", ") + "\n")
