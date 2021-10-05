@@ -372,7 +372,7 @@ if __name__ == "__main__":
     matplotlib.rc('xtick', labelsize=15) 
     matplotlib.rc('ytick', labelsize=15)
 
-    problematic_revids = load(open("../data/problematic_revids.json"))
+    problematic_revids = load(open("../data/CRISPR_articles_problematic_revids.json"))
     problematic_revids_CRISPR_en = [item[0] for item in problematic_revids["CRISPR_en"]]
     problematic_revids_CRISPR_gene_editing_en = [item[0] for item in problematic_revids["CRISPR_gene_editing_en"]]
 

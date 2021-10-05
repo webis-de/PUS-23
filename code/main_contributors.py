@@ -190,7 +190,7 @@ if __name__ == "__main__":
     article_title = "CRISPR_en"
     output_directory = "../analysis/contributors/" + article_title
     basename = output_directory + sep + article_title + "_" + section_name.lower() + "_section_editor_contributions"
-    problematic_revids = [item[0] for item in load(open("../data/problematic_revids.json"))[article_title]]
+    problematic_revids = [item[0] for item in load(open("../data/CRISPR_articles_problematic_revids.json"))[article_title]]
     other_revids = [744165876,
                     744168725,
                     744170373,
