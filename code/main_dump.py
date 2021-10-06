@@ -14,6 +14,7 @@ from os import makedirs
 from glob import glob
 from multiprocessing import Pool
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcol
 from time import sleep
 
 def get_logger(filename):
@@ -74,20 +75,41 @@ def read_and_increment_index_counter():
         file.write(str(index + 1))
     return index
 
-def get_dates():
-    dates = []
-    for year in range(2001,2022):
+def get_timeslices(first_year = 2001, final_year = 2021):
+    timeslices = []
+    for year in range(first_year,final_year + 1):
         for month in range(1, 13):
-            dates.append(str(month).rjust(2, "0") + "/" + str(year))
-    return dates
+            timeslices.append(str(month).rjust(2, "0") + "/" + str(year))
+    return timeslices
 
-def process(input_filepath,
-            output_directory,
-            publication_map,
-            doi_and_pmid_regex,
-            done_input_filepaths,
-            article_titles,
-            quick = False):
+def get_publication_data():
+    publication_map = {}
+    dois = []
+    pmids = []
+    bibkeys = []
+    unified_publication_events = read_and_unify_publication_eventlists()
+    for publication_event in unified_publication_events:
+        bibkey = list(publication_event.bibentries.keys())[0]
+        bibkeys.append(bibkey)
+        doi = publication_event.dois[bibkey]
+        pmid = publication_event.pmids[bibkey]
+        wos = publication_event.trace["wos"]
+        accounts = publication_event.trace["accounts"]
+        if doi:
+            dois.append(re.escape(doi))
+            publication_map[doi] = (bibkey, wos, accounts)
+        if pmid:
+            pmids.append(re.escape(pmid))
+            publication_map[pmid] = (bibkey, wos, accounts)
+    return (publication_map, dois, pmids, bibkeys)
+
+def analyse_dump(input_filepath,
+                 output_directory,
+                 publication_map,
+                 doi_and_pmid_regex,
+                 done_input_filepaths,
+                 article_titles,
+                 quick = False):
     output_file_prefix = output_directory + sep + basename(input_filepath).split(".bz2")[0]
     csv_filepath = output_file_prefix + "_results.csv"
     log_filepath = output_file_prefix + "_log.txt"
@@ -170,11 +192,50 @@ def process(input_filepath,
                                        duration])
             done_file.flush()
 
+def analyse_article(article_filepath, timeslices, publication_map, bibkeys):
+    article = Article(article_filepath)
+    article_name = article.name
+
+    results = {timeslice:{bibkey:False for bibkey in bibkeys} for timeslice in timeslices}
+                
+    revisions = article.yield_revisions()
+    timeslice_revision_map = {timeslice:False for timeslice in timeslices}
+    for revision in revisions:
+        month = str(revision.timestamp.month).rjust(2, "0")
+        year = str(revision.timestamp.year)
+        timeslice = month + "/" + year
+        timeslice_revision_map[timeslice] = True
+
+        for match in sorted(set([item.group().replace("pmid = ", "") for item in re.finditer(doi_and_pmid_regex, revision.get_wikitext())])):
+            bibkey, wos, accounts = publication_map[match]
+            results[timeslice][bibkey] = "wos" if wos else "any"
+
+    for i in range(1, len(timeslices)):
+        if not timeslice_revision_map[timeslices[i]] and timeslice_revision_map[timeslices[i-1]]:
+            results[timeslices[i]] = results[timeslices[i-1]]
+            timeslice_revision_map[timeslices[i]] = True
+
+    line = []
+    for timeslice in timeslices:
+        wos_count = 0
+        any_count = 0
+        for bibkey in results[timeslice]:
+            if results[timeslice][bibkey] == "wos":
+                wos_count += 1
+            if results[timeslice][bibkey] == "any":
+                any_count += 1
+        line.append(str(wos_count) + "/" + str(wos_count + any_count))
+    print(article_name)
+    return [article_name] + line
+
 if __name__ == "__main__":
 
     test = False
     multi = False
     quick = False
+
+    output_directory = "../analysis/test"
+    if not exists(output_directory): makedirs(output_directory)
 
 ##    with open("../data/CRISPR_articles.txt") as article_titles_file:
 ##        article_titles = [article_title.strip() for article_title in article_titles_file.readlines()]
@@ -194,8 +255,6 @@ if __name__ == "__main__":
 ##                             "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/"
 ##        input_filepaths = glob(corpus_path_prefix + "*.bz2")
 ##
-##    output_directory = "../analysis/dump_test"
-##    if not exists(output_directory): makedirs(output_directory)
 ##    
 ##    done_filepath = output_directory + sep + "done.csv"
 ##    if exists(done_filepath):
@@ -204,104 +263,101 @@ if __name__ == "__main__":
 ##    else:
 ##        done_input_filepaths = []
 
-    publication_map = {}
-    dois = []
-    pmids = []
-    bibkeys = []
-    unified_publication_events = read_and_unify_publication_eventlists()
-    for publication_event in unified_publication_events:
-        bibkey = list(publication_event.bibentries.keys())[0]
-        bibkeys.append(bibkey)
-        doi = publication_event.dois[bibkey]
-        pmid = publication_event.pmids[bibkey]
-        wos = publication_event.trace["wos"]
-        accounts = publication_event.trace["accounts"]
-        if doi:
-            dois.append(re.escape(doi))
-            publication_map[doi] = (bibkey, wos, accounts)
-        if pmid:
-            pmids.append(re.escape(pmid))
-            publication_map[pmid] = (bibkey, wos, accounts)
-    
-    doi_and_pmid_regex = re.compile("|".join(dois) + "|" + "(pmid = (" + ("|".join(pmids)) + "))")
+    article_filepaths = sorted(glob("../articles/2021-10-04_wikitext_only/en/*_en"))
 
-    article_filenames = sorted(glob("../articles/2021-10-04_wikitext_only/en/*_en"))
+    relevant_article_filepath = [("../data/CRISPR_articles_relevant.txt","_relevant"),
+                                 ("../data/CRISPR_articles_relevant_no_persons.txt","_relevant_no_persons")
+                                 ][-2]
 
-    print(article_filenames)
+    with open(relevant_article_filepath[0]) as file:
+        relevant_article_names = set([line.strip() for line in file.readlines()])
+        
+    timeslices = get_timeslices(2001)[:-7]
 
-    dates = get_dates()[:-7]
-
-    results = {date:{} for date in dates}
-
-    for index,article_filename in enumerate(article_filenames, 1):
-        article = Article(article_filename)
-        for date in dates:
-            results[date][article.name] = {bibkey:False for bibkey in bibkeys}
-
-    fig, ax = plt.subplots()
-    fig.set_dpi(100.0)
-    fig.set_figheight(80)
-    fig.set_figwidth(50)
-    with open("results.csv", "w") as csvfile:
-        for article_filename in article_filenames:
-            article = Article(article_filename)
-            print(article.name)
-            revisions = article.yield_revisions()
-            date_revision_map = {date:False for date in dates}
-            for revision in revisions:
-                month = str(revision.timestamp.month).rjust(2, "0")
-                year = str(revision.timestamp.year)
-                date = month + "/" + year
-                date_revision_map[date] = True
-
-                #print(revision.index, revision.url)
-
-                for match in sorted(set([item.group().replace("pmid = ", "") for item in re.finditer(doi_and_pmid_regex, revision.get_wikitext())])):
-                    bibkey, wos, accounts = publication_map[match]
-                    results[date][article.name][bibkey] = 1 if wos else 2
-
-            for i in range(1, len(dates)):
-                if not date_revision_map[dates[i]] and date_revision_map[dates[i-1]]:
-                    results[dates[i]] = results[dates[i-1]]
-                    date_revision_map[dates[i]] = True
-
+    csv_data_filepath = output_directory + sep + "dump_analysis_plot_data.csv"
+    if not exists(csv_data_filepath):
+        publication_map, dois, pmids, bibkeys = get_publication_data()
+        #doi_and_pmid_regex = re.compile("|".join(dois) + "|" + "(pmid = (" + ("|".join(pmids)) + "))")
+        doi_and_pmid_regex = re.compile(("|".join(dois)) + "|" + ("|".join(pmids)))
+        
+        with open(csv_data_filepath, "w") as csvfile:
             csv_writer = csv.writer(csvfile, delimiter=",")
-            line = []
-            for date in dates:
-                wos_count = 0
-                acc_count = 0
-                for bibkey in results[date][article.name]:
-                    if results[date][article.name][bibkey] == 1:
-                        wos_count += 1
-                    if results[date][article.name][bibkey] == 2:
-                        acc_count += 1
-                line.append(str(wos_count) + "/" + str(wos_count + acc_count))
-            csv_writer.writerow([article.name] + line)
+            with Pool() as pool:
+                lines = [line for line in pool.starmap(analyse_article, [(article_filepath, timeslices, publication_map, bibkeys)
+                                                                         for article_filepath in article_filepaths])]
 
-            data = {'x': dates,
-                    'y': [article.name for y in dates],
-                    'c': [((len([value for value in results[date][article.name].values() if value in [1]])/
-                            len([value for value in results[date][article.name].values() if value in [1,2]]))
-                           if len([value for value in results[date][article.name].values() if value in [1,2]]) > 0 else 0)
-                          for date in dates],
-                    'd': [len([value for value in results[date][article.name].values() if value in [1,2]]) for date in dates]}
-        
-            ax.scatter('x', 'y', c='c', s='d', data=data, cmap='Greys')
-                
-        csv_writer = csv.writer(csvfile, delimiter=",")
-        csv_writer.writerow([""] + dates)
-        
-        ax.set(xlabel='Months', ylabel='Name of Article')
-        ax.tick_params(axis='x', labelrotation=90)
-        ax.margins(x=0.005, y=0.005)
-        plt.subplots_adjust(left=0.09, right=0.9975, bottom=0.0125, top=0.999)
-        plt.savefig("results.png")
-        plt.savefig("results.jpg")
+            for line in lines:
+                csv_writer.writerow(line)
+            csv_writer.writerow([""] + timeslices)
+    else:
+        lines = []
+        with open(csv_data_filepath) as csvfile:
+            csv_reader = csv.reader(csvfile, delimiter=",")
+            for row in csv_reader:
+                if row[0] in relevant_article_names:
+                    lines.append(row)
+                    
+    bibkey_max_per_month_count_sort_map = {line[0]:max([int(item.split("/")[-1]) for item in line[1:]])
+                                           for line in lines}
 
+    lines = sorted(lines, key=lambda line: bibkey_max_per_month_count_sort_map[line[0]])
+    
+    start_index = 1
+    for i in range(1, len(lines[0])):
+        if any([line[i] != "0/0" for line in lines]):
+            start_index = i
+            break
+    start_index -= 1
+
+    timeslices = timeslices[start_index-1:]
+    lines = [[line[0]] + line[start_index:] for line in lines]
+       
+    cm = mcol.LinearSegmentedColormap.from_list("MyCmapName",["b","r"])    
+    fig, ax = plt.subplots()
+    fig.set_dpi(300.0)
+    height = int(len(lines)/5) + 2
+    width = len(timeslices[start_index:])/2
+    fig.set_figheight(height)
+    fig.set_figwidth(width)          
+        
+    for line in lines:
+        ax.plot(timeslices, [line[0] for _ in timeslices], linewidth=0.3, color="gray", zorder=0)
+        data = {'x': timeslices,
+                'y': [line[0] for _ in timeslices],
+                'c': [eval(item) if item != "0/0" else 0.0 for item in line[1:]],
+                'd': [int(item.split("/")[-1]) * 1 for item in line[1:]]}
+        
+        ax.scatter('x', 'y', c='c', s='d', data=data, cmap=cm, zorder=1)
+        
+    ax.set(xlabel='', ylabel='')
+    ax.tick_params(axis='x', labelsize=6.0, labelrotation=90)
+    ax.tick_params(axis='y', labelsize=10.0)
+    ax.margins(x=0.005, y=0.15/height)
+    
+    adjustment_left = 3.75/width
+    adjustment_right = 0.9975
+    adjustment_bottom = 0.5/height
+    adjustment_top = 0.995
+    
+    plt.subplots_adjust(left=adjustment_left,
+                        right=adjustment_right,
+                        bottom=adjustment_bottom,
+                        top=adjustment_top)
+
+    print("articles:", relevant_article_filepath[1].replace("_", " ").strip())
+    print("height:", height, "width:", width)
+    print("\n\t".join(["adjustments:",
+                     "left: " + str(adjustment_left),
+                     "right: " + str(adjustment_right),
+                     "bottom: " + str(adjustment_bottom),
+                     "top: " + str(adjustment_top)]))
+    
+    plt.savefig(output_directory + sep + "plot" + relevant_article_filepath[1] + ".png")
+            
 ##    if multi:
 ##        with Pool(3) as pool:
 ##
-##            pool.starmap(process, [(input_filepath,
+##            pool.starmap(analyse_dump, [(input_filepath,
 ##                                    output_directory,
 ##                                    publication_map,
 ##                                    doi_and_pmid_regex,
@@ -311,7 +367,7 @@ if __name__ == "__main__":
 ##                                   for input_filepath in input_filepaths])
 ##    else:
 ##        for input_filepath in input_filepaths:
-##            process(input_filepath,
+##            analyse_dump(input_filepath,
 ##                    output_directory,
 ##                    publication_map,
 ##                    doi_and_pmid_regex,
