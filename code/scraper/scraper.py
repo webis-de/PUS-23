@@ -126,7 +126,15 @@ class Scraper:
         Returns:
             The corrected titles as defined by the redirect.
         """
-        response = GET(self.api_url, params={"format":"json","action":"query","titles":title,"redirects":""}, headers=self.headers, timeout=5).json()
+        while True:
+            wait = 10
+            try:
+                response = GET(self.api_url, params={"format":"json","action":"query","titles":title,"redirects":""}, headers=self.headers, timeout=5).json()
+                break
+            except OSError:
+                self.logger.warning("Connection issue, retrying in " + str(wait) + " seconds.")
+                sleep(wait)
+                wait += 10
         self.page_id = list(response["query"]["pages"].keys())[0]
         if self.page_id == "-1":
             self.logger.warning("Article '" + title + "' does not exist.")
@@ -178,7 +186,15 @@ class Scraper:
             filepath: Path to the revisions file.
         """
         latest_revid = self._latest_revid(filepath)
-        response = GET(self.api_url, {"format":"json","action":"query","titles":self.title,"prop":"revisions","rvlimit":"1","rvdir":"newer","rvstartid":str(latest_revid)}, timeout=5).json()
+        while True:
+            wait = 10
+            try:
+                response = GET(self.api_url, {"format":"json","action":"query","titles":self.title,"prop":"revisions","rvlimit":"1","rvdir":"newer","rvstartid":str(latest_revid)}, timeout=5).json()
+                break
+            except OSError:
+                self.logger.warning("Connection issue, retrying in " + str(wait) + " seconds.")
+                sleep(wait)
+                wait += 10
         self.rvcontinue = response.get("continue",{}).get("rvcontinue",None)
         if self.rvcontinue:
             self.parameters["rvstartid"] = self.rvcontinue.split("|")[1]
@@ -214,7 +230,15 @@ class Scraper:
             date is on day of deadline or there are no more revisions, else True.
         """
         if self.rvcontinue:
-            response = GET(self.api_url, params=self.parameters, headers=self.headers, timeout=5)
+            while True:
+                wait = 10
+                try:
+                    response = GET(self.api_url, params=self.parameters, headers=self.headers, timeout=5)
+                    break
+                except OSError:
+                    self.logger.warning("Connection issue, retrying in " + str(wait) + " seconds.")
+                    sleep(wait)
+                    wait += 10
             response_json = response.json()
             sleep(self._delay())
             for revision in response_json["query"]["pages"][self.page_id]["revisions"]:
@@ -271,7 +295,15 @@ class Scraper:
         Returns:
             The HTML of the revision.
         """
-        response = GET(revision_url, headers=self.headers, timeout=5)
+        while True:
+            wait = 10
+            try:
+                response = GET(revision_url, headers=self.headers, timeout=5)
+                break
+            except OSError:
+                self.logger.warning("Connection issue, retrying in " + str(wait) + " seconds.")
+                sleep(wait)
+                wait += 10
         tree = html.fromstring(response.text)
         #get text from MediaWiki
         try:
