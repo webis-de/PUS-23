@@ -1,4 +1,5 @@
 requests
+numpy
 pybtex
 lxml
 matplotlib
