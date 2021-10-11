@@ -43,28 +43,28 @@ class TestWikipediaDumpReader(unittest.TestCase):
         pmid_count = 0
         revisions = []
         with WikipediaDumpReader(self.input_filepath) as wdr:
-            for revision in wdr:
+            for title, revid, timestamp, text in wdr.line_iter():
                 for event in self.eventlist.events:
                     bibkey = list(event.bibentries.keys())[0]
                     doi = event.dois[bibkey]
                     pmid = event.pmids[bibkey]
-                    if revision["text"]:
-                        if doi and (doi in revision["text"]):
+                    if text:
+                        if doi and (doi in text):
                             doi_count += 1
-                        if pmid and (pmid in revision["text"]):
+                        if pmid and (pmid in text):
                             pmid_count += 1
-                        if doi and (doi in revision["text"]) \
-                           and pmid and (pmid in revision["text"]):
-                            revisions.append(revision)
+                        if doi and (doi in text) \
+                           and pmid and (pmid in text):
+                            revisions.append((title, revid, timestamp, text))
         
         self.assertEqual(doi_count, 17)
         self.assertEqual(pmid_count, 17)
 
         self.assertEqual(len(revisions), 17)
 
-        self.assertEqual(revisions[0]["revid"], "358506933")
+        self.assertEqual(revisions[0][1], "358506933")
         
-        self.assertEqual(revisions[-1]["revid"], "1014921611")
+        self.assertEqual(revisions[-1][1], "1014921611")
 
     def test_parquet_writer(self):
         
@@ -72,7 +72,7 @@ class TestWikipediaDumpReader(unittest.TestCase):
             wdr.write_revisions_to_parquet(self.output_filepath)
 
         self.assertEqual(self.file_checksum(self.output_filepath),
-                         "87ed2903b1f9e733a7f83c14b09f5671b2b59c25515919f71922dfce1b741b21")
+                         "96b5ae404d60224c0916b0319475e8c1710ab0bff8c461050cccc7633b33ef85")
 
     def test_csv_analysis(self):
         events = {"bibkey":[],"doi":[],"pmid":[]}

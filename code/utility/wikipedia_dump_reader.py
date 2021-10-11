@@ -95,8 +95,10 @@ class WikipediaDumpReader(object):
 
     def write_revisions_to_parquet(self, output_filepath):
         revisions = {"title":[],"revid":[],"timestamp":[],"text":[]}
-        for revision in self:
-            for key,value in revision.items():
-                revisions[key].append(value)
+        for title, revid, timestamp, text in self.line_iter():
+            revisions["title"].append(title)
+            revisions["revid"].append(revid)
+            revisions["timestamp"].append(timestamp)
+            revisions["text"].append(text)
         table = pa.Table.from_pydict(revisions)
         pq.write_table(table, output_filepath)
