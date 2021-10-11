@@ -28,6 +28,13 @@ class Article:
         self.name = unquote(" ".join(self.filename.split("_")[:-1]))
         self.timestamps = []
 
+    def get_revision_count(self):
+        revision_count = 0
+        with open(self.filepath) as file:
+            for line in file:
+                revision_count += 1
+        return revision_count
+
     def get_revisions(self, first = 0, final = float("inf")):
         """
         Get revisions from first to final as provided (both included).
