@@ -144,8 +144,14 @@ def analyse_dump(input_filepath,
         csv_writer = csv.writer(csvfile, delimiter=",")
         old_title = None
         skip = False
-        with WikipediaDumpReader(input_filepath, article_titles) as wdr:
-            for title,revid,timestamp,text in wdr.line_iter():
+        article = Article(input_filepath)
+        if True:#WikipediaDumpReader(input_filepath, article_titles) as wdr:
+            for revision in article.yield_revisions():
+                title = article.name
+                revid = revision.revid
+                timestamp = revision.timestamp.string
+                text = revision.get_wikitext()
+            #for title,revid,timestamp,text in wdr.line_iter():
                 revision_count += 1
                 if start_revision_count and revision_count <= start_revision_count:
                     continue
@@ -161,7 +167,7 @@ def analyse_dump(input_filepath,
                 for match in sorted(set([item.group() for item in re.finditer(doi_and_pmid_regex, text)])):
                     if match:
                         #match = match.group().replace("pmid = ", "")
-                        match = match.replace("pmid = ", "")
+                        match = match.replace("pmid = ", "").replace("PMID ", "")
                         publication_count += 1
                         bibkey, wos, accounts = publication_map[match]
                         eventlist = "|".join([key for key,value
@@ -171,7 +177,7 @@ def analyse_dump(input_filepath,
                                              match,
                                              title,
                                              revid,
-                                             Timestamp(timestamp).string,
+                                             timestamp,#Timestamp(timestamp).string,
                                              eventlist])
                         csvfile.flush()
                         if quick:
@@ -231,10 +237,10 @@ def analyse_article(article_filepath, timeslices, publication_map, bibkeys):
 if __name__ == "__main__":
 
     test = False
-    multi = False
+    multi = True
     quick = False
 
-    output_directory = "../analysis/test"
+    output_directory = "../analysis/bibliography/2021_10_06"
     if not exists(output_directory): makedirs(output_directory)
 
 ##    with open("../data/CRISPR_articles.txt") as article_titles_file:
@@ -263,18 +269,21 @@ if __name__ == "__main__":
 ##    else:
 ##        done_input_filepaths = []
 
-    article_filepaths = sorted(glob("../articles/2021-10-04_wikitext_only/en/*_en"))
-
-    relevant_article_filepath = [("../data/CRISPR_articles_relevant.txt","_relevant"),
+##    article_filepaths = sorted(glob("../articles/2021-10-06_wikitext_only/en/*_en"))
+##    publication_map, dois, pmids, bibkeys = get_publication_data()
+##    doi_and_pmid_regex = re.compile("|".join(dois) + "|" + "((pmid = |PMID )(" + ("|".join(pmids)) + "))")
+    
+    relevant_article_filepath = [("../data/CRISPR_articles.txt", "_all"),
+                                 ("../data/CRISPR_articles_relevant.txt","_relevant"),
                                  ("../data/CRISPR_articles_relevant_no_persons.txt","_relevant_no_persons")
-                                 ][-2]
+                                 ][0]
 
     with open(relevant_article_filepath[0]) as file:
         relevant_article_names = set([line.strip() for line in file.readlines()])
         
     timeslices = get_timeslices(2001)[:-7]
 
-    csv_data_filepath = output_directory + sep + "dump_analysis_plot_data.csv"
+    csv_data_filepath = "../analysis/bibliography/2021_10_06/dump_analysis_plot_data.csv"
     if not exists(csv_data_filepath):
         publication_map, dois, pmids, bibkeys = get_publication_data()
         #doi_and_pmid_regex = re.compile("|".join(dois) + "|" + "(pmid = (" + ("|".join(pmids)) + "))")
@@ -314,28 +323,29 @@ if __name__ == "__main__":
        
     cm = mcol.LinearSegmentedColormap.from_list("MyCmapName",["b","r"])    
     fig, ax = plt.subplots()
-    fig.set_dpi(300.0)
-    height = int(len(lines)/5) + 2
-    width = len(timeslices[start_index:])/2
+    fig.set_dpi(1000.0)
+    height = int(len(lines)/5)*1.5
+    width = len(timeslices[start_index:])/10
     fig.set_figheight(height)
     fig.set_figwidth(width)          
         
     for line in lines:
-        ax.plot(timeslices, [line[0] for _ in timeslices], linewidth=0.3, color="gray", zorder=0)
+        #ax.plot(timeslices, [line[0] for _ in timeslices], linewidth=0.3, color="gray", zorder=0)
         data = {'x': timeslices,
                 'y': [line[0] for _ in timeslices],
                 'c': [eval(item) if item != "0/0" else 0.0 for item in line[1:]],
-                'd': [int(item.split("/")[-1]) * 1 for item in line[1:]]}
+                'd': [float(item.split("/")[-1])*3 for item in line[1:]]}
         
-        ax.scatter('x', 'y', c='c', s='d', data=data, cmap=cm, zorder=1)
+        ax.scatter('x', 'y', c='c', s='d', data=data, cmap=cm, zorder=1, marker=[(0, 3),(0,-3)], linewidth=3)
         
     ax.set(xlabel='', ylabel='')
     ax.tick_params(axis='x', labelsize=6.0, labelrotation=90)
     ax.tick_params(axis='y', labelsize=10.0)
-    ax.margins(x=0.005, y=0.15/height)
+    ax.set_xticklabels([timeslice if index % 6 == 0 else "" for index,timeslice in enumerate(timeslices)])
+    ax.margins(x=0.005, y=0.3/height)
     
     adjustment_left = 3.75/width
-    adjustment_right = 0.9975
+    adjustment_right = 0.995
     adjustment_bottom = 0.5/height
     adjustment_top = 0.995
     
@@ -355,16 +365,16 @@ if __name__ == "__main__":
     plt.savefig(output_directory + sep + "plot" + relevant_article_filepath[1] + ".png")
             
 ##    if multi:
-##        with Pool(3) as pool:
+##        with Pool() as pool:
 ##
-##            pool.starmap(analyse_dump, [(input_filepath,
-##                                    output_directory,
-##                                    publication_map,
-##                                    doi_and_pmid_regex,
-##                                    done_input_filepaths,
-##                                    article_titles,
-##                                    quick)
-##                                   for input_filepath in input_filepaths])
+##            pool.starmap(analyse_dump, [(article_filepath,
+##                                         output_directory,
+##                                         publication_map,
+##                                         doi_and_pmid_regex,
+##                                         [],#done_input_filepaths,
+##                                         [],#article_titles,
+##                                         quick)
+##                                        for article_filepath in article_filepaths])
 ##    else:
 ##        for input_filepath in input_filepaths:
 ##            analyse_dump(input_filepath,

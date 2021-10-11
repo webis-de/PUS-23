@@ -8,7 +8,9 @@ def scroll_to_url(article_name, revid, string):
             + "&oldid=" + revid
             + "#:~:text=" + quote(string))
 
-filepaths = glob("../../analysis/dump_articles_analysis/*results.csv")
+directory = "../../analysis/articles/articles_analysis_from_dump/"
+
+filepaths = glob(directory + "*results.csv")
 
 results = {}
 corpus_map = {}
@@ -70,18 +72,18 @@ for article_name in results:
             results[article_name][bibkey][doi_or_pmid] = len(results[article_name][bibkey][doi_or_pmid])
 
 
-#sort bibkeys according to descending number of revisions encountered in
+#sort bibkeys according to descending number of revisions encountered in first; bibkey second
 results = {article_name:{bibkey:results[article_name][bibkey]
                          for bibkey in sorted(results[article_name].keys(),
-                                              key=lambda bibkey: max(results[article_name][bibkey].values()),
+                                              key=lambda bibkey: (max(results[article_name][bibkey].values()),bibkey),
                                               reverse=True)}
            for article_name in results}
 
 #write to txt
-with open("dumps_articles_analysis.txt", "w") as file:
+with open(directory + "0_articles_analysis.txt", "w") as file:
     file.write(pformat(results, sort_dicts=False))
 #write to csv
-with open("dumps_articles_analysis.csv", "w") as file:
+with open(directory + "0_articles_analysis.csv", "w") as file:
     csv_writer = writer(file, delimiter=",")
     for article_name in results:
         first_time_article_name = True
@@ -132,3 +134,5 @@ with open("dumps_articles_analysis.csv", "w") as file:
                                                pmid) if pmid else "",
                                  "---"])
             first_time_article_name = False
+
+print(directory)
