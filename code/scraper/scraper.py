@@ -33,7 +33,7 @@ class Scraper:
         updating: Flag for update mode.
         update_count: Number of revisions scraped if updating.
     """
-    def __init__(self, directory, title, language):
+    def __init__(self, directory, title, language, get_redirect = True):
         """
         Initialise scraper.
 
@@ -41,6 +41,7 @@ class Scraper:
             directory: The directory to which scraped revisions will be saved.
             title: The title of the Wikipedia page to scrape.
             language: The language of the Wikipedia page to scrape.
+            get_redirect: Scrape article the title redirects to, True by default.
         """
         self.directory = directory
         if not exists(directory): makedirs(directory)
@@ -49,7 +50,7 @@ class Scraper:
         self.language = language
         self.api_url = "https://" + language + ".wikipedia.org/w/api.php"
         self.page_id = None
-        self.title = self._sanity_check(title)
+        self.title = self._sanity_check(title, get_redirect)
         self.filename = self._quote_filename(self.title)
         self.article_url = "https://" + language + ".wikipedia.org/w/index.php?title=" + self.title
         self.parameters = {"format":"json","action":"query","titles":self.title,"prop":"revisions","rvlimit":"50","rvdir":"newer","rvslots":"*",
@@ -117,14 +118,15 @@ class Scraper:
         """
         return " ".join(unquote(filename).split("_")[:-1])
 
-    def _sanity_check(self, title):
+    def _sanity_check(self, title, get_redirect):
         """
-        Check article for redirect and reset title if applicable.
+        Santiy-check article, set title to redirect if applicable.
 
         Args:
             title: The title of the page to check.
+            get_redirect: Get redirect instead of provided title.
         Returns:
-            The corrected titles as defined by the redirect.
+            The corrected title as defined by the redirect.
         """
         while True:
             wait = 10
@@ -138,12 +140,25 @@ class Scraper:
         self.page_id = list(response["query"]["pages"].keys())[0]
         if self.page_id == "-1":
             self.logger.warning("Article '" + title + "' does not exist.")
+            return title
         redirect = response["query"].get("redirects", [{"to":None}])[0]["to"]
         if redirect:
-            self.logger.warning("Article '" + title + "' redirects to " + redirect + ". Setting title to " + redirect + ".")
-            return redirect
-        else:
-            return title
+            if get_redirect:
+                self.logger.warning("Article '" + title + "' redirects to " + redirect + ". Setting title to '" + redirect + "'.")
+                return redirect
+            else:
+                self.logger.warning("Article '" + title + "' redirects to " + redirect + ". Consider scraping '" + redirect + "'.")
+        while True:
+            wait = 10
+            try:
+                response = GET(self.api_url, params={"format":"json","action":"query","titles":title,"prop":"revisions"}, headers=self.headers, timeout=5).json()
+                break
+            except OSError:
+                self.logger.warning("Connection issue, retrying in " + str(wait) + " seconds.")
+                sleep(wait)
+                wait += 10
+        self.page_id = list(response["query"]["pages"].keys())[0]
+        return title
 
     def scrape(self, directory, deadline, number = float("inf"), verbose = True, gethtml = True):
         """

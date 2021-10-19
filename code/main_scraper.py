@@ -39,6 +39,9 @@ if __name__ == "__main__":
     argument_parser.add_argument("--nohtml",
                                  action='store_false',
                                  help="Omit the HTML of the revisions.")
+    argument_parser.add_argument("--noredirect",
+                                 action='store_false',
+                                 help="Do not get redirect of article.")
     args = vars(argument_parser.parse_args())
 
     #Load articles and flatten to one list if from file or split if connected with ','.
@@ -57,10 +60,11 @@ if __name__ == "__main__":
     DEADLINE = args["deadline"]
     NUMBER = args["number"]
     GETHTML = args["nohtml"]
+    GETREDIRECT = args["noredirect"]
 
     ARTICLES = wikipedia_articles
     for article in ARTICLES:
-        with Scraper(DIRECTORY, article, LANGUAGE) as scraper:
+        with Scraper(DIRECTORY, article, LANGUAGE, GETREDIRECT) as scraper:
             scraper.scrape(directory = DIRECTORY,
                            deadline = DEADLINE,
                            number = NUMBER,
