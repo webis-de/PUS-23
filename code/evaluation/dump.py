@@ -8,7 +8,7 @@ def scroll_to_url(article_name, revid, string):
             + "&oldid=" + revid
             + "#:~:text=" + quote(string))
 
-directory = "../../analysis/articles/articles_analysis_from_dump/"
+directory = "../../analysis/articles/articles_analysis_from_scrape_ALL_no_prefix/"
 
 filepaths = glob(directory + "*results.csv")
 
