@@ -3,8 +3,6 @@ from code.bibliography.bibliography import Bibliography
 from code.timeline.eventlist import EventList
 from code.timeline.accountlist import AccountList
 from code.utility.wikipedia_dump_reader import WikipediaDumpReader
-import pyarrow.parquet as pq
-import pyarrow as pa
 from hashlib import sha256
 from os import remove
 import unittest
@@ -22,13 +20,6 @@ class TestWikipediaDumpReader(unittest.TestCase):
                                   [],
                                   ["bibentries"])
         cls.input_filepath = "tests/data/wikipedia_dump.bz2"
-
-    def file_checksum(self, filepath):
-        sha256_hash = sha256()
-        with open(filepath,"rb") as f:
-            for byte_block in iter(lambda: f.read(4096),b""):
-                sha256_hash.update(byte_block)
-        return sha256_hash.hexdigest()
     
     def test_iterator(self):
 
