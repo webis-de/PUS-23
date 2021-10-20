@@ -66,14 +66,6 @@ class TestWikipediaDumpReader(unittest.TestCase):
         
         self.assertEqual(revisions[-1][1], "1014921611")
 
-    def test_parquet_writer(self):
-        
-        with WikipediaDumpReader(self.input_filepath) as wdr:
-            wdr.write_revisions_to_parquet(self.output_filepath)
-
-        self.assertEqual(self.file_checksum(self.output_filepath),
-                         "96b5ae404d60224c0916b0319475e8c1710ab0bff8c461050cccc7633b33ef85")
-
     def test_csv_analysis(self):
         events = {"bibkey":[],"doi":[],"pmid":[]}
     

@@ -1,8 +1,6 @@
 import bz2
 from lxml.etree import ElementTree as LXMLET
 from xml.etree import ElementTree as XMLET
-import pyarrow.parquet as pq
-import pyarrow as pa
 from re import findall
 
 class WikipediaDumpReader(object):
@@ -91,14 +89,4 @@ class WikipediaDumpReader(object):
                         elif line.startswith("      <timestamp"):
                             timestamp = line[17:-13]
                         elif read_revisions and line.startswith("      <text"):
-                            read_text = True               
-
-    def write_revisions_to_parquet(self, output_filepath):
-        revisions = {"title":[],"revid":[],"timestamp":[],"text":[]}
-        for title, revid, timestamp, text in self.line_iter():
-            revisions["title"].append(title)
-            revisions["revid"].append(revid)
-            revisions["timestamp"].append(timestamp)
-            revisions["text"].append(text)
-        table = pa.Table.from_pydict(revisions)
-        pq.write_table(table, output_filepath)
+                            read_text = True
