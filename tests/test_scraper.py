@@ -58,9 +58,17 @@ class TestScraper(unittest.TestCase):
 
     def test_sanity_check(self):
 
-        with Scraper(directory = self.directory, title = self.no_title, language = "en") as scraper:
-            sanity_checked_title = scraper._sanity_check("Crispr")
+        with Scraper(directory = self.directory, title = self.no_title, language = "en", get_redirect = True) as scraper:
+            sanity_checked_title = scraper._sanity_check("Crispr", get_redirect = True)
             self.assertEqual(sanity_checked_title, "CRISPR")
+
+        with Scraper(directory = self.directory, title = self.no_title, language = "en", get_redirect = True) as scraper:
+            sanity_checked_title = scraper._sanity_check("Genome engineering", get_redirect = True)
+            self.assertEqual(sanity_checked_title, "Genome editing")
+
+        with Scraper(directory = self.directory, title = self.no_title, language = "en", get_redirect = False) as scraper:
+            sanity_checked_title = scraper._sanity_check("Genome engineering", get_redirect = False)
+            self.assertEqual(sanity_checked_title, "Genome engineering")
 
     def test_rvstartid(self):        
         with Scraper(directory = self.directory, title = "CRISPR/Cas Tools", language = "en") as scraper:

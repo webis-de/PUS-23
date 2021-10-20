@@ -2,5 +2,4 @@ requests
 pybtex
 lxml
 matplotlib
-pyarrow
 regex
