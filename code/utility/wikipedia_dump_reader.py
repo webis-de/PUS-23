@@ -1,6 +1,6 @@
 import bz2
-from lxml.etree import ElementTree as LXMLET
-from xml.etree import ElementTree as XMLET
+##from lxml.etree import ElementTree as LXMLET
+##from xml.etree import ElementTree as XMLET
 from re import findall
 
 class WikipediaDumpReader(object):
