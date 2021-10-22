@@ -1,6 +1,6 @@
 from glob import glob
 from csv import reader, writer
-from pprint import pformat
+from pprint import pformat, pprint
 from urllib.parse import quote, unquote
 
 def scroll_to_url(article_name, revid, string):
@@ -8,30 +8,78 @@ def scroll_to_url(article_name, revid, string):
             + "&oldid=" + revid
             + "#:~:text=" + quote(string))
 
-directory = "../../analysis/articles/articles_analysis_from_scrape_ALL_no_prefix/"
+directory = "../../analysis/articles_new/articles_candidates_from_dump/"
 
 filepaths = glob(directory + "*results.csv")
 
-results = {}
-corpus_map = {}
+def get_publication_data_csv():
+    dois = set()
+    pmids = set()
+    publication_map = {}
+    with open("../../data/CRISPR_literature.csv") as csvfile:
+        csv_reader = reader(csvfile, delimiter="|")
+        header = True
+        for wos_uid, title, doi, pmid in csv_reader:
+            if header:
+                header = False
+                continue
+            if doi and doi not in publication_map:
+                publication_map[doi] = wos_uid
+                if doi in dois:
+                    print(doi)
+                dois.add(doi)
+            if pmid and pmid not in publication_map:
+                publication_map[pmid] = wos_uid
+                if pmid in pmids:
+                    print(pmid)
+                pmids.add(pmid)
+    print(len(dois))
+    print(len(pmids))
+    return publication_map
 
-#collect all unique occurrences of (revid,timestamp,corpus) tuples for each article and bibkey
+##def get_publication_data_csv():
+##    publication_map = {}
+##    with open("../../data/CRISPR_literature.csv") as csvfile:
+##        csv_reader = reader(csvfile, delimiter="|")
+##        header = True
+##        for wos_uid, title, doi, pmid in csv_reader:
+##            if header:
+##                header = False
+##                continue
+##            if wos_uid not in publication_map:
+##                publication_map[wos_uid] = []
+##            if doi and doi not in publication_map[wos_uid]:
+##                publication_map[wos_uid].append(doi)
+##            if pmid and pmid not in publication_map[wos_uid]:
+##                publication_map[wos_uid].append(pmid)
+##    return publication_map
+
+publication_map = get_publication_data_csv()
+
+##for key,value in publication_map.items():
+##	if len(value) > 2:
+##		print(key, value)
+
+input("DONE")
+
+results = {}
+
+#collect all unique occurrences of (revid,timestamp) tuples for each article and bibkey
 for index, filepath in enumerate(filepaths):
     print(index + 1)
     with open(filepath) as file:
         csv_reader = reader(file,  delimiter=',')
-        for bibkey, doi_or_pmid, article_name, revid, timestamp, corpus in csv_reader:
+        for doi_or_pmid, article_name, revid, timestamp in csv_reader:
+            if not doi_or_pmid.startswith("10."):
+                doi_or_pmid = "".join([character for character in doi_or_pmid if character.isnumeric()])
+            bibkey = publication_map[doi_or_pmid]
             if article_name not in results:
                 results[article_name] = {}
             if bibkey not in results[article_name]:
                 results[article_name][bibkey] = {}
             if doi_or_pmid not in results[article_name][bibkey]:
                 results[article_name][bibkey][doi_or_pmid] = set()
-            results[article_name][bibkey][doi_or_pmid].add((revid,timestamp,corpus))
-            if bibkey not in corpus_map:
-                corpus_map[bibkey] = {"wos":"","accounts":""}
-            for subcorpus in corpus.split("|"):
-                corpus_map[bibkey][subcorpus] = "X"
+            results[article_name][bibkey][doi_or_pmid].add((revid,timestamp))
 
 #sort articles according to descending number of publications found
 results = {article_name:results[article_name]
@@ -65,7 +113,7 @@ for article_name in results:
                                                                                      "first_doi_match":first_doi_match,
                                                                                      "final_doi_match":final_doi_match}
 
-#map (revid,timestamp,corpus) tuples to count
+#map (revid,timestamp) tuples to count
 for article_name in results:
     for bibkey in results[article_name]:
         for doi_or_pmid in results[article_name][bibkey]:
@@ -80,10 +128,10 @@ results = {article_name:{bibkey:results[article_name][bibkey]
            for article_name in results}
 
 #write to txt
-with open(directory + "0_articles_analysis.txt", "w") as file:
+with open(directory + "articles_analysis.txt", "w") as file:
     file.write(pformat(results, sort_dicts=False))
 #write to csv
-with open(directory + "0_articles_analysis.csv", "w") as file:
+with open(directory + "articles_analysis.csv", "w") as file:
     csv_writer = writer(file, delimiter=",")
     for article_name in results:
         first_time_article_name = True
@@ -105,8 +153,6 @@ with open(directory + "0_articles_analysis.csv", "w") as file:
             revid_of_final_doi_match,timestamp_of_final_doi_match = first_and_final_revision_for_article_and_bibkey_map[article_name][bibkey]["final_doi_match"]
             csv_writer.writerow([article_name if first_time_article_name else "",
                                  bibkey,
-                                 corpus_map[bibkey]["wos"],
-                                 corpus_map[bibkey]["accounts"],
                                  doi,
                                  doi_count,
                                  revid_of_first_doi_match,

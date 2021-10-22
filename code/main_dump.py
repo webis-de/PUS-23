@@ -1,21 +1,22 @@
-from article.article import Article
+##from article.article import Article
+##from bibliography.bibliography import Bibliography
+##from timeline.eventlist import EventList
+##from timeline.accountlist import AccountList
 from article.revision.timestamp import Timestamp
-from bibliography.bibliography import Bibliography
-from timeline.eventlist import EventList
-from timeline.accountlist import AccountList
 from utility.wikipedia_dump_reader import WikipediaDumpReader
 import csv
 import logging
 import regex as re
 
 from datetime import datetime
-from os.path import basename, exists, sep
+from os.path import basename, exists, getsize, sep
+from os import environ
 from os import makedirs
 from glob import glob
-from multiprocessing import Pool
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcol
-from time import sleep
+from socket import gethostname
+
+##import matplotlib.pyplot as plt
+##import matplotlib.colors as mcol
 
 def get_logger(filename):
     """Set up the logger."""
@@ -65,15 +66,9 @@ def read_and_unify_publication_eventlists_for_tests():
     eventlist.events[0].trace = {"wos":True, "accounts":False}
     return eventlist.events
 
-def read_and_increment_index_counter():
-    if not exists("index.txt"):
-        index = 0
-    else:
-        with open("index.txt") as file:
-            index = int(file.readline().strip())
-    with open("index.txt", "w") as file:
-        file.write(str(index + 1))
-    return index
+def log_handler_host(output_directory, hostname, nodename, input_filepath_index, input_filepath, filesize):
+    with open(output_directory + sep + hostname + ".txt", "a") as file:
+        file.write(str(input_filepath_index).rjust(3, "0") + " " + basename(input_filepath) + " " + nodename + " " + str(filesize / (1024**2)) + "\n")    
 
 def get_timeslices(first_year = 2001, final_year = 2021):
     timeslices = []
@@ -82,12 +77,12 @@ def get_timeslices(first_year = 2001, final_year = 2021):
             timeslices.append(str(month).rjust(2, "0") + "/" + str(year))
     return timeslices
 
-def get_publication_data():
+def get_publication_data_bib(test = False):
     publication_map = {}
     dois = []
     pmids = []
     bibkeys = []
-    unified_publication_events = read_and_unify_publication_eventlists()
+    unified_publication_events = eval("read_and_unify_publication_eventlists" + ("_for_tests" if test else "") + "()")
     for publication_event in unified_publication_events:
         bibkey = list(publication_event.bibentries.keys())[0]
         bibkeys.append(bibkey)
@@ -102,6 +97,20 @@ def get_publication_data():
             pmids.append(re.escape(pmid))
             publication_map[pmid] = (bibkey, wos, accounts)
     return (publication_map, dois, pmids, bibkeys)
+
+def get_publication_data_csv():
+    dois = set()
+    pmids = set()
+    with open("../data/CRISPR_literature.csv") as csvfile:
+        csv_reader = csv.reader(csvfile, delimiter="|")
+        header = True
+        for wos_uid, title, doi, pmid in csv_reader:
+            if header:
+                header = False
+                continue
+            if doi: dois.add(doi)
+            if pmid: pmids.add(pmid)
+    return (dois, pmids)                
 
 def analyse_dump(input_filepath,
                  output_directory,
@@ -144,14 +153,8 @@ def analyse_dump(input_filepath,
         csv_writer = csv.writer(csvfile, delimiter=",")
         old_title = None
         skip = False
-        article = Article(input_filepath)
-        if True:#WikipediaDumpReader(input_filepath, article_titles) as wdr:
-            for revision in article.yield_revisions():
-                title = article.name
-                revid = revision.revid
-                timestamp = revision.timestamp.string
-                text = revision.get_wikitext()
-            #for title,revid,timestamp,text in wdr.line_iter():
+        with WikipediaDumpReader(input_filepath, article_titles) as wdr:
+            for title,revid,timestamp,text in wdr.line_iter():
                 revision_count += 1
                 if start_revision_count and revision_count <= start_revision_count:
                     continue
@@ -163,22 +166,20 @@ def analyse_dump(input_filepath,
                     if title == old_title and skip:
                         continue
                 matches = re.finditer(doi_and_pmid_regex, text)
-                #for match in re.finditer(doi_and_pmid_regex, text):
                 for match in sorted(set([item.group() for item in re.finditer(doi_and_pmid_regex, text)])):
                     if match:
-                        #match = match.group().replace("pmid = ", "")
-                        match = match.replace("pmid = ", "").replace("PMID ", "")
                         publication_count += 1
-                        bibkey, wos, accounts = publication_map[match]
-                        eventlist = "|".join([key for key,value
-                                              in [("wos",wos),
-                                                  ("accounts",accounts)] if value])
-                        csv_writer.writerow([bibkey,
+                        #bibkey, wos, accounts = publication_map[match]
+                        #eventlist = "|".join([key for key,value
+                        #                      in [("wos",wos),
+                        #                          ("accounts",accounts)] if value])
+                        csv_writer.writerow([#bibkey,
                                              match,
                                              title,
                                              revid,
-                                             timestamp,#Timestamp(timestamp).string,
-                                             eventlist])
+                                             Timestamp(timestamp).string
+                                             #eventlist
+                                             ])
                         csvfile.flush()
                         if quick:
                             skip = True
@@ -236,43 +237,76 @@ def analyse_article(article_filepath, timeslices, publication_map, bibkeys):
 
 if __name__ == "__main__":
 
-    test = False
-    multi = True
-    quick = False
+    test_files = [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
+                  #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
+                  #"enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
+                  #"enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
+                  #"enwiki-20210601-pages-meta-history1.xml-p10133p11053.bz2",    # 2GB
+                  #"enwiki-20210601-pages-meta-history11.xml-p6324364p6396854.bz2" # broken results CSV
+                  "enwiki-20210601-pages-meta-history10.xml-p5128920p5137511.bz2"] # 55 GB
 
-    output_directory = "../analysis/articles/articles_analysis_from_scrape_ALL_no_prefix"
+    positive_files = ["enwiki-20210601-pages-meta-history16.xml-p19095128p19200231.bz2",
+                      "enwiki-20210601-pages-meta-history25.xml-p59825024p60146730.bz2",
+                      "enwiki-20210601-pages-meta-history1.xml-p11828p12504.bz2",
+                      "enwiki-20210601-pages-meta-history21.xml-p38516211p38695815.bz2",
+                      "enwiki-20210601-pages-meta-history1.xml-p12505p13384.bz2"]
+
+    pattern = ['"((10\.)(" + "|".join([doi[3:] for doi in dois]) + "))" + "|" + ' + \
+               '"(([pP][mM][iI][dD][ =:]{0,5})(" + ("|".join(pmids)) + "))"',
+               '"(10\.)" + "(" + "|".join([doi[3:] for doi in dois]) + ")"',
+               '"|".join(dois) + "|" + "(([pP][mM][iI][dD][ =:]{0,5})(" + ("|".join(pmids)) + "))"',
+               '"|".join(dois) + "|" + "((pmid = |PMID )(" + ("|".join(pmids)) + "))"',
+               '"|".join(dois) + "|" + "(pmid = (" + ("|".join(pmids)) + "))"',
+               '"|".join(dois)) + "|" + ("|".join(pmids)'
+               ][0]
+
+    test = False
+    quick = True
+    slice_size = 1
+
+    JOB_COMPLETION_INDEX = 0#int(environ.get("JOB_COMPLETION_INDEX"))
+
+    output_directory = "../analysis/articles/articles_candidates_from_dump_new_big_file"
     if not exists(output_directory): makedirs(output_directory)
 
-##    with open("../data/CRISPR_articles.txt") as article_titles_file:
-##        article_titles = [article_title.strip() for article_title in article_titles_file.readlines()]
-##
-##    if test:
-##        corpus_path_prefix = ("../dumps/")
-##        input_files = [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
-##                       #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
-##                       #"enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2",   # 150MB
-##                       #"enwiki-20210601-pages-meta-history12.xml-p9089624p9172788.bz2", # 860MB, false positive results
-##                       #"enwiki-20210601-pages-meta-history1.xml-p10133p11053.bz2",    # 2GB
-##                       "enwiki-20210601-pages-meta-history11.xml-p6324364p6396854.bz2" # broken results CSV
-##                       ]
-##        input_filepaths = [corpus_path_prefix + input_file for input_file in input_files]
-##    else:
-##        corpus_path_prefix = "../../../../../" + \
-##                             "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210620/"
-##        input_filepaths = glob(corpus_path_prefix + "*.bz2")
-##
-##    
-##    done_filepath = output_directory + sep + "done.csv"
-##    if exists(done_filepath):
-##        with open(done_filepath) as file:
-##            done_input_filepaths = [line.split(",")[0] for line in file.readlines()]
-##    else:
-##        done_input_filepaths = []
+    done_filepath = output_directory + sep + "done.csv"
+    if exists(done_filepath):
+        with open(done_filepath) as file:
+            done_input_filepaths = [line.split(",")[0] for line in file.readlines()]
+    else:
+        done_input_filepaths = []
 
-    article_filepaths = sorted(glob("../articles/2021-06-01_wikitext_only/en/*_en"))
-    publication_map, dois, pmids, bibkeys = get_publication_data()
-    doi_and_pmid_regex = re.compile(("|".join(dois)) + "|" + ("|".join(pmids)))
-    
+    if test:
+        corpus_path_prefix = ("../dumps/")
+        corpus_path_prefix = "../../../../../" + \
+                             "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210601/"
+        input_filepaths = [corpus_path_prefix + input_file for input_file in test_files]
+    else:
+        corpus_path_prefix = "../../../../../" + \
+                             "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210601/"
+        input_filepaths = sorted(glob(corpus_path_prefix + "*.bz2"))
+        input_filepaths.remove(corpus_path_prefix + "enwiki-20210601-pages-meta-history10.xml-p5128920p5137511.bz2")
+        input_filepaths = [corpus_path_prefix + "enwiki-20210601-pages-meta-history10.xml-p5128920p5137511.bz2"]
+
+    #publication_map, dois, pmids, bibkeys = get_publication_data_bib(False)
+    dois, pmids = get_publication_data_csv()
+
+    doi_and_pmid_regex = re.compile(eval(pattern))
+
+    for input_filepath_index, input_filepath in enumerate(input_filepaths[JOB_COMPLETION_INDEX*slice_size:(JOB_COMPLETION_INDEX+1)*slice_size], JOB_COMPLETION_INDEX*slice_size):
+        filesize = getsize(input_filepath)
+        hostname = gethostname()
+        log_handler_host(output_directory, hostname, "" if True else environ.get("NODE_NAME"), input_filepath_index, input_filepath, filesize)
+        
+        analyse_dump(input_filepath=input_filepath,
+                     output_directory=output_directory,
+                     publication_map={},
+                     doi_and_pmid_regex=doi_and_pmid_regex,
+                     done_input_filepaths=done_input_filepaths,
+                     article_titles=[],
+                     quick=quick)
+
+##    article_filepaths = sorted(glob("../articles/2021-06-01_wikitext_only/en/*_en"))
 ##    relevant_article_filepath = [("../data/CRISPR_articles.txt", "_all"),
 ##                                 ("../data/CRISPR_articles_relevant.txt","_relevant"),
 ##                                 ("../data/CRISPR_articles_relevant_no_persons.txt","_relevant_no_persons")
@@ -285,10 +319,8 @@ if __name__ == "__main__":
 ##
 ##    csv_data_filepath = "../analysis/bibliography/2021_10_06/dump_analysis_plot_data.csv"
 ##    if not exists(csv_data_filepath):
-##        publication_map, dois, pmids, bibkeys = get_publication_data()
-##        #doi_and_pmid_regex = re.compile("|".join(dois) + "|" + "((pmid = |PMID )(" + ("|".join(pmids)) + "))")
-##        #doi_and_pmid_regex = re.compile("|".join(dois) + "|" + "(pmid = (" + ("|".join(pmids)) + "))")
-##        doi_and_pmid_regex = re.compile(("|".join(dois)) + "|" + ("|".join(pmids)))
+##        publication_map, dois, pmids, bibkeys = get_publication_data_bib()
+##        doi_and_pmid_regex = re.compile(eval(pattern))
 ##        
 ##        with open(csv_data_filepath, "w") as csvfile:
 ##            csv_writer = csv.writer(csvfile, delimiter=",")
@@ -365,23 +397,4 @@ if __name__ == "__main__":
 ##    
 ##    plt.savefig(output_directory + sep + "plot" + relevant_article_filepath[1] + ".png")
             
-    if multi:
-        with Pool() as pool:
 
-            pool.starmap(analyse_dump, [(article_filepath,
-                                         output_directory,
-                                         publication_map,
-                                         doi_and_pmid_regex,
-                                         [],#done_input_filepaths,
-                                         [],#article_titles,
-                                         quick)
-                                        for article_filepath in article_filepaths])
-    else:
-        for input_filepath in input_filepaths:
-            analyse_dump(input_filepath,
-                    output_directory,
-                    publication_map,
-                    doi_and_pmid_regex,
-                    done_input_filepaths,
-                    article_titles,
-                    quick)
