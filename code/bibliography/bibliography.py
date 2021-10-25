@@ -1,8 +1,8 @@
-from bibentry import Bibentry
+from .bibentry import Bibentry
 from os.path import exists, sep
 from os import makedirs
 from pybtex.database import parse_file as pybtex_parse_file
-from pybcsv.database import parse_file as pybcsv_parse_file
+from .pybcsv.database import parse_file as pybcsv_parse_file
 import matplotlib.pyplot as plt
 
 class Bibliography:
