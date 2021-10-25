@@ -1,7 +1,8 @@
-from .bibentry import Bibentry
+from bibentry import Bibentry
 from os.path import exists, sep
 from os import makedirs
-from pybtex.database import parse_file
+from pybtex.database import parse_file as pybtex_parse_file
+from pybcsv.database import parse_file as pybcsv_parse_file
 import matplotlib.pyplot as plt
 
 class Bibliography:
@@ -24,12 +25,15 @@ class Bibliography:
             filepath: The path to the bibliohgraphy file.
         """
         self.filepath = filepath
-        self.bibentries = {bibkey:Bibentry(bibentry) for bibkey,bibentry in parse_file(filepath).entries.items()}
+        self.bibentries = {bibkey:Bibentry(bibentry) for bibkey,bibentry in
+                           (pybtex_parse_file(filepath).entries.items()
+                            if filepath.endswith(".bib")
+                            else pybcsv_parse_file(filepath).entries.items())}
         self.titles = [bibentry.title for bibentry in self.bibentries.values()]
         self.authors = sorted(set([bibentry.authors[0] for bibentry in self.bibentries.values()]))
         self.dois = [bibentry.doi for bibentry in self.bibentries.values()]
         self.pmids = [bibentry.pmid for bibentry in self.bibentries.values()]
-        self.years = [int(bibentry.year) for bibentry in self.bibentries.values()]        
+        self.years = [int(bibentry.year) for bibentry in self.bibentries.values()]
 
     def field_values(self, field):
         """
