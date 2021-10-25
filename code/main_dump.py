@@ -1,7 +1,7 @@
-##from article.article import Article
-##from bibliography.bibliography import Bibliography
-##from timeline.eventlist import EventList
-##from timeline.accountlist import AccountList
+from article.article import Article
+from bibliography.bibliography import Bibliography
+from timeline.eventlist import EventList
+from timeline.accountlist import AccountList
 from article.revision.timestamp import Timestamp
 from utility.wikipedia_dump_reader import WikipediaDumpReader
 import csv
@@ -13,10 +13,11 @@ from os.path import basename, exists, getsize, sep
 from os import environ
 from os import makedirs
 from glob import glob
+from multiprocessing import Pool
 from socket import gethostname
 
-##import matplotlib.pyplot as plt
-##import matplotlib.colors as mcol
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcol
 
 def get_logger(filename):
     """Set up the logger."""
@@ -78,7 +79,8 @@ def get_timeslices(first_year = 2001, final_year = 2021):
     return timeslices
 
 def get_publication_data_bib(test = False):
-    publication_map = {}
+    identifier_map = {}
+    wos_map = {}
     dois = []
     pmids = []
     bibkeys = []
@@ -86,35 +88,64 @@ def get_publication_data_bib(test = False):
     for publication_event in unified_publication_events:
         bibkey = list(publication_event.bibentries.keys())[0]
         bibkeys.append(bibkey)
+        title = publication_event.titles[bibkey]
         doi = publication_event.dois[bibkey]
         pmid = publication_event.pmids[bibkey]
+        wos_key = publication_event.wos_keys
         wos = publication_event.trace["wos"]
         accounts = publication_event.trace["accounts"]
         if doi:
             dois.append(re.escape(doi))
-            publication_map[doi] = (bibkey, wos, accounts)
+            identifier_map[doi] = (title, bibkey, "-", wos, accounts)
         if pmid:
             pmids.append(re.escape(pmid))
-            publication_map[pmid] = (bibkey, wos, accounts)
-    return (publication_map, dois, pmids, bibkeys)
+            identifier_map[pmid] = (title, bibkey, "-", wos, accounts)
+        wos_map[wos_key] = (title, bibkey, doi, pmid, wos, accounts)
+    return (identifier_map, wos_map, dois, pmids, bibkeys)
 
-def get_publication_data_csv():
+def get_publication_data_csv(relevant_wos_keys = []):
+    identifier_map = {}
+    wos_map = {}
     dois = set()
     pmids = set()
+    wos_keys = set()
     with open("../data/CRISPR_literature.csv") as csvfile:
         csv_reader = csv.reader(csvfile, delimiter="|")
-        header = True
-        for wos_uid, title, doi, pmid in csv_reader:
-            if header:
-                header = False
+        for wos_key, title, doi, pmid in csv_reader:
+            if relevant_wos_keys and wos_key not in relevant_wos_keys:
                 continue
-            if doi: dois.add(doi)
-            if pmid: pmids.add(pmid)
-    return (dois, pmids)                
+            if doi:
+                dois.add(doi)
+                identifier_map[doi] = (title, "-", wos_key, "-", "-")
+            if pmid:
+                pmids.add(pmid)
+                identifier_map[pmid] = (title, "-", wos_key, "-", "-")
+            wos_map[wos_key] = (title, "-", doi, pmid, "-", "-")
+            wos_keys.add(wos_key)
+    return (identifier_map, wos_map, dois, pmids, wos_keys)
+
+def check_and_write_wos_keys_in_article():
+    with open("../analysis/articles/analysis_from_dump/articles_woskeys.txt") as file:
+        wos_keys = [line.strip() for line in file.readlines()]
+    identifier_map, wos_map_corpora, dois, pmids, bibkeys = get_publication_data_bib(False)
+    wosmap_corpora = {wos_key:["X" if list(wos_map_corpora[wos_key])[-2] else "",
+                               "X" if list(wos_map_corpora[wos_key])[-1] else ""] + list(wos_map_corpora[wos_key])[:4]
+                      for wos_key in wos_map_corpora}
+    identifier_map, wos_map_field, dois, pmids, wos_keys = get_publication_data_csv()
+    wosmap_field = {wos_key:list(wos_map_field[wos_key])[:4] for wos_key in wos_map_field}
+    with open("../analysis/articles/analysis_from_dump/articles_woskeys.csv", "w") as file:
+        csv_writer = csv.writer(file, delimiter=",")
+        csv_writer.writerow([item.upper() for item in
+                             ["wos_key","in_corpora","wos","accounts","title","bibkey","doi","pmid"]])
+        for wos_key in wos_keys:
+            if wos_key in wosmap_corpora:
+                csv_writer.writerow([wos_key] + ["X"] + wosmap_corpora[wos_key])
+            else:
+                csv_writer.writerow([wos_key] + ["","",""] + wosmap_field[wos_key])
 
 def analyse_dump(input_filepath,
                  output_directory,
-                 publication_map,
+                 identifier_map,
                  doi_and_pmid_regex,
                  done_input_filepaths,
                  article_titles,
@@ -169,7 +200,7 @@ def analyse_dump(input_filepath,
                 for match in sorted(set([item.group() for item in re.finditer(doi_and_pmid_regex, text)])):
                     if match:
                         publication_count += 1
-                        #bibkey, wos, accounts = publication_map[match]
+                        #bibkey, wos, accounts = identifier_map[match]
                         #eventlist = "|".join([key for key,value
                         #                      in [("wos",wos),
                         #                          ("accounts",accounts)] if value])
@@ -199,11 +230,11 @@ def analyse_dump(input_filepath,
                                        duration])
             done_file.flush()
 
-def analyse_article(article_filepath, timeslices, publication_map, bibkeys):
+def analyse_article(article_filepath, timeslices, identifier_map, wos_keys):
     article = Article(article_filepath)
     article_name = article.name
 
-    results = {timeslice:{bibkey:False for bibkey in bibkeys} for timeslice in timeslices}
+    results = {timeslice:{wos_key:False for wos_key in wos_keys} for timeslice in timeslices}
                 
     revisions = article.yield_revisions()
     timeslice_revision_map = {timeslice:False for timeslice in timeslices}
@@ -213,9 +244,11 @@ def analyse_article(article_filepath, timeslices, publication_map, bibkeys):
         timeslice = month + "/" + year
         timeslice_revision_map[timeslice] = True
 
-        for match in sorted(set([item.group().replace("pmid = ", "") for item in re.finditer(doi_and_pmid_regex, revision.get_wikitext())])):
-            bibkey, wos, accounts = publication_map[match]
-            results[timeslice][bibkey] = "wos" if wos else "any"
+        for match in sorted(set([item.group() for item in re.finditer(doi_and_pmid_regex, revision.get_wikitext())])):
+            if not match.startswith("10."):
+                match = "".join([character for character in match if character.isnumeric()])
+            title, bibkey, wos_key, wos, accounts = identifier_map[match]
+            results[timeslice][wos_key] = 1
 
     for i in range(1, len(timeslices)):
         if not timeslice_revision_map[timeslices[i]] and timeslice_revision_map[timeslices[i-1]]:
@@ -224,16 +257,16 @@ def analyse_article(article_filepath, timeslices, publication_map, bibkeys):
 
     line = []
     for timeslice in timeslices:
-        wos_count = 0
-        any_count = 0
-        for bibkey in results[timeslice]:
-            if results[timeslice][bibkey] == "wos":
-                wos_count += 1
-            if results[timeslice][bibkey] == "any":
-                any_count += 1
-        line.append(str(wos_count) + "/" + str(wos_count + any_count))
+        count = 0
+        for wos_key in results[timeslice]:
+            if results[timeslice][wos_key]:
+                count += 1
+        line.append(str(count))
     print(article_name)
     return [article_name] + line
+
+#IDENTIFIER_MAP:   title, bibkey, wos_key, wos, accounts
+#WOS_MAP:          title, bibkey, doi, pmid, wos, accounts
 
 if __name__ == "__main__":
 
@@ -260,141 +293,154 @@ if __name__ == "__main__":
                '"|".join(dois)) + "|" + ("|".join(pmids)'
                ][0]
 
-    test = False
-    quick = True
-    slice_size = 1
-
-    JOB_COMPLETION_INDEX = 0#int(environ.get("JOB_COMPLETION_INDEX"))
-
-    output_directory = "../analysis/articles/articles_candidates_from_dump_new_big_file"
-    if not exists(output_directory): makedirs(output_directory)
-
-    done_filepath = output_directory + sep + "done.csv"
-    if exists(done_filepath):
-        with open(done_filepath) as file:
-            done_input_filepaths = [line.split(",")[0] for line in file.readlines()]
-    else:
-        done_input_filepaths = []
-
-    if test:
-        corpus_path_prefix = ("../dumps/")
-        corpus_path_prefix = "../../../../../" + \
-                             "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210601/"
-        input_filepaths = [corpus_path_prefix + input_file for input_file in test_files]
-    else:
-        corpus_path_prefix = "../../../../../" + \
-                             "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210601/"
-        input_filepaths = sorted(glob(corpus_path_prefix + "*.bz2"))
-        input_filepaths.remove(corpus_path_prefix + "enwiki-20210601-pages-meta-history10.xml-p5128920p5137511.bz2")
-        input_filepaths = [corpus_path_prefix + "enwiki-20210601-pages-meta-history10.xml-p5128920p5137511.bz2"]
-
-    #publication_map, dois, pmids, bibkeys = get_publication_data_bib(False)
-    dois, pmids = get_publication_data_csv()
-
-    doi_and_pmid_regex = re.compile(eval(pattern))
-
-    for input_filepath_index, input_filepath in enumerate(input_filepaths[JOB_COMPLETION_INDEX*slice_size:(JOB_COMPLETION_INDEX+1)*slice_size], JOB_COMPLETION_INDEX*slice_size):
-        filesize = getsize(input_filepath)
-        hostname = gethostname()
-        log_handler_host(output_directory, hostname, "" if True else environ.get("NODE_NAME"), input_filepath_index, input_filepath, filesize)
-        
-        analyse_dump(input_filepath=input_filepath,
-                     output_directory=output_directory,
-                     publication_map={},
-                     doi_and_pmid_regex=doi_and_pmid_regex,
-                     done_input_filepaths=done_input_filepaths,
-                     article_titles=[],
-                     quick=quick)
-
-##    article_filepaths = sorted(glob("../articles/2021-06-01_wikitext_only/en/*_en"))
-##    relevant_article_filepath = [("../data/CRISPR_articles.txt", "_all"),
-##                                 ("../data/CRISPR_articles_relevant.txt","_relevant"),
-##                                 ("../data/CRISPR_articles_relevant_no_persons.txt","_relevant_no_persons")
-##                                 ][0]
+##    test = False
+##    quick = False
+##    slice_size = 5
 ##
-##    with open(relevant_article_filepath[0]) as file:
-##        relevant_article_names = set([line.strip() for line in file.readlines()])
-##        
-##    timeslices = get_timeslices(2001)[:-7]
+##    JOB_COMPLETION_INDEX = int(environ.get("JOB_COMPLETION_INDEX"))
 ##
-##    csv_data_filepath = "../analysis/bibliography/2021_10_06/dump_analysis_plot_data.csv"
-##    if not exists(csv_data_filepath):
-##        publication_map, dois, pmids, bibkeys = get_publication_data_bib()
-##        doi_and_pmid_regex = re.compile(eval(pattern))
-##        
-##        with open(csv_data_filepath, "w") as csvfile:
-##            csv_writer = csv.writer(csvfile, delimiter=",")
-##            with Pool() as pool:
-##                lines = [line for line in pool.starmap(analyse_article, [(article_filepath, timeslices, publication_map, bibkeys)
-##                                                                         for article_filepath in article_filepaths])]
+##    output_directory = "../analysis/articles/TEST"
+##    if not exists(output_directory): makedirs(output_directory)
 ##
-##            for line in lines:
-##                csv_writer.writerow(line)
-##            csv_writer.writerow([""] + timeslices)
+##    done_filepath = output_directory + sep + "done.csv"
+##    if exists(done_filepath):
+##        with open(done_filepath) as file:
+##            done_input_filepaths = [line.split(",")[0] for line in file.readlines()]
 ##    else:
-##        lines = []
-##        with open(csv_data_filepath) as csvfile:
-##            csv_reader = csv.reader(csvfile, delimiter=",")
-##            for row in csv_reader:
-##                if row[0] in relevant_article_names:
-##                    lines.append(row)
-##                    
-##    bibkey_max_per_month_count_sort_map = {line[0]:max([int(item.split("/")[-1]) for item in line[1:]])
-##                                           for line in lines}
+##        done_input_filepaths = []
 ##
-##    lines = sorted(lines, key=lambda line: bibkey_max_per_month_count_sort_map[line[0]])
-##    
-##    start_index = 1
-##    for i in range(1, len(lines[0])):
-##        if any([line[i] != "0/0" for line in lines]):
-##            start_index = i
-##            break
-##    start_index -= 1
+##    if test:
+##        corpus_path_prefix = ("../dumps/")
+##        corpus_path_prefix = "../../../../../" + \
+##                             "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210601/"
+##        input_filepaths = [corpus_path_prefix + input_file for input_file in test_files]
+##    else:
+##        corpus_path_prefix = "../../../../../" + \
+##                             "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210601/"
+##        #input_filepaths = sorted(glob(corpus_path_prefix + "*.bz2"))
+##        #input_filepaths.remove(corpus_path_prefix + "enwiki-20210601-pages-meta-history10.xml-p5128920p5137511.bz2")
+##        relevant_bz2_files = []
+##        with open("../analysis/articles/candidates_from_dump/done.csv") as donefile:
+##            for line in donefile:
+##                line = line.split(",")
+##                if line[1] != "0":
+##                    relevant_bz2_files.append(line[0])
+##        input_filepaths = [corpus_path_prefix + relevant_bz2_file for relevant_bz2_file in relevant_bz2_files]
 ##
-##    timeslices = timeslices[start_index-1:]
-##    lines = [[line[0]] + line[start_index:] for line in lines]
-##       
-##    cm = mcol.LinearSegmentedColormap.from_list("MyCmapName",["b","r"])    
-##    fig, ax = plt.subplots()
-##    fig.set_dpi(1000.0)
-##    height = int(len(lines)/5)*1.5
-##    width = len(timeslices[start_index:])/10
-##    fig.set_figheight(height)
-##    fig.set_figwidth(width)          
-##        
-##    for line in lines:
-##        #ax.plot(timeslices, [line[0] for _ in timeslices], linewidth=0.3, color="gray", zorder=0)
-##        data = {'x': timeslices,
-##                'y': [line[0] for _ in timeslices],
-##                'c': [eval(item) if item != "0/0" else 0.0 for item in line[1:]],
-##                'd': [float(item.split("/")[-1])*3 for item in line[1:]]}
-##        
-##        ax.scatter('x', 'y', c='c', s='d', data=data, cmap=cm, zorder=1, marker=[(0, 3),(0,-3)], linewidth=3)
-##        
-##    ax.set(xlabel='', ylabel='')
-##    ax.tick_params(axis='x', labelsize=6.0, labelrotation=90)
-##    ax.tick_params(axis='y', labelsize=10.0)
-##    ax.set_xticklabels([timeslice if index % 6 == 0 else "" for index,timeslice in enumerate(timeslices)])
-##    ax.margins(x=0.005, y=0.3/height)
-##    
-##    adjustment_left = 3.75/width
-##    adjustment_right = 0.995
-##    adjustment_bottom = 0.5/height
-##    adjustment_top = 0.995
-##    
-##    plt.subplots_adjust(left=adjustment_left,
-##                        right=adjustment_right,
-##                        bottom=adjustment_bottom,
-##                        top=adjustment_top)
+##    with open("../data/CRISPR_articles_844.txt") as file:
+##        relevant_article_names = set([line.strip() for line in file.readlines()])
 ##
-##    print("articles:", relevant_article_filepath[1].replace("_", " ").strip())
-##    print("height:", height, "width:", width)
-##    print("\n\t".join(["adjustments:",
-##                     "left: " + str(adjustment_left),
-##                     "right: " + str(adjustment_right),
-##                     "bottom: " + str(adjustment_bottom),
-##                     "top: " + str(adjustment_top)]))
-##    
-##    plt.savefig(output_directory + sep + "plot" + relevant_article_filepath[1] + ".png")
+##    #identifier_map, wos_map, dois, pmids, bibkeys = get_publication_data_bib(False)
+##    identifier_map, wos_map, dois, pmids, wos_keys = get_publication_data_csv()
+##
+##    doi_and_pmid_regex = re.compile(eval(pattern))
+##
+##    for input_filepath_index, input_filepath in enumerate(input_filepaths[JOB_COMPLETION_INDEX*slice_size:(JOB_COMPLETION_INDEX+1)*slice_size], JOB_COMPLETION_INDEX*slice_size):
+##        filesize = getsize(input_filepath)
+##        hostname = gethostname()
+##        log_handler_host(output_directory, hostname, environ.get("NODE_NAME"), input_filepath_index, input_filepath, filesize)
+##        
+##        analyse_dump(input_filepath=input_filepath,
+##                     output_directory=output_directory,
+##                     identifier_map={},
+##                     doi_and_pmid_regex=doi_and_pmid_regex,
+##                     done_input_filepaths=done_input_filepaths,
+##                     article_titles=relevant_article_names,
+##                     quick=quick)
+
+    article_filepaths = sorted(glob("../articles/2021-06-01/*_en"))
+    relevant_article_filepath = [("../data/CRISPR_articles_411.txt", "_411"),
+                                 ("../data/CRISPR_articles_844.txt", "_844"),
+                                 ("../data/CRISPR_articles_relevant_new.txt","_relevant"),
+                                 ("../data/CRISPR_articles_relevant_new_no_persons.txt","_relevant_no_persons")
+                                 ][3]
+
+    with open(relevant_article_filepath[0]) as file:
+        relevant_article_names = set([line.strip() for line in file.readlines()])
+
+    with open("../analysis/articles/analysis_from_dump/articles_woskeys.txt") as file:
+        relevant_wos_keys = [line.strip() for line in file.readlines()]
+        
+    timeslices = get_timeslices(2001)[:-7]
+
+    csv_data_filepath = "../analysis/bibliography/2021_10_25/dump_analysis_plot_data.csv"
+    if not exists(csv_data_filepath):
+        identifier_map, wos_map, dois, pmids, wos_keys = get_publication_data_csv(relevant_wos_keys)
+        doi_and_pmid_regex = re.compile(eval(pattern))
+        
+        with open(csv_data_filepath, "w") as csvfile:
+            csv_writer = csv.writer(csvfile, delimiter=",")
+            with Pool() as pool:
+                lines = [line for line in pool.starmap(analyse_article, [(article_filepath, timeslices, identifier_map, wos_keys)
+                                                                         for article_filepath in article_filepaths])]
+
+            for line in lines:
+                csv_writer.writerow(line)
+            csv_writer.writerow([""] + timeslices)
+    else:
+        lines = []
+        with open(csv_data_filepath) as csvfile:
+            csv_reader = csv.reader(csvfile, delimiter=",")
+            for row in csv_reader:
+                if row[0] in relevant_article_names:
+                    lines.append(row)
+                    
+    bibkey_max_per_month_count_sort_map = {line[0]:max([int(item.split("/")[-1]) for item in line[1:]])
+                                           for line in lines}
+
+    lines = sorted(lines, key=lambda line: bibkey_max_per_month_count_sort_map[line[0]])
+    
+    start_index = 1
+    for i in range(1, len(lines[0])):
+        if any([line[i] != "0" for line in lines]):
+            start_index = i
+            break
+    start_index -= 1
+
+    timeslices = timeslices[start_index-1:]
+    lines = [[line[0]] + line[start_index:] for line in lines]
+       
+    cm = mcol.LinearSegmentedColormap.from_list("MyCmapName",["black","r"])    
+    fig, ax = plt.subplots()
+    fig.set_dpi(150.0)
+    height = int(len(lines)/4)
+    width = len(timeslices[start_index:])/9
+    fig.set_figheight(height)
+    fig.set_figwidth(width)          
+        
+    for line in lines:
+        #ax.plot(timeslices, [line[0] for _ in timeslices], linewidth=0.3, color="gray", zorder=0)
+        data = {'x': timeslices,
+                'y': [line[0] for _ in timeslices],
+                'c': [eval(item) if item == "0/0" else 0.0 for item in line[1:]],
+                'd': [float(item.split("/")[-1]) for item in line[1:]]}
+        
+        ax.scatter('x', 'y', c='c', s='d', data=data, cmap=cm, zorder=1, marker="$│$", linewidth=1)
+        
+    ax.set(xlabel='', ylabel='')
+    ax.tick_params(axis='x', labelsize=6.0, labelrotation=90)
+    ax.tick_params(axis='y', labelsize=10.0)
+    ax.set_xticklabels([timeslice if index % 6 == 0 else "" for index,timeslice in enumerate(timeslices)])
+    ax.margins(x=0.01, y=0.15/height)
+    
+    adjustment_left = 5/width
+    adjustment_right = 0.995
+    adjustment_bottom = 0.5/height
+    adjustment_top = 0.995
+    
+    plt.subplots_adjust(left=adjustment_left,
+                        right=adjustment_right,
+                        bottom=adjustment_bottom,
+                        top=adjustment_top)
+
+    print("articles:", relevant_article_filepath[1].replace("_", " ").strip())
+    print("height:", height, "width:", width)
+    print("\n\t".join(["adjustments:",
+                     "left: " + str(adjustment_left),
+                     "right: " + str(adjustment_right),
+                     "bottom: " + str(adjustment_bottom),
+                     "top: " + str(adjustment_top)]))
+    
+    plt.savefig("../analysis/bibliography/2021_10_25" + sep + "plot" + relevant_article_filepath[1] + ".png")
             
 

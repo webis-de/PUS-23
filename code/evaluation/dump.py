@@ -8,7 +8,7 @@ def scroll_to_url(article_name, revid, string):
             + "&oldid=" + revid
             + "#:~:text=" + quote(string))
 
-directory = "../../analysis/articles_new/articles_candidates_from_dump/"
+directory = "../../analysis/articles/analysis_from_dump/"
 
 filepaths = glob(directory + "*results.csv")
 
@@ -25,13 +25,9 @@ def get_publication_data_csv():
                 continue
             if doi and doi not in publication_map:
                 publication_map[doi] = wos_uid
-                if doi in dois:
-                    print(doi)
                 dois.add(doi)
             if pmid and pmid not in publication_map:
                 publication_map[pmid] = wos_uid
-                if pmid in pmids:
-                    print(pmid)
                 pmids.add(pmid)
     print(len(dois))
     print(len(pmids))
@@ -59,8 +55,6 @@ publication_map = get_publication_data_csv()
 ##for key,value in publication_map.items():
 ##	if len(value) > 2:
 ##		print(key, value)
-
-input("DONE")
 
 results = {}
 
@@ -127,58 +121,58 @@ results = {article_name:{bibkey:results[article_name][bibkey]
                                               reverse=True)}
            for article_name in results}
 
-#write to txt
-with open(directory + "articles_analysis.txt", "w") as file:
-    file.write(pformat(results, sort_dicts=False))
-#write to csv
-with open(directory + "articles_analysis.csv", "w") as file:
-    csv_writer = writer(file, delimiter=",")
-    for article_name in results:
-        first_time_article_name = True
-        for bibkey in results[article_name]:
-            pmid = ""
-            pmid_count = ""
-            doi = ""
-            doi_count = ""
-            for doi_or_pmid, count in results[article_name][bibkey].items():
-                if doi_or_pmid.isnumeric():
-                    pmid = doi_or_pmid
-                    pmid_count = count
-                else:
-                    doi = doi_or_pmid
-                    doi_count = count
-            revid_of_first_pmid_match,timestamp_of_first_pmid_match = first_and_final_revision_for_article_and_bibkey_map[article_name][bibkey]["first_pmid_match"]
-            revid_of_final_pmid_match,timestamp_of_final_pmid_match = first_and_final_revision_for_article_and_bibkey_map[article_name][bibkey]["final_pmid_match"]
-            revid_of_first_doi_match,timestamp_of_first_doi_match = first_and_final_revision_for_article_and_bibkey_map[article_name][bibkey]["first_doi_match"]
-            revid_of_final_doi_match,timestamp_of_final_doi_match = first_and_final_revision_for_article_and_bibkey_map[article_name][bibkey]["final_doi_match"]
-            csv_writer.writerow([article_name if first_time_article_name else "",
-                                 bibkey,
-                                 doi,
-                                 doi_count,
-                                 revid_of_first_doi_match,
-                                 timestamp_of_first_doi_match,
-                                 scroll_to_url(article_name,
-                                               revid_of_first_doi_match,
-                                               doi) if doi else "",
-                                 revid_of_final_doi_match,
-                                 timestamp_of_final_doi_match,
-                                 scroll_to_url(article_name,
-                                               revid_of_final_doi_match,
-                                               doi) if doi else "",
-                                 "---",
-                                 pmid,
-                                 pmid_count,
-                                 revid_of_first_pmid_match,
-                                 timestamp_of_first_pmid_match,
-                                 scroll_to_url(article_name,
-                                               revid_of_first_pmid_match,
-                                               pmid) if pmid else "",
-                                 revid_of_final_pmid_match,
-                                 timestamp_of_final_pmid_match,
-                                 scroll_to_url(article_name,
-                                               revid_of_final_pmid_match,
-                                               pmid) if pmid else "",
-                                 "---"])
-            first_time_article_name = False
+###write to txt
+##with open(directory + "articles_analysis.txt", "w") as file:
+##    file.write(pformat(results, sort_dicts=False))
+###write to csv
+##with open(directory + "articles_analysis.csv", "w") as file:
+##    csv_writer = writer(file, delimiter=",")
+##    for article_name in results:
+##        first_time_article_name = True
+##        for bibkey in results[article_name]:
+##            pmid = ""
+##            pmid_count = ""
+##            doi = ""
+##            doi_count = ""
+##            for doi_or_pmid, count in results[article_name][bibkey].items():
+##                if doi_or_pmid.isnumeric():
+##                    pmid = doi_or_pmid
+##                    pmid_count = count
+##                else:
+##                    doi = doi_or_pmid
+##                    doi_count = count
+##            revid_of_first_pmid_match,timestamp_of_first_pmid_match = first_and_final_revision_for_article_and_bibkey_map[article_name][bibkey]["first_pmid_match"]
+##            revid_of_final_pmid_match,timestamp_of_final_pmid_match = first_and_final_revision_for_article_and_bibkey_map[article_name][bibkey]["final_pmid_match"]
+##            revid_of_first_doi_match,timestamp_of_first_doi_match = first_and_final_revision_for_article_and_bibkey_map[article_name][bibkey]["first_doi_match"]
+##            revid_of_final_doi_match,timestamp_of_final_doi_match = first_and_final_revision_for_article_and_bibkey_map[article_name][bibkey]["final_doi_match"]
+##            csv_writer.writerow([article_name if first_time_article_name else "",
+##                                 bibkey,
+##                                 doi,
+##                                 doi_count,
+##                                 revid_of_first_doi_match,
+##                                 timestamp_of_first_doi_match,
+##                                 scroll_to_url(article_name,
+##                                               revid_of_first_doi_match,
+##                                               doi) if doi else "",
+##                                 revid_of_final_doi_match,
+##                                 timestamp_of_final_doi_match,
+##                                 scroll_to_url(article_name,
+##                                               revid_of_final_doi_match,
+##                                               doi) if doi else "",
+##                                 "---",
+##                                 pmid,
+##                                 pmid_count,
+##                                 revid_of_first_pmid_match,
+##                                 timestamp_of_first_pmid_match,
+##                                 scroll_to_url(article_name,
+##                                               revid_of_first_pmid_match,
+##                                               pmid) if pmid else "",
+##                                 revid_of_final_pmid_match,
+##                                 timestamp_of_final_pmid_match,
+##                                 scroll_to_url(article_name,
+##                                               revid_of_final_pmid_match,
+##                                               pmid) if pmid else "",
+##                                 "---"])
+##            first_time_article_name = False
 
 print(directory)
