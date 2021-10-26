@@ -303,7 +303,7 @@ if __name__ == "__main__":
     else:
         article_titles = [article.strip() for article in split(" *, *", args["articles"])]
 
-    bibliography = Bibliography("../data/CRISPR_literature.bib")
+    bibliography = Bibliography("../data/CRISPR_literature_from_bib.csv")
     accountlist = AccountList("../data/CRISPR_accounts.csv")
 
     logger.info("Analysing articles [" + ", ".join(article_titles) + "]")
