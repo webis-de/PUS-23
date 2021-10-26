@@ -15,7 +15,7 @@ class Event:
         self.event_text = args["event_text"]
         self.type = args["type"]
         self.subtype = args["subtype"]
-        self.bibentries = bibliography.get_bibentries(split("; *", args["bib_keys"]))
+        self.bibentries = bibliography.get_bibentries(split("; *", args["wos_keys"]))
         self.wos_keys = args["wos_keys"]
         self.extracted_from = args["extracted_from"]
         self.comment = args["comment"]

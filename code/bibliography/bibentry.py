@@ -15,31 +15,15 @@ class Bibentry:
         pmid: The pmid of this bibentry.
         year: The year of this bibentry.
     """
-    def __init__(self, bibentry):
+    def __init__(self, bibkey, bibentry):
 
-        self.bibkey = bibentry.key
-        self.title = self.replace_braces(bibentry.fields.get("title", None))
-        self.authors = [self.replace_braces(person.last_names[0]) for person in bibentry.persons.get("author") if self.replace_braces(person.last_names[0])]
-        self.journal = bibentry.fields.get("journal", None)
-        self.doi = bibentry.fields.get("doi", None)
-        self.pmid = bibentry.fields.get("pmid", None)
-        self.year = bibentry.fields.get("year", None)
-
-    def replace_braces(self, value):
-        """
-        Replaces curly braces in a string or the string elements of a list or tuple.
-
-        Returns:
-            The string or list or tuple provided, with curly braces removed.
-        """
-        if type(value) == str:
-            return value.replace("{","").replace("}","")
-        elif type(value) == list:
-            return [string.replace("{","").replace("}","") for string in value]
-        elif type(value) == tuple:
-            return tuple(string.replace("{","").replace("}","") for string in value)
-        else:
-            ""
+        self.bibkey = bibkey
+        self.title = bibentry.get("title", None)
+        self.authors = [author[0] for author in bibentry.get("authors")]
+        self.journal = bibentry.get("journal", None)
+        self.doi = bibentry.get("doi", None)
+        self.pmid = bibentry.get("pmid", None)
+        self.year = bibentry.get("year", None)
 
     def doi_valid(self):
         """

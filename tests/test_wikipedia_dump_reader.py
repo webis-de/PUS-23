@@ -12,7 +12,7 @@ class TestWikipediaDumpReader(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        bibliography = Bibliography("tests/data/literature.bib")
+        bibliography = Bibliography("tests/data/literature.csv")
         accountlist = AccountList("tests/data/accounts.csv")
         cls.eventlist = EventList("tests/data/events.csv",
                                   bibliography,

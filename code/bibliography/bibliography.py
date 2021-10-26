@@ -1,8 +1,7 @@
 from .bibentry import Bibentry
 from os.path import exists, sep
 from os import makedirs
-from pybtex.database import parse_file as pybtex_parse_file
-from .pybcsv.database import parse_file as pybcsv_parse_file
+from csv import reader
 import matplotlib.pyplot as plt
 
 class Bibliography:
@@ -25,10 +24,18 @@ class Bibliography:
             filepath: The path to the bibliohgraphy file.
         """
         self.filepath = filepath
-        self.bibentries = {bibkey:Bibentry(bibentry) for bibkey,bibentry in
-                           (pybtex_parse_file(filepath).entries.items()
-                            if filepath.endswith(".bib")
-                            else pybcsv_parse_file(filepath).entries.items())}
+        self.bibentries = {}
+        with open(filepath) as file:
+            csv_reader = reader(file, delimiter=",")
+            header = next(csv_reader)
+            for row in csv_reader:
+                self.bibentries[row[0]] = Bibentry(row[0],
+                                                   {"title":row[header.index("title")],
+                                                    "authors":[author.split(",") for author in row[header.index("authors")].split("|")],
+                                                    "journal":row[header.index("journal")],
+                                                    "doi":row[header.index("doi")],
+                                                    "pmid":row[header.index("pmid")],
+                                                    "year":row[header.index("year")]})
         self.titles = [bibentry.title for bibentry in self.bibentries.values()]
         self.authors = sorted(set([bibentry.authors[0] for bibentry in self.bibentries.values()]))
         self.dois = [bibentry.doi for bibentry in self.bibentries.values()]
@@ -91,3 +98,46 @@ class Bibliography:
         plt.subplots_adjust(bottom=0.1, top=0.95, left=0.03, right=0.995)
         if not exists(directory): makedirs(directory)
         plt.savefig(directory + sep + "publication_distribution.png")
+
+if __name__ == "__main__":
+
+    def replace_braces(value):
+        """
+        Replaces curly braces in a string or the string elements of a list or tuple.
+
+        Returns:
+            The string or list or tuple provided, with curly braces removed.
+        """
+        if type(value) == str:
+            return value.replace("{","").replace("}","")
+        elif type(value) == list:
+            return [string.replace("{","").replace("}","") for string in value]
+        elif type(value) == tuple:
+            return tuple(string.replace("{","").replace("}","") for string in value)
+        else:
+            ""
+
+    from csv import writer, reader
+    from pybtex.database import parse_file as pybtex_parse_file
+    bib = pybtex_parse_file("../../data/CRISPR_literature.bib").entries.values()
+    with open("CRISPR_literature_from_bib.csv", "w") as file:
+        csv_writer = writer(file, delimiter=",")
+        csv_writer.writerow(["unique-id","title","authors","doi","pmid","eissn","issn","year","month","journal","number","volume","pages"])
+        for bibentry in bib:
+            csv_writer.writerow([bibentry.fields.get("unique-id", "").replace("ISI","WOS"),
+                                 replace_braces(bibentry.fields.get("title", "")),
+                                 "|".join([replace_braces(person.last_names[0]) + "," + replace_braces(person.first_names[0]) for person in bibentry.persons.get("author", "")]),
+                                 bibentry.fields.get("doi", ""),
+                                 bibentry.fields.get("pmid", ""),
+                                 bibentry.fields.get("eissn", ""),
+                                 bibentry.fields.get("issn", ""),
+                                 bibentry.fields.get("year", ""),
+                                 bibentry.fields.get("month", ""),
+                                 bibentry.fields.get("journal", ""),
+                                 bibentry.fields.get("number", ""),
+                                 bibentry.fields.get("volume", ""),
+                                 bibentry.fields.get("pages", "")])
+        
+    b = Bibliography("CRISPR_literature_from_bib.csv")
+    for key,value in b.bibentries["WOS:000282599700029"].__dict__.items():
+        print(key, value)
