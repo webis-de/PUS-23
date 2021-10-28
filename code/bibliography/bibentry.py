@@ -10,7 +10,6 @@ class Bibentry:
         bibkey: The bibkey of this bibentry.
         title: The title of this bibentry.
         authors: The authors of this bibentry.
-        journal: The journal of this bibentry.
         doi: The doi of this bibentry.
         pmid: The pmid of this bibentry.
         year: The year of this bibentry.
@@ -20,7 +19,6 @@ class Bibentry:
         self.bibkey = bibkey
         self.title = bibentry.get("title", None)
         self.authors = [author[0] for author in bibentry.get("authors")]
-        self.journal = bibentry.get("journal", None)
         self.doi = bibentry.get("doi", None)
         self.pmid = bibentry.get("pmid", None)
         self.year = bibentry.get("year", None)

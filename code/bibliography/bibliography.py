@@ -25,17 +25,22 @@ class Bibliography:
         """
         self.filepath = filepath
         self.bibentries = {}
+        i = 1
         with open(filepath) as file:
-            csv_reader = reader(file, delimiter=",")
+            csv_reader = reader(file, delimiter="|")
             header = next(csv_reader)
+            columns = {column:header.index(column) for column in header}
             for row in csv_reader:
-                self.bibentries[row[0]] = Bibentry(row[0],
-                                                   {"title":row[header.index("title")],
-                                                    "authors":[author.split(",") for author in row[header.index("authors")].split("|")],
-                                                    "journal":row[header.index("journal")],
-                                                    "doi":row[header.index("doi")],
-                                                    "pmid":row[header.index("pmid")],
-                                                    "year":row[header.index("year")]})
+                i += 1
+                try:
+                    self.bibentries[row[0]] = Bibentry(row[0],
+                                                       {"title":row[columns["title"]],
+                                                        "authors":[author.split(",") for author in row[columns["authors"]].split("|")],
+                                                        "doi":row[columns["doi"]],
+                                                        "pmid":row[columns["pmid"]],
+                                                        "year":row[columns["year"]]})
+                except:
+                    input(i)
         self.titles = [bibentry.title for bibentry in self.bibentries.values()]
         self.authors = sorted(set([bibentry.authors[0] for bibentry in self.bibentries.values()]))
         self.dois = [bibentry.doi for bibentry in self.bibentries.values()]
