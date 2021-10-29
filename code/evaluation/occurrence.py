@@ -1,10 +1,9 @@
 import matplotlib.pyplot as plt
 from json import load
 from os.path import basename, dirname, sep
-from urllib.parse import quote, unquote
 from glob import glob
 import numpy as np
-from pprint import pprint
+from utils import parse_json_name, parse_article_title
 
 #constants
 NO_MATCH_OR_NEGATIVE = 0.05
@@ -26,12 +25,6 @@ def stringify_delay(delay):
         return "-"
     else:
         return str(int(delay - ZERO))
-
-def parse_json_name(json_path):
-    return basename(json_path).split(".")[0]
-
-def parse_article_title(json_name):
-    return unquote(json_name).replace("_"," ")
 
 def occurrence(json_path, sort):
 
@@ -198,7 +191,7 @@ def plot_delays(json_path, data, methods):
 
 if __name__ == "__main__":
 
-    json_paths = sorted(glob("../../analysis/bibliography/2021_10_27/publication-events-field-matched/*.json"))
+    json_paths = sorted(glob("../../analysis/bibliography/2021_10_27_copy/publication-events-field-matched/*.json"))
 
     with open(dirname(json_paths[0]) + sep + "_.csv", "w") as overlook_csv:
         
@@ -206,11 +199,11 @@ if __name__ == "__main__":
 
             overlook_csv.write(occurrence(json_path, False))
 
-            delays = calculate_delays(json_path, True)
-            delays_all = calculate_delays(json_path, False)
+##            delays = calculate_delays(json_path, True)
+##            delays_all = calculate_delays(json_path, False)
 
-            write_delay_table(json_path, delays, True)
-            write_delay_table(json_path, delays_all, False)
+##            write_delay_table(json_path, delays, True)
+##            write_delay_table(json_path, delays_all, False)
 
-            methods = ["titles","dois","pmids"]
-            plot_delays(json_path, delays, methods)
+##            methods = ["titles","dois","pmids"]
+##            plot_delays(json_path, delays, methods)
