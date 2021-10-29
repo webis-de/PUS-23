@@ -19,6 +19,8 @@ strategies = ["verbatim", "relaxed"]
 
 json_paths = sorted(glob("../../analysis/bibliography/2021_10_27/publication-events (copy 1)/*_correct.json"))
 
+relative = True
+
 for json_path in json_paths:
     with open(json_path) as file:
         events = load(file)
@@ -26,8 +28,8 @@ for json_path in json_paths:
     json_name = parse_json_name(json_path)
     article_title = parse_article_title(json_name).replace(" correct", "")
 
-    method_matrix = [[[0,0]]*len(methods) for _ in methods]
-    strategy_matrix = [[[0,0]]*len(strategies) for _ in strategies]
+    method_matrix = [[[0,0] for _ in range(len(methods))] for _ in methods]
+    strategy_matrix = [[[0,0] for _ in range(len(strategies))] for _ in strategies]
 
     for event in events:
         for i in range(len(strategies)):
@@ -40,13 +42,7 @@ for json_path in json_paths:
                     if min([value["index"] for value in event["trace"][article_title]["first_mentioned"][strategies[j]].values() if value]) > min([value["index"] for value in event["trace"][article_title]["first_mentioned"][strategies[i]].values() if value]):
                         strategy_matrix[i][j][0] += 1
         results = {k:v for k,v in list(event["trace"][article_title]["first_mentioned"]["verbatim"].items()) + list(event["trace"][article_title]["first_mentioned"]["relaxed"].items())}
-    ##    results = {k:v for k,v in list(event["trace"][article_title]["first_mentioned"]["relaxed"].items())}
-    ##    verbatim_methods = [item for item in event["trace"][article_title]["first_mentioned"]["verbatim"].items() if item[1]]
-    ##    if verbatim_methods:
-    ##        best_verbatim = sorted(verbatim_methods, key = lambda item: item[1]["index"])[0]
-    ##        results["verbatim"] = best_verbatim[1]
-    ##    else:
-    ##        results["verbatim"] = None
+
         for i in range(len(methods)):
             for j in range(len(methods)):
                 if i == j:
@@ -60,17 +56,17 @@ for json_path in json_paths:
         for j in range(len(methods)):
             if i != j:
                 try:
-                    method_matrix[i][j] = round(method_matrix[i][j][0] / method_matrix[i][j][1], 2)
+                    method_matrix[i][j] = str(int(method_matrix[i][j][0] * 100 / method_matrix[i][j][1]))  if relative else method_matrix[i][j][0]
                 except ZeroDivisonError:
-                    method_matrix[i][j] = 0.00
+                    method_matrix[i][j] = "0.00"
 
     for i in range(len(strategies)):
         for j in range(len(strategies)):
             if i != j:
                 try:
-                    strategy_matrix[i][j] = round(strategy_matrix[i][j][0] / strategy_matrix[i][j][1], 2)
+                    strategy_matrix[i][j] = str(int(strategy_matrix[i][j][0] * 100 / strategy_matrix[i][j][1])) if relative else strategy_matrix[i][j][0]
                 except ZeroDivisonError:
-                    strategy_matrix[i][j] = 0.00
+                    strategy_matrix[i][j] = "0.00"
 
     with open(json_path.replace("_correct.json", "_confusion.csv"), "w") as file:
         csv_writer = writer(file, delimiter=",")
