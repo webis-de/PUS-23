@@ -32,6 +32,8 @@ class EventList:
                     args = {header[i].strip():row[i].strip() for i in range(len(header))}
                     #create event object from arguments and bibliography
                     event = Event(args, bibliography, accountlist, equalling)
+                    self.events.append(event)
+                    continue
                     #check conditions and skip events not matching them
                     for condition in conditions:
                         if not eval(condition):
