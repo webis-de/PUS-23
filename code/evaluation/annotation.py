@@ -16,7 +16,7 @@ relaxed_methods = ["ned <= 0.2",
                    ]
 
 json_paths = sorted([path for path
-                     in glob("../../analysis/bibliography/2021_10_27_copy/publication-events-field-matched/*.json")
+                     in glob("../../analysis/bibliography/2021_10_29/publication-events-field/*.json")
                      if not any([path.endswith(suffix) for suffix in ["_correct.json", "_annotated.json", "_reduced.json"]])])
 
 for json_path in json_paths:
@@ -31,6 +31,8 @@ for json_path in json_paths:
 
     with open(json_path) as file:
         events = load(file)
+
+    match_map = {}
 
     for index, event in enumerate(events):
         bibkey = list(event["bibentries"].keys())[0]
@@ -54,20 +56,30 @@ for json_path in json_paths:
                         if match and ((title and title in match) or (doi and doi in match) or (pmid and pmid in match)):
                             correct = True
                         else:
-                            print("BIBLIOGRAPH ENTRY:")
-                            print("Title:", title)
-                            print("Authors:", authors)
-                            print("DOI:", doi)
-                            print("PMID:", pmid)
-                            print("Year:", year)
-                            print()
-                            print("->", "METHOD:", method)
-                            print("->", "SCORE:", result["result"][bibkey][list(result["result"][bibkey].keys())[-1]])
-                            print()
-                            print(match)
-                            print()
-                            correct = input("\nENTER y IF CORRECT, PRESS ENTER IF INCORRECT. ") == "y"
-                            print("="*50)
+                            ref = title + "".join(authors) + doi + pmid + year
+                            check = True
+                            if ref in match_map:
+                                if match in match_map[ref]:
+                                    correct = match_map[ref][match]
+                                    check = False
+                            if check:
+                                print("BIBLIOGRAPH ENTRY:")
+                                print("Title:", title)
+                                print("Authors:", authors)
+                                print("DOI:", doi)
+                                print("PMID:", pmid)
+                                print("Year:", year)
+                                print()
+                                print("->", "METHOD:", method)
+                                print("->", "SCORE:", result["result"][bibkey][list(result["result"][bibkey].keys())[-1]])
+                                print()
+                                print(match)
+                                print()
+                                correct = input("\nENTER y IF CORRECT, PRESS ENTER IF INCORRECT. ") == "y"
+                                if ref not in match_map:
+                                    match_map[ref] = {}
+                                match_map[ref][match] = correct
+                                print("="*50)
                         if correct:
                             no_result = False
                             precisions[method][0] += 1
