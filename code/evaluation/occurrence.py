@@ -4,6 +4,7 @@ from os.path import basename, dirname, sep
 from glob import glob
 import numpy as np
 from utils import parse_json_name, parse_article_title
+from csv import writer
 
 #constants
 NO_MATCH_OR_NEGATIVE = 0.05
@@ -26,7 +27,7 @@ def stringify_delay(delay):
     else:
         return str(int(delay - ZERO))
 
-def occurrence(json_path, sort):
+def occurrence(json_path, sort, rows):
 
     directory = dirname(json_path)
     json_name = parse_json_name(json_path)
@@ -97,6 +98,9 @@ def occurrence(json_path, sort):
                                                             "note":"any of the verbatim strategies or title edit distance less or equal 0.2 or title edit distance less or equal 0.4 and a list of authors with Skat >= 0.8"}
                        }
 
+            if rows == {}:
+                rows = {key:[] for key in results.keys()}
+
             file_string = ""
             
             file_string += "number of events" + "," + str(len(publication_events)) + "\n"
@@ -109,6 +113,8 @@ def occurrence(json_path, sort):
                 file_string += key + "," + str(len(value["data"])) + "," + str(round(len(value["data"])/len(publication_events)*100, 2)) + "," + value["note"] + "\n"
                 if key == "pmids":
                     file_string += "--- Relaxed Match Measures ---" + "\n"
+                rows[key] += [len(value["data"]),
+                              round(len(value["data"])/len(publication_events)*100, 2)]
             file_string += "\n"
             file.write(file_string)
 
@@ -117,7 +123,7 @@ def occurrence(json_path, sort):
             for line in file_string_data:
                 print("".join([item.ljust(len(file_string_data[2][line.index(item)]) + 2, " ") for item in line]))
                 
-    return article_title + "\n\n" + file_string
+    return rows#article_title + "\n\n" + file_string
 
 def calculate_delays(json_path, skip_no_result):
 
@@ -191,13 +197,26 @@ def plot_delays(json_path, data, methods):
 
 if __name__ == "__main__":
 
-    json_paths = sorted(glob("../../analysis/bibliography/2021_10_29/publication-events-field/*.json"))
+    json_paths = sorted(glob("../../analysis/bibliography/2021_11_01/publication-events-field (copy 1)/*.json"))
 
+    rows = {}
+    for json_path in json_paths:
+        rows = occurrence(json_path, False, rows)
+        
     with open(dirname(json_paths[0]) + sep + "_.csv", "w") as overlook_csv:
         
+        article_titles = []
         for json_path in json_paths:
+            json_name = parse_json_name(json_path)
+            article_titles.append(parse_article_title(json_name))
+            article_titles.append("")
 
-            overlook_csv.write(occurrence(json_path, False))
+        csv_writer = writer(overlook_csv, delimiter=",")
+        csv_writer.writerow(["Strategy Employed to Identify First Occurrence"] + \
+                            article_titles)
+        csv_writer.writerow([""] + ["Absolute","Relative"] * len(json_paths))
+        for key, values in rows.items():
+            csv_writer.writerow([key] + values)
 
 ##            delays = calculate_delays(json_path, True)
 ##            delays_all = calculate_delays(json_path, False)

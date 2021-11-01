@@ -1,7 +1,8 @@
-from os.path import basename, dirname, sep
+from os.path import basename, dirname, exists, sep
 from glob import glob
 from json import load, dumps
 from utils import parse_json_name, parse_article_title
+from csv import reader, writer
 
 verbatim_methods = ["titles",
                     "dois",
@@ -15,126 +16,153 @@ relaxed_methods = ["ned <= 0.2",
                    "ned_and_skat"
                    ]
 
+def get_bibliography_data(event):
+    bibkey = list(event["bibentries"].keys())[0]
+    title = event["bibentries"][bibkey]["title"]
+    authors = event["bibentries"][bibkey]["authors"]
+    doi = event["bibentries"][bibkey]["doi"]
+    pmid = event["bibentries"][bibkey]["pmid"]
+    year = event["bibentries"][bibkey]["year"]
+    return (bibkey, title, authors, doi, pmid, year)
+
+def concatenate_bibliography_data(title, authors, doi, pmid, year):
+    return ("Title: " + title + "\n" +
+            "Authors: " + "[" + ", ".join(authors) + "]" + "\n" +
+            "DOI: " + doi + "\n" +
+            "PMID: " + pmid + "\n" +
+            "Year: " + year)    
+
 json_paths = sorted([path for path
-                     in glob("../../analysis/bibliography/2021_10_29/publication-events-field/*.json")
+                     in glob("../../analysis/bibliography/2021_11_01/publication-events-highly-cited/*.json")
                      if not any([path.endswith(suffix) for suffix in ["_correct.json", "_annotated.json", "_reduced.json"]])])
+
+to_label_filepath = "../../analysis/bibliography/2021_11_01/to_label.csv"
+labelled_filepath =  "../../analysis/bibliography/2021_11_01/labelled.csv"
+
+reference_match_mapping = {}
 
 for json_path in json_paths:
 
+    with open(json_path) as file:
+        events = load(file)
     json_name = parse_json_name(json_path)
     article_title = parse_article_title(json_name)
 
-    print(article_title)
-    print("-"*len(article_title) + "\n")
-    
-    precisions = {method:[0,0] for method in verbatim_methods + relaxed_methods}
+    print(article_title + ":", json_path)
 
-    with open(json_path) as file:
-        events = load(file)
-
-    match_map = {}
-
-    for index, event in enumerate(events):
-        bibkey = list(event["bibentries"].keys())[0]
-        title = event["bibentries"][bibkey]["title"]
-        authors = event["bibentries"][bibkey]["authors"]
-        doi = event["bibentries"][bibkey]["doi"]
-        pmid = event["bibentries"][bibkey]["pmid"]
-        year = event["bibentries"][bibkey]["year"]
-        no_result = True
-        for strategy in event["trace"][article_title]["first_mentioned"]:
-            for method,result in event["trace"][article_title]["first_mentioned"][strategy].items():
-                if result:
-                    if method in verbatim_methods:
-                        no_result = False
-                        precisions[method][0] += 1
-                        precisions[method][1] += 1
-                        events[index]["trace"][article_title]["first_mentioned"][strategy][method]["correct"] = True
-                    else:
-                        precisions[method][1] += 1
-                        match = result["result"][bibkey]["source_text"]["raw"]
-                        if match and ((title and title in match) or (doi and doi in match) or (pmid and pmid in match)):
-                            correct = True
-                        else:
-                            ref = title + "".join(authors) + doi + pmid + year
-                            check = True
-                            if ref in match_map:
-                                if match in match_map[ref]:
-                                    correct = match_map[ref][match]
-                                    check = False
-                            if check:
-                                print("BIBLIOGRAPH ENTRY:")
-                                print("Title:", title)
-                                print("Authors:", authors)
-                                print("DOI:", doi)
-                                print("PMID:", pmid)
-                                print("Year:", year)
-                                print()
-                                print("->", "METHOD:", method)
-                                print("->", "SCORE:", result["result"][bibkey][list(result["result"][bibkey].keys())[-1]])
-                                print()
-                                print(match)
-                                print()
-                                correct = input("\nENTER y IF CORRECT, PRESS ENTER IF INCORRECT. ") == "y"
-                                if ref not in match_map:
-                                    match_map[ref] = {}
-                                match_map[ref][match] = correct
-                                print("="*50)
-                        if correct:
-                            no_result = False
-                            precisions[method][0] += 1
-                            events[index]["trace"][article_title]["first_mentioned"][strategy][method]["correct"] = True
-                        else:
-                            events[index]["trace"][article_title]["first_mentioned"][strategy][method]["correct"] = False
-
-    first_event = True
-    first_correct_event = True
-    first_reduced_event = True
+    if not exists(to_label_filepath):
             
-    with open(json_path.replace(".json", "_annotated.json"), "w") as annotated_file,\
-         open(json_path.replace(".json", "_correct.json"), "w") as correct_file,\
-         open(json_path.replace(".json", "_reduced.json"), "w") as reduced_file:
-        annotated_file.write("[")
-        correct_file.write("[")
-        reduced_file.write("[")
-
-        for event in events:
-
-            annotated_file.write("," * (not first_event) + "\n")
-            first_event = False
-            
-            annotated_file.write(dumps(event))
-            
+        for index, event in enumerate(events):
+            bibkey, title, authors, doi, pmid, year = get_bibliography_data(event)
+            concatenated_bibliography_data = concatenate_bibliography_data(title, authors, doi, pmid, year)
             for strategy in event["trace"][article_title]["first_mentioned"]:
-                for method in event["trace"][article_title]["first_mentioned"][strategy]:
-                    if event["trace"][article_title]["first_mentioned"][strategy][method] and not event["trace"][article_title]["first_mentioned"][strategy][method]["correct"]:
-                        event["trace"][article_title]["first_mentioned"][strategy][method] = None
+                for method,result in event["trace"][article_title]["first_mentioned"][strategy].items():
+                    if result:
+                        if method in verbatim_methods:
+                            continue
+                        else:
+                            match = result["result"][bibkey]["source_text"]["raw"]
+                            if not any([(title and title in match),
+                                        (doi and doi in match),
+                                        (pmid and pmid in match)]):
+                                if concatenated_bibliography_data not in reference_match_mapping:
+                                    reference_match_mapping[concatenated_bibliography_data] = {}
+                                reference_match_mapping[concatenated_bibliography_data][match] = ""
+    else:
+        if exists(labelled_filepath):
 
-            methods_with_results = [item for item in event["trace"][article_title]["first_mentioned"]["verbatim"].values() if item] + \
-                                   [item for item in event["trace"][article_title]["first_mentioned"]["relaxed"].values() if item]
+            reference_match_mapping = {}
+            with open(labelled_filepath) as labeled_file:
+                csv_reader = reader(labeled_file, delimiter=",")
+                for concatenated_bibliography_data,match,judgement in csv_reader:
+                    if concatenated_bibliography_data not in reference_match_mapping:
+                        reference_match_mapping[concatenated_bibliography_data] = {}
+                    reference_match_mapping[concatenated_bibliography_data][match] = bool(int(judgement))
             
-            if any(methods_with_results):
+            precisions = {method:[0,0] for method in verbatim_methods + relaxed_methods}
 
-                correct_file.write("," * (not first_correct_event) + "\n")
-                first_correct_event = False
-                
-                correct_file.write(dumps(event))
+            with open(json_path) as file:
+                events = load(file)
 
-                correct_methods = [item for item in methods_with_results if item["correct"]]
-                
-                if any(correct_methods):
-                    earliest_result = sorted(correct_methods, key = lambda item: item["index"])[0]
-                    event["trace"][article_title]["first_mentioned"] = earliest_result
+            for index, event in enumerate(events):
+                bibkey, title, authors, doi, pmid, year = get_bibliography_data(event)
+                concatenated_bibliography_data = concatenate_bibliography_data(title, authors, doi, pmid, year)
+                for strategy in event["trace"][article_title]["first_mentioned"]:
+                    for method,result in event["trace"][article_title]["first_mentioned"][strategy].items():
+                        if result:
+                            if method in verbatim_methods:
+                                precisions[method][0] += 1
+                                precisions[method][1] += 1
+                                events[index]["trace"][article_title]["first_mentioned"][strategy][method]["correct"] = True
+                            else:
+                                match = result["result"][bibkey]["source_text"]["raw"]
+                                if any([(title and title in match),
+                                        (doi and doi in match),
+                                        (pmid and pmid in match)]):
+                                    correct = True
+                                else:
+                                    correct = reference_match_mapping[concatenated_bibliography_data][match]
+                                if correct:
+                                    precisions[method][0] += 1
+                                precisions[method][1] += 1
+                                events[index]["trace"][article_title]["first_mentioned"][strategy][method]["correct"] = correct
 
-                    reduced_file.write("," * (not first_reduced_event) + "\n")
-                    first_reduced_event = False
+            first_event = True
+            first_correct_event = True
+            first_reduced_event = True
+                    
+            with open(json_path.replace(".json", "_annotated.json"), "w") as annotated_file,\
+                 open(json_path.replace(".json", "_correct.json"), "w") as correct_file,\
+                 open(json_path.replace(".json", "_reduced.json"), "w") as reduced_file:
+                annotated_file.write("[")
+                correct_file.write("[")
+                reduced_file.write("[")
+
+                for event in events:
+
+                    annotated_file.write("," * (not first_event) + "\n")
+                    first_event = False
+                    
+                    annotated_file.write(dumps(event))
+                    
+                    for strategy in event["trace"][article_title]["first_mentioned"]:
+                        for method in event["trace"][article_title]["first_mentioned"][strategy]:
+                            if event["trace"][article_title]["first_mentioned"][strategy][method] and not event["trace"][article_title]["first_mentioned"][strategy][method]["correct"]:
+                                event["trace"][article_title]["first_mentioned"][strategy][method] = None
+
+                    methods_with_results = [item for item in event["trace"][article_title]["first_mentioned"]["verbatim"].values() if item] + \
+                                           [item for item in event["trace"][article_title]["first_mentioned"]["relaxed"].values() if item]
+                    
+                    if any(methods_with_results):
+
+                        correct_file.write("," * (not first_correct_event) + "\n")
+                        first_correct_event = False
                         
-                    reduced_file.write(dumps(event))
+                        correct_file.write(dumps(event))
 
-        annotated_file.write("\n" + "]")
-        correct_file.write("\n" + "]")
-        reduced_file.write("\n" + "]")
+                        correct_methods = [item for item in methods_with_results if item["correct"]]
+                        
+                        if any(correct_methods):
+                            earliest_result = sorted(correct_methods, key = lambda item: item["index"])[0]
+                            event["trace"][article_title]["first_mentioned"] = earliest_result
 
-    with open(json_path.replace(".json", "_precision.txt"), "w") as file:
-        for method, score in precisions.items():
-            file.write(method + " " + "correct: " + str(score[0]) + "/" + str(score[1]) + " " + (str(round(score[0]/score[1]*100, 2)) if score[1] > 0 else "0.0") + "\n")
+                            reduced_file.write("," * (not first_reduced_event) + "\n")
+                            first_reduced_event = False
+                                
+                            reduced_file.write(dumps(event))
+
+                annotated_file.write("\n" + "]")
+                correct_file.write("\n" + "]")
+                reduced_file.write("\n" + "]")
+
+            with open(json_path.replace(".json", "_precision.csv"), "w") as precision_file:
+                precision_csv_writer = writer(precision_file, delimiter=",")
+                for method, score in precisions.items():
+                    precision_csv_writer.writerow([method, str(score[0]), str(score[1]), str(round(score[0]/score[1]*100, 2)) if score[1] > 0 else "0.0"])
+
+if not exists(to_label_filepath):
+    with open(to_label_filepath, "w") as to_label_file:
+        to_label_csv_writer = writer(to_label_file, delimiter=",")
+        for concatenated_bibliography_data,matches in reference_match_mapping.items():
+            for match in matches:
+                to_label_csv_writer.writerow([concatenated_bibliography_data, match, ""])

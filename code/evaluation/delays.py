@@ -2,6 +2,19 @@ from json import load
 from datetime import datetime
 from glob import glob
 from utils import parse_json_name, parse_article_title
+from csv import writer
+
+verbatim_methods = ["titles",
+                    "dois",
+                    "pmids"]
+
+relaxed_methods = ["ned <= 0.2",
+                   "ned <= 0.3",
+                   "ned <= 0.4",
+                   "ned_and_ratio",
+                   "ned_and_jaccard",
+                   "ned_and_skat"
+                   ]
 
 def median(array):
     array = sorted(array)
@@ -23,7 +36,7 @@ def delta(timestamp1, timestamp2):
     date2 = datetime.strptime(timestamp2, "%Y-%m-%d %H:%M:%S")
     return (date2 - date1).days
 
-json_paths = sorted(glob("../../analysis/bibliography/2021_10_27/publication-events (copy 1)/*_correct.json"))
+json_paths = sorted(glob("../../analysis/bibliography/2021_11_01/publication-events-highly-cited/*_correct.json"))
 
 for json_path in json_paths:
     method_delays = {"absolute":{},"relative":{}}
@@ -55,13 +68,13 @@ for json_path in json_paths:
                     delay = int(result["timestamp"][:4]) - max(2005, event["event_year"])
                     method_delays["absolute"][method].append(delay)
 
-    with open(json_path.replace("_correct.json","_delays.txt"), "w") as file:
-        for key in ["absolute","relative"]:
-            file.write(key + "delay" + "\n")
-            file.write("\n")
-            for method,delays in method_delays[key].items():
-                value = sorted(delays)
-                file.write("\t" + method + "\n")
-                file.write("\t" + "mean delay" + str(mean(delays)) + "\n")
-                file.write("\t" + "median delay" + str(median(delays)) + "\n")
-                file.write("\t" + "="*50 + "\n")
+    with open(json_path.replace("_correct.json","_delays.csv"), "w") as file:
+        csv_writer = writer(file, delimiter=",")
+        csv_writer.writerow(["","absolute delay","","relative delay",""])
+        csv_writer.writerow(["","mean","median","mean","median"])
+        for method in verbatim_methods + relaxed_methods:
+            csv_writer.writerow([method,
+                                 mean(method_delays["absolute"][method]),
+                                 median(method_delays["absolute"][method]),
+                                 mean(method_delays["relative"][method]),
+                                 median(method_delays["relative"][method])])
