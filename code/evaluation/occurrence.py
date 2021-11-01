@@ -191,7 +191,7 @@ def plot_delays(json_path, data, methods):
 
 if __name__ == "__main__":
 
-    json_paths = sorted(glob("../../analysis/bibliography/2021_10_27_copy/publication-events-field-matched/*.json"))
+    json_paths = sorted(glob("../../analysis/bibliography/2021_10_29/publication-events-field/*.json"))
 
     with open(dirname(json_paths[0]) + sep + "_.csv", "w") as overlook_csv:
         
