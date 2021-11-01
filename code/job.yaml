@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dump-pod
+spec:
+  ttlSecondsAfterFinished: 86400
+  backoffLimit: 5
+  completions: 83
+  completionMode: Indexed
+  parallelism: 83
+  template:
+    spec:
+      volumes:
+        - name: ceph
+          hostPath:
+            path: /mnt/ceph/storage
+      containers:
+        - name: dump-analysis
+          image: python
+          command:
+          - 'sh'
+          - '-c'
+          - |
+            cd /data/data-in-progress/data-research/computational-social-science/science-analytics-wikipedia
+            pip3 install -r requirements_simple.txt
+            cd code
+            python3 main_dump.py
+          env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          volumeMounts:
+          - name: ceph
+            mountPath: /data
+      restartPolicy: Never
