@@ -13,7 +13,7 @@ documents = {"CRISPR_narrative-events.csv":{"key":"1wRwgRmMYluVJPrr_p-BKn6fycDGm
                                                            "gid":"489243049",
                                                            "output":"csv"},
              "CRISPR_publication-events-field.csv":{"key":"1wRwgRmMYluVJPrr_p-BKn6fycDGmZ_JdlI-5dWUKnMw",
-                                                    "gid":"993190470",
+                                                    "gid":"1171354808",
                                                     "output":"csv"},
              "CRISPR_accounts.csv":{"key":"1wRwgRmMYluVJPrr_p-BKn6fycDGmZ_JdlI-5dWUKnMw",
                                     "gid":"1402599909",
