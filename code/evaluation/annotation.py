@@ -33,7 +33,7 @@ def concatenate_bibliography_data(title, authors, doi, pmid, year):
             "Year: " + year)    
 
 json_paths = sorted([path for path
-                     in glob("../../analysis/bibliography/2021_11_01/publication-events-highly-cited/*.json")
+                     in glob("../../analysis/bibliography/2021_11_01/*/*.json")
                      if not any([path.endswith(suffix) for suffix in ["_correct.json", "_annotated.json", "_reduced.json"]])])
 
 to_label_filepath = "../../analysis/bibliography/2021_11_01/to_label.csv"

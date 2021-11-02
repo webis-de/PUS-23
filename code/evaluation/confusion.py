@@ -17,9 +17,9 @@ methods = ["titles",
 
 strategies = ["verbatim", "relaxed"]
 
-json_paths = sorted(glob("../../analysis/bibliography/2021_11_01/publication-events-highly-cited/*_correct.json"))
+json_paths = sorted(glob("../../analysis/bibliography/2021_11_01/publication-events/*_correct.json"))
 
-relative = True
+relative = False
 
 for json_path in json_paths:
     with open(json_path) as file:
@@ -39,7 +39,11 @@ for json_path in json_paths:
                 elif any(event["trace"][article_title]["first_mentioned"][strategies[i]].values()) and \
                      any(event["trace"][article_title]["first_mentioned"][strategies[j]].values()):
                     strategy_matrix[i][j][1] += 1
-                    if min([value["index"] for value in event["trace"][article_title]["first_mentioned"][strategies[j]].values() if value]) > min([value["index"] for value in event["trace"][article_title]["first_mentioned"][strategies[i]].values() if value]):
+                    if min([value["index"] for
+                            value in event["trace"][article_title]["first_mentioned"][strategies[j]].values()
+                            if value]) < min([value["index"]
+                                              for value in event["trace"][article_title]["first_mentioned"][strategies[i]].values()
+                                              if value]):
                         strategy_matrix[i][j][0] += 1
         results = {k:v for k,v in list(event["trace"][article_title]["first_mentioned"]["verbatim"].items()) + list(event["trace"][article_title]["first_mentioned"]["relaxed"].items())}
 
@@ -49,7 +53,7 @@ for json_path in json_paths:
                     method_matrix[i][j] = ""
                 elif results[methods[i]] and results[methods[j]]:
                     method_matrix[i][j][1] += 1
-                    if results[methods[j]]["index"] > results[methods[i]]["index"]:
+                    if results[methods[j]]["index"] < results[methods[i]]["index"]:
                         method_matrix[i][j][0] += 1
 
     for i in range(len(methods)):
