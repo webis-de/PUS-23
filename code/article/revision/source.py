@@ -78,10 +78,17 @@ class Source:
         AUTHORS = []
         if language == "en":
             if "(" in text:
+                #remove caret
+                text = text.replace("^", "")
+                #remove leading reference numbers
+                while search(r" [a-z] ", text):
+                    text = sub(r" [a-z] ", " ", text)
                 #remove everything after first (
                 text = sub(r"\(.*", "", text)
                 #remove everything after et al.
                 text = sub(r",? *et al.*", "", text)
+                #remove commas
+                text = sub(r"(\w{3,10}), ", r"\1 ", text)
                 #remove abbreviation dots
                 text = text.replace(".", "")
                 #strip text
