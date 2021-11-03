@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: article-pod
+spec:
+  ttlSecondsAfterFinished: 86400
+  backoffLimit: 5
+  completions: 11
+  completionMode: Indexed
+  parallelism: 11
+  template:
+    spec:
+      volumes:
+        - name: ceph
+          hostPath:
+            path: /mnt/ceph/storage
+      containers:
+        - name: article-analysis
+          image: python
+          command:
+          - 'sh'
+          - '-c'
+          - |
+            cd /data/data-in-progress/data-research/computational-social-science/science-analytics-wikipedia
+            pip3 install -r requirements.txt
+            cd code
+            python3 main_article.py -ad ../articles/2021-06-01_with_html/en -ef ../data/CRISPR_publication-events-field-matched.csv -od ../analysis/bibliography/2021_11_03/publication-events-field-matched -a "CRISPR,CRISPR activation,CRISPR gene editing,CRISPR interference,CRISPR/Cas Tools,Cas9,Genome-wide CRISPR-Cas9 knockout screens,Off-target genome editing,Perturb-seq,Protospacer adjacent motif,Restriction enzyme" -eq bibentries -lang en -m first_mentioned
+          env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          volumeMounts:
+          - name: ceph
+            mountPath: /data
+      restartPolicy: Never

@@ -281,6 +281,8 @@ if __name__ == "__main__":
 
     args = vars(argument_parser.parse_args())
 
+    JOB_COMPLETION_INDEX = int(environ.get("JOB_COMPLETION_INDEX"))
+
     article_directory = args["articledir"]
     event_file = args["eventfile"]
     output_directory = args["outputdir"] + sep + str(datetime.now())[:-7].replace(":","_").replace("-","_").replace(" ","_")
@@ -294,38 +296,44 @@ if __name__ == "__main__":
                   "JACCARD_SCORE_THRESHOLD":args["jaccard_score_threshold"],
                   "SKAT_SCORE_THRESHOLD":args["skat_score_threshold"]}
 
-    if not exists(output_directory): makedirs(output_directory)
-
-    logger = get_logger(output_directory)
-    
     if exists(args["articles"]):
         article_titles = flatten_list_of_lists(load(open(args["articles"])).values())
     else:
         article_titles = [article.strip() for article in split(" *, *", args["articles"])]
 
-    bibliography = Bibliography("../data/CRISPR_literature.csv")
-    accountlist = AccountList("../data/CRISPR_accounts.csv")
+    if True:
+        article_title = article_titles[JOB_COMPLETION_INDEX]
+        filename = quote(article_title.replace(" ","_"), safe="")
 
-    logger.info("Analysing articles [" + ", ".join(article_titles) + "]")
-    logger.info("Using event file: " + basename(event_file))
-    logger.info("Using events with conditions: " + ", ".join(conditions if conditions else ["-"]))
-    logger.info("Equalling events to attributes: " + ", ".join(equalling if equalling else ["-"]))
-    logger.info("Trace mode: " + mode)
-    logger.info("Using the below thresholds:")
-    for threshold in thresholds:
-        logger.info(threshold + ": " + str(thresholds[threshold]))    
+        output_directory = output_directory + sep + filename
+        
+        if not exists(output_directory): makedirs(output_directory)
+
+        logger = get_logger(output_directory)
+
+        bibliography = Bibliography("../data/CRISPR_literature.csv")
+        accountlist = AccountList("../data/CRISPR_accounts.csv")
+
+        logger.info("Analysing articles [" + ", ".join(article_titles) + "]")
+        logger.info("Using event file: " + basename(event_file))
+        logger.info("Using events with conditions: " + ", ".join(conditions if conditions else ["-"]))
+        logger.info("Equalling events to attributes: " + ", ".join(equalling if equalling else ["-"]))
+        logger.info("Trace mode: " + mode)
+        logger.info("Using the below thresholds:")
+        for threshold in thresholds:
+            logger.info(threshold + ": " + str(thresholds[threshold]))    
     
-    for article_title in article_titles:
-
+    #for article_title in article_titles:
+            
         eventlist = EventList(event_file, bibliography, accountlist, conditions, equalling)
 
         logger.info(article_title)
 
-        filename = quote(article_title.replace(" ","_"), safe="")
+        #filename = quote(article_title.replace(" ","_"), safe="")
         filepath = article_directory + sep + filename + "_" + language
         if not exists(filepath):
             logger.info(filepath + " does not exist.")
-            continue
+            #continue
         
         article = Article(filepath)
         revisions = article.yield_revisions()
@@ -374,7 +382,7 @@ if __name__ == "__main__":
             ### All PMIDs occuring in 'References' and 'Further Reading'.
             referenced_pmids = set([])#set(flatten_list_of_lists([source.get_pmids() for source in sources]))
 
-            with Pool(24) as pool:
+            with Pool(8) as pool:
                 eventlist.events = pool.starmap(analyse,
                                                 [(event,
                                                   revision,
