@@ -3,6 +3,7 @@ from json import load, dumps
 from utils import parse_json_name, parse_article_title
 from glob import glob
 from csv import writer
+from pprint import pprint
 
 methods = ["titles",
            "dois",
@@ -17,9 +18,9 @@ methods = ["titles",
 
 strategies = ["verbatim", "relaxed"]
 
-json_paths = sorted(glob("../../analysis/bibliography/2021_11_01/publication-events/*_correct.json"))
+json_paths = sorted(glob("../../analysis/bibliography/test/*/*_correct.json"))
 
-relative = False
+relative = True
 
 for json_path in json_paths:
     with open(json_path) as file:
@@ -40,9 +41,9 @@ for json_path in json_paths:
                      any(event["trace"][article_title]["first_mentioned"][strategies[j]].values()):
                     strategy_matrix[i][j][1] += 1
                     if min([value["index"] for
-                            value in event["trace"][article_title]["first_mentioned"][strategies[j]].values()
+                            value in event["trace"][article_title]["first_mentioned"][strategies[i]].values()
                             if value]) < min([value["index"]
-                                              for value in event["trace"][article_title]["first_mentioned"][strategies[i]].values()
+                                              for value in event["trace"][article_title]["first_mentioned"][strategies[j]].values()
                                               if value]):
                         strategy_matrix[i][j][0] += 1
         results = {k:v for k,v in list(event["trace"][article_title]["first_mentioned"]["verbatim"].items()) + list(event["trace"][article_title]["first_mentioned"]["relaxed"].items())}
@@ -53,7 +54,7 @@ for json_path in json_paths:
                     method_matrix[i][j] = ""
                 elif results[methods[i]] and results[methods[j]]:
                     method_matrix[i][j][1] += 1
-                    if results[methods[j]]["index"] < results[methods[i]]["index"]:
+                    if results[methods[i]]["index"] < results[methods[j]]["index"]:
                         method_matrix[i][j][0] += 1
 
     for i in range(len(methods)):
@@ -61,7 +62,7 @@ for json_path in json_paths:
             if i != j:
                 try:
                     method_matrix[i][j] = str(int(method_matrix[i][j][0] * 100 / method_matrix[i][j][1]))  if relative else method_matrix[i][j][0]
-                except ZeroDivisonError:
+                except ZeroDivisionError:
                     method_matrix[i][j] = "0.00"
 
     for i in range(len(strategies)):

@@ -32,7 +32,7 @@ def concatenate_bibliography_data(title, authors, doi, pmid, year):
             "PMID: " + pmid + "\n" +
             "Year: " + year)    
 
-directory = "../../analysis/bibliography/2021_11_03"
+directory = "../../analysis/bibliography/test/"
 
 json_paths = sorted([path for path
                      in glob(directory + "/*/*.json")
@@ -92,6 +92,7 @@ for json_path in json_paths:
                 for strategy in event["trace"][article_title]["first_mentioned"]:
                     for method,result in event["trace"][article_title]["first_mentioned"][strategy].items():
                         if result:
+                            events[index]["trace"][article_title]["first_mentioned"][strategy][method]["method"] = method
                             if method in verbatim_methods:
                                 precisions[method][0] += 1
                                 precisions[method][1] += 1
