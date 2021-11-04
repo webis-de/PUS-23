@@ -198,7 +198,7 @@ def plot_delays(json_path, data, methods):
 if __name__ == "__main__":
 
     json_paths = sorted([path for path
-                         in glob("../../analysis/bibliography/2021_11_01/publication-events/*.json")
+                         in glob("../../analysis/bibliography/2021_11_01/publication-events-field/*.json")
                          if not any([path.endswith(suffix) for suffix in ["_correct.json", "_annotated.json", "_reduced.json"]])])
 
     rows = {}
