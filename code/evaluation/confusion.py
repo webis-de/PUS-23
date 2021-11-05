@@ -18,11 +18,12 @@ methods = ["titles",
 
 strategies = ["verbatim", "relaxed"]
 
-json_paths = sorted(glob("../../analysis/bibliography/test/*/*_correct.json"))
+json_paths = sorted(glob("../../analysis/bibliography/2021_11_03/publication-events/*_correct.json"))
 
 relative = True
 
 for json_path in json_paths:
+    print(json_path)
     with open(json_path) as file:
         events = load(file)
 
@@ -32,6 +33,11 @@ for json_path in json_paths:
     method_matrix = [[[0,0] for _ in range(len(methods))] for _ in methods]
     strategy_matrix = [[[0,0] for _ in range(len(strategies))] for _ in strategies]
 
+    count = 0
+    rate = 0
+    m = "ned <= 0.4"
+    n = "pmids"
+    print(m)
     for event in events:
         for i in range(len(strategies)):
             for j in range(len(strategies)):
@@ -53,15 +59,22 @@ for json_path in json_paths:
                 if i == j:
                     method_matrix[i][j] = ""
                 elif results[methods[i]] and results[methods[j]]:
+                    if methods[i] == m and methods[j] == n:
+                        count += 1
                     method_matrix[i][j][1] += 1
                     if results[methods[i]]["index"] < results[methods[j]]["index"]:
+                        if methods[i] == m and methods[j] == n:
+                            rate += 1
                         method_matrix[i][j][0] += 1
+
+    print(rate, count, rate/count)
+    input()
 
     for i in range(len(methods)):
         for j in range(len(methods)):
             if i != j:
                 try:
-                    method_matrix[i][j] = str(int(method_matrix[i][j][0] * 100 / method_matrix[i][j][1]))  if relative else method_matrix[i][j][0]
+                    method_matrix[i][j] = str(int(round(method_matrix[i][j][0] * 100 / method_matrix[i][j][1],0)))  if relative else method_matrix[i][j][0]
                 except ZeroDivisionError:
                     method_matrix[i][j] = "0.00"
 
@@ -69,7 +82,7 @@ for json_path in json_paths:
         for j in range(len(strategies)):
             if i != j:
                 try:
-                    strategy_matrix[i][j] = str(int(strategy_matrix[i][j][0] * 100 / strategy_matrix[i][j][1])) if relative else strategy_matrix[i][j][0]
+                    strategy_matrix[i][j] = str(int(round(strategy_matrix[i][j][0] * 100 / strategy_matrix[i][j][1],0))) if relative else strategy_matrix[i][j][0]
                 except ZeroDivisonError:
                     strategy_matrix[i][j] = "0.00"
 
