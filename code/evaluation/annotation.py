@@ -76,10 +76,10 @@ for json_path in json_paths:
             reference_match_mapping = {}
             with open(labelled_filepath) as labeled_file:
                 csv_reader = reader(labeled_file, delimiter=",")
-                for concatenated_bibliography_data,match,judgement in csv_reader:
+                for concatenated_bibliography_data,match,judgement1,judgement2 in csv_reader:
                     if concatenated_bibliography_data not in reference_match_mapping:
                         reference_match_mapping[concatenated_bibliography_data] = {}
-                    reference_match_mapping[concatenated_bibliography_data][match] = bool(int(judgement))
+                    reference_match_mapping[concatenated_bibliography_data][match] = (judgement1 == "y")
             
             precisions = {method:[0,0] for method in verbatim_methods + relaxed_methods}
 
