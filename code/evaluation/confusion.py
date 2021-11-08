@@ -4,6 +4,7 @@ from utils import parse_json_name, parse_article_title
 from glob import glob
 from csv import writer
 from pprint import pprint
+from numpy import std, mean
 
 methods = ["titles",
            "dois",
@@ -18,9 +19,12 @@ methods = ["titles",
 
 strategies = ["verbatim", "relaxed"]
 
-json_paths = sorted(glob("../../analysis/bibliography/2021_11_03/publication-events/*_correct.json"))
+json_paths = sorted(glob("../../analysis/bibliography/2021_11_03_analysed/publication-events-field/*_correct.json"))
 
 relative = True
+
+method_matrices = []
+strategy_matrices = []
 
 for json_path in json_paths:
     print(json_path)
@@ -37,7 +41,7 @@ for json_path in json_paths:
     rate = 0
     m = "ned <= 0.4"
     n = "pmids"
-    print(m)
+
     for event in events:
         for i in range(len(strategies)):
             for j in range(len(strategies)):
@@ -67,24 +71,24 @@ for json_path in json_paths:
                             rate += 1
                         method_matrix[i][j][0] += 1
 
-    print(rate, count, rate/count)
-    input()
-
     for i in range(len(methods)):
         for j in range(len(methods)):
             if i != j:
                 try:
-                    method_matrix[i][j] = str(int(round(method_matrix[i][j][0] * 100 / method_matrix[i][j][1],0)))  if relative else method_matrix[i][j][0]
+                    method_matrix[i][j] = method_matrix[i][j][0]/method_matrix[i][j][1] if relative else method_matrix[i][j][0]
                 except ZeroDivisionError:
-                    method_matrix[i][j] = "0.00"
+                    method_matrix[i][j] = 0.0
 
     for i in range(len(strategies)):
         for j in range(len(strategies)):
             if i != j:
                 try:
-                    strategy_matrix[i][j] = str(int(round(strategy_matrix[i][j][0] * 100 / strategy_matrix[i][j][1],0))) if relative else strategy_matrix[i][j][0]
-                except ZeroDivisonError:
-                    strategy_matrix[i][j] = "0.00"
+                    strategy_matrix[i][j] = strategy_matrix[i][j][0]/strategy_matrix[i][j][1] if relative else strategy_matrix[i][j][0]
+                except ZeroDivisionError:
+                    strategy_matrix[i][j] = 0.0
+
+    method_matrices.append(method_matrix)
+    strategy_matrices.append(strategy_matrix)
 
     with open(json_path.replace("_correct.json", "_confusion.csv"), "w") as file:
         csv_writer = writer(file, delimiter=",")
@@ -95,8 +99,9 @@ for json_path in json_paths:
         print("\n\n\n")
 
         for index,line in enumerate(method_matrix):
-            print(methods[index].rjust(width, " ") + "".join([str(item).rjust(width, " ") for item in line]))
-            csv_writer.writerow([methods[index]] + [str(item) for item in line])
+            items = [str(int(round(item*100,0))) if type(item) != str else "" for item in line]
+            print(methods[index].rjust(width, " ") + "".join([item.rjust(width, " ") for item in items]))
+            csv_writer.writerow([methods[index]] + [item for item in items])
             print("\n\n\n\n\n")
                 
         print(" "*width + "".join([strategy.rjust(width, " ") for strategy in strategies]))
@@ -104,6 +109,30 @@ for json_path in json_paths:
         print("\n\n\n")
 
         for index,line in enumerate(strategy_matrix):
-            print(strategies[index].rjust(width, " ") + "".join([str(item).rjust(width, " ") for item in line]))
-            csv_writer.writerow([strategies[index]] + [str(item) for item in line])
+            items = [str(int(round(item*100,0))) if type(item) != str else "" for item in line]
+            print(strategies[index].rjust(width, " ") + "".join([item.rjust(width, " ") for item in items]))
+            csv_writer.writerow([strategies[index]] + [item for item in items])
             print("\n\n\n")
+
+methods_matrix = [["" for _ in range(len(methods))] for _ in methods]
+strategy_matrix = [["" for _ in range(len(strategies))] for _ in strategies]
+
+for i in range(len(methods)):
+    for j in range(len(methods)):
+        if i != j:
+            values = [matrix[i][j] for matrix in method_matrices]
+            method_matrix[i][j] = str(int(round(mean(values)*100,0))) + " (" + str(int(round(std(values)*100,0))) + ")"
+
+for i in range(len(strategies)):
+    for j in range(len(strategies)):
+        if i != j:
+            values = [matrix[i][j] for matrix in strategy_matrices]
+            strategy_matrix[i][j] = str(int(round(mean(values)*100,0))) + " (" + str(int(round(std(values)*100,0))) + ")"
+
+with open(dirname(json_paths[0]) + sep + "_precision.csv", "w") as file:
+    csv_writer = writer(file, delimiter=",")
+    for line in method_matrix:
+        csv_writer.writerow(line)
+    csv_writer.writerow([""])
+    for line in strategy_matrix:
+        csv_writer.writerow(line)

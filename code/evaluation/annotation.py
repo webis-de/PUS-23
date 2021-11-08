@@ -32,7 +32,7 @@ def concatenate_bibliography_data(title, authors, doi, pmid, year):
             "PMID: " + pmid + "\n" +
             "Year: " + year)    
 
-directory = "../../analysis/bibliography/2021_11_03"
+directory = "../../analysis/bibliography/2021_11_03_analysed"
 
 json_paths = sorted([path for path
                      in glob(directory + "/*/*.json")
@@ -161,7 +161,7 @@ for json_path in json_paths:
             with open(json_path.replace(".json", "_precision.csv"), "w") as precision_file:
                 precision_csv_writer = writer(precision_file, delimiter=",")
                 for method, score in precisions.items():
-                    precision_csv_writer.writerow([method, str(score[0]), str(score[1]), str(round(score[0]/score[1]*100, 2)) if score[1] > 0 else "0.0"])
+                    precision_csv_writer.writerow([method, str(score[0]), str(score[1]), str(round(score[0]/score[1], 4)) if score[1] > 0 else "0.000"])
 
 if not exists(to_label_filepath):
     with open(to_label_filepath, "w") as to_label_file:
