@@ -205,7 +205,7 @@ if __name__ == "__main__":
     for json_path in json_paths:
         rows = occurrence(json_path, False, rows)
         
-    with open(dirname(json_paths[0]) + sep + "_.csv", "w") as overlook_csv:
+    with open(dirname(json_paths[0]) + sep + "0_occurrence.csv", "w") as overlook_csv:
         
         article_titles = []
         for json_path in json_paths:
