@@ -33,6 +33,7 @@ method_matrices = []
 strategy_matrices = []
 
 # [EARLIER_COUNT, EARLIER_RATE, DELTAS, DELTA_MEAN]
+SEPARATOR = "/"
 
 for json_path in json_paths:
     print(json_path)
@@ -42,8 +43,8 @@ for json_path in json_paths:
     json_name = parse_json_name(json_path)
     article_title = parse_article_title(json_name).replace(" correct", "")
 
-    method_matrix = [["" if i == j else [[],0,[],0] for i in range(len(methods))] for j in range(len(methods))]
-    strategy_matrix = [["" if i == j else [[],0,[],0] for i in range(len(strategies))] for j in range(len(strategies))]
+    method_matrix = [[SEPARATOR if i == j else [[],0,[],0] for i in range(len(methods))] for j in range(len(methods))]
+    strategy_matrix = [[SEPARATOR if i == j else [[],0,[],0] for i in range(len(strategies))] for j in range(len(strategies))]
 
     for event in events:
         for i in range(len(strategies)):
@@ -76,11 +77,11 @@ for json_path in json_paths:
                 if method_matrix[i][j][0]:
                     method_matrix[i][j][1] = mean(method_matrix[i][j][0])
                 else:
-                    method_matrix[i][j][1] = "n/a"
+                    method_matrix[i][j][1] = "na"
                 if method_matrix[i][j][2]:
                     method_matrix[i][j][3] = mean(method_matrix[i][j][2])
                 else:
-                    method_matrix[i][j][3] = "n/a"
+                    method_matrix[i][j][3] = "na"
 
     for i in range(len(strategies)):
         for j in range(len(strategies)):
@@ -88,16 +89,16 @@ for json_path in json_paths:
                 if strategy_matrix[i][j][0]:
                     strategy_matrix[i][j][1] = mean(strategy_matrix[i][j][0])
                 else:
-                    strategy_matrix[i][j][1] = "n/a"
+                    strategy_matrix[i][j][1] = "na"
                 if strategy_matrix[i][j][2]:
                     strategy_matrix[i][j][3] = mean(strategy_matrix[i][j][2])
                 else:
-                    strategy_matrix[i][j][3] = "n/a"
+                    strategy_matrix[i][j][3] = "na"
 
-##    if json_path not in ["../../analysis/bibliography/2021_11_03_analysed/publication-events-field/Genome-wide_CRISPR-Cas9_knockout_screens_correct.json",
-##                         "../../analysis/bibliography/2021_11_03_analysed/publication-events-field/Restriction_enzyme_correct.json",
-##                         "../../analysis/bibliography/2021_11_03_analysed/publication-events-field/Protospacer_adjacent_motif_correct.json"]:
-    if True:
+    if json_path not in ["../../analysis/bibliography/2021_11_03_analysed/publication-events-field/Genome-wide_CRISPR-Cas9_knockout_screens_correct.json",
+                         "../../analysis/bibliography/2021_11_03_analysed/publication-events-field/Restriction_enzyme_correct.json",
+                         "../../analysis/bibliography/2021_11_03_analysed/publication-events-field/CRISPR%2FCas_Tools_correct.json"]:
+
         method_matrices.append(method_matrix)
         strategy_matrices.append(strategy_matrix)
 
@@ -106,79 +107,79 @@ for json_path in json_paths:
         width = 16
 
         print(" "*width + "".join([method.rjust(width, " ") for method in methods]))
-        csv_writer.writerow([""] + methods)
+        csv_writer.writerow([""] + [method + SEPARATOR for method in methods])
         print("\n\n\n")
 
         for index,line in enumerate(method_matrix):
             earlier_rates = [str(int(round(item[1]*100,0)))
-                             if (item != "" and item[1] != "n/a")
-                             else (item[1] if item != "" else item)
+                             if (item != SEPARATOR and item[1] != "na")
+                             else (item[1] if item != SEPARATOR else "")
                              for item in line]
             delta_means = [str(int(round(item[3],0))) + " (" + str(int(round(std(item[2]),0))) + ")"
-                           if (item != "" and item[3] != "n/a")
-                           else (item[1] if item != "" else item)
+                           if (item != SEPARATOR and item[3] != "na")
+                           else (item[1] if item != SEPARATOR else "")
                            for item in line]
             print(methods[index].rjust(width, " ") + \
-                  "".join([(item1 + " | " + item2).rjust(width, " ") for item1,item2 in zip(earlier_rates,delta_means)]))
-            csv_writer.writerow([methods[index]] + [item1 + (" | " if (item1 and item2) else "") + item2 for item1,item2 in zip(earlier_rates,delta_means)])
+                  "".join([(item1 + SEPARATOR + item2).rjust(width, " ") for item1,item2 in zip(earlier_rates,delta_means)]))
+            csv_writer.writerow([methods[index]] + [item1 + SEPARATOR + item2 for item1,item2 in zip(earlier_rates,delta_means)])
             print("\n\n\n\n\n")
                 
         print(" "*width + "".join([strategy.rjust(width, " ") for strategy in strategies]))
-        csv_writer.writerow([""] + strategies)
+        csv_writer.writerow([""] + [strategy + SEPARATOR for strategy in strategies])
         print("\n\n\n")
 
         for index,line in enumerate(strategy_matrix):
             
             earlier_rates = [str(int(round(item[1]*100,0)))
-                             if (item != "" and item[1] != "n/a")
-                             else (item[1] if item != "" else item)
+                             if (item != SEPARATOR and item[1] != "na")
+                             else (item[1] if item != SEPARATOR else "")
                              for item in line]
             delta_means = [str(int(round(item[3],0))) + " (" + str(int(round(std(item[2]),0))) + ")"
-                           if (item != "" and item[3] != "n/a")
-                           else (item[1] if item != "" else item)
+                           if (item != SEPARATOR and item[3] != "na")
+                           else (item[1] if item != SEPARATOR else "")
                            for item in line]
             print(strategies[index].rjust(width, " ") + \
-                  "".join([(item1 + " | " + item2).rjust(width, " ") for item1,item2 in zip(earlier_rates,delta_means)]))
-            csv_writer.writerow([strategies[index]] + [item1 + (" | " if (item1 and item2) else "") + item2 for item1,item2 in zip(earlier_rates,delta_means)])
+                  "".join([(item1 + SEPARATOR + item2).rjust(width, " ") for item1,item2 in zip(earlier_rates,delta_means)]))
+            csv_writer.writerow([strategies[index]] + [item1 + SEPARATOR + item2 for item1,item2 in zip(earlier_rates,delta_means)])
             print("\n\n\n")
 
-methods_matrix = [["" for _ in range(len(methods))] for _ in methods]
-strategy_matrix = [["" for _ in range(len(strategies))] for _ in strategies]
+method_matrix = [[SEPARATOR if i == j else "" for i in range(len(methods))] for j in range(len(methods))]
+strategy_matrix = [[SEPARATOR if i == j else "" for i in range(len(strategies))] for j in range(len(strategies))]
 
 for i in range(len(methods)):
     for j in range(len(methods)):
         if i != j:
-            earlier_rates = [matrix[i][j][1] for matrix in method_matrices if matrix[i][j][1] != "n/a"]
-            delta_means = [matrix[i][j][3] for matrix in method_matrices if matrix[i][j][3] != "n/a"]
+            earlier_rates = [matrix[i][j][1] for matrix in method_matrices if matrix[i][j][1] != "na"]
+            delta_means = [matrix[i][j][3] for matrix in method_matrices if matrix[i][j][3] != "na"]
             if earlier_rates:
-                methods_matrix[i][j] += str(int(round(mean(earlier_rates)*100,0))) + " (" + str(int(round(std(earlier_rates)*100,0))) + ") | "
+                method_matrix[i][j] += str(int(round(mean(earlier_rates)*100,0))) + " (" + str(int(round(std(earlier_rates)*100,0))) + ")" + SEPARATOR
             else:
-                methods_matrix[i][j] += "n/a"  + " | "
+                method_matrix[i][j] += "na"  + SEPARATOR
             if delta_means:
-                methods_matrix[i][j] += str(int(round(mean(delta_means),0))) + " (" + str(int(round(std(delta_means),0))) + ")"
+                method_matrix[i][j] += str(int(round(mean(delta_means),0))) + " (" + str(int(round(std(delta_means),0))) + ")"
             else:
-                methods_matrix[i][j] += "n/a"
+                method_matrix[i][j] += "na"
 
 for i in range(len(strategies)):
     for j in range(len(strategies)):
         if i != j:
-            earlier_rates = [matrix[i][j][1] for matrix in strategy_matrices if matrix[i][j][1] != "n/a"]
-            delta_means = [matrix[i][j][3] for matrix in strategy_matrices if matrix[i][j][3] != "n/a"]
+            earlier_rates = [matrix[i][j][1] for matrix in strategy_matrices if matrix[i][j][1] != "na"]
+            delta_means = [matrix[i][j][3] for matrix in strategy_matrices if matrix[i][j][3] != "na"]
             if earlier_rates:
-                strategy_matrix[i][j] += str(int(round(mean(earlier_rates)*100,0))) + " (" + str(int(round(std(earlier_rates)*100,0))) + ") | "
+                strategy_matrix[i][j] += str(int(round(mean(earlier_rates)*100,0))) + " (" + str(int(round(std(earlier_rates)*100,0))) + ")" + SEPARATOR
             else:
-                strategy_matrix[i][j] += "n/a"  + " | "
+                strategy_matrix[i][j] += "na"  + SEPARATOR
             if delta_means:
                 strategy_matrix[i][j] += str(int(round(mean(delta_means),0))) + " (" + str(int(round(std(delta_means),0))) + ")"
             else:
-                strategy_matrix[i][j] += "n/a"
+                strategy_matrix[i][j] += "na"
 
 with open(dirname(json_paths[0]) + sep + "0_confusion.csv", "w") as file:
     csv_writer = writer(file, delimiter=",")
-    csv_writer.writerow([""] + methods)
-    for index,line in enumerate(methods_matrix):
+    csv_writer.writerow([""] + [method + SEPARATOR for method in methods])
+    for index,line in enumerate(method_matrix):
         csv_writer.writerow([methods[index]] + line)
     csv_writer.writerow([""])
-    csv_writer.writerow([""] + strategies)
+    csv_writer.writerow([""] + [strategy + SEPARATOR for strategy in strategies])
     for index,line in enumerate(strategy_matrix):
         csv_writer.writerow([strategies[index]] + line)
