@@ -95,10 +95,10 @@ for json_path in json_paths:
                 else:
                     strategy_matrix[i][j][3] = "na"
 
-    if json_path not in ["../../analysis/bibliography/2021_11_03_analysed/publication-events-field/Genome-wide_CRISPR-Cas9_knockout_screens_correct.json",
-                         "../../analysis/bibliography/2021_11_03_analysed/publication-events-field/Restriction_enzyme_correct.json",
-                         "../../analysis/bibliography/2021_11_03_analysed/publication-events-field/CRISPR%2FCas_Tools_correct.json"]:
-
+##    if json_path not in ["../../analysis/bibliography/2021_11_03_analysed/publication-events-field/Genome-wide_CRISPR-Cas9_knockout_screens_correct.json",
+##                         "../../analysis/bibliography/2021_11_03_analysed/publication-events-field/Restriction_enzyme_correct.json",
+##                         "../../analysis/bibliography/2021_11_03_analysed/publication-events-field/CRISPR%2FCas_Tools_correct.json"]:
+    if True:
         method_matrices.append(method_matrix)
         strategy_matrices.append(strategy_matrix)
 
@@ -111,11 +111,11 @@ for json_path in json_paths:
         print("\n\n\n")
 
         for index,line in enumerate(method_matrix):
-            earlier_rates = [str(int(round(item[1]*100,0)))
+            earlier_rates = [str(float(round(item[1]*100,1)))
                              if (item != SEPARATOR and item[1] != "na")
                              else (item[1] if item != SEPARATOR else "")
                              for item in line]
-            delta_means = [str(int(round(item[3],0))) + " (" + str(int(round(std(item[2]),0))) + ")"
+            delta_means = [str(float(round(item[3],1))) + " (" + str(float(round(std(item[2]),1))) + ")"
                            if (item != SEPARATOR and item[3] != "na")
                            else (item[1] if item != SEPARATOR else "")
                            for item in line]
@@ -130,11 +130,11 @@ for json_path in json_paths:
 
         for index,line in enumerate(strategy_matrix):
             
-            earlier_rates = [str(int(round(item[1]*100,0)))
+            earlier_rates = [str(float(round(item[1]*100,1)))
                              if (item != SEPARATOR and item[1] != "na")
                              else (item[1] if item != SEPARATOR else "")
                              for item in line]
-            delta_means = [str(int(round(item[3],0))) + " (" + str(int(round(std(item[2]),0))) + ")"
+            delta_means = [str(float(round(item[3],1))) + " (" + str(float(round(std(item[2]),1))) + ")"
                            if (item != SEPARATOR and item[3] != "na")
                            else (item[1] if item != SEPARATOR else "")
                            for item in line]
@@ -152,11 +152,11 @@ for i in range(len(methods)):
             earlier_rates = [matrix[i][j][1] for matrix in method_matrices if matrix[i][j][1] != "na"]
             delta_means = [matrix[i][j][3] for matrix in method_matrices if matrix[i][j][3] != "na"]
             if earlier_rates:
-                method_matrix[i][j] += str(int(round(mean(earlier_rates)*100,0))) + " (" + str(int(round(std(earlier_rates)*100,0))) + ")" + SEPARATOR
+                method_matrix[i][j] += str(float(round(mean(earlier_rates)*100,1))) + " (" + str(float(round(std(earlier_rates)*100,1))) + ")" + SEPARATOR
             else:
                 method_matrix[i][j] += "na"  + SEPARATOR
             if delta_means:
-                method_matrix[i][j] += str(int(round(mean(delta_means),0))) + " (" + str(int(round(std(delta_means),0))) + ")"
+                method_matrix[i][j] += str(float(round(mean(delta_means),1))) + " (" + str(float(round(std(delta_means),1))) + ")"
             else:
                 method_matrix[i][j] += "na"
 
@@ -166,11 +166,11 @@ for i in range(len(strategies)):
             earlier_rates = [matrix[i][j][1] for matrix in strategy_matrices if matrix[i][j][1] != "na"]
             delta_means = [matrix[i][j][3] for matrix in strategy_matrices if matrix[i][j][3] != "na"]
             if earlier_rates:
-                strategy_matrix[i][j] += str(int(round(mean(earlier_rates)*100,0))) + " (" + str(int(round(std(earlier_rates)*100,0))) + ")" + SEPARATOR
+                strategy_matrix[i][j] += str(float(round(mean(earlier_rates)*100,1))) + " (" + str(float(round(std(earlier_rates)*100,1))) + ")" + SEPARATOR
             else:
                 strategy_matrix[i][j] += "na"  + SEPARATOR
             if delta_means:
-                strategy_matrix[i][j] += str(int(round(mean(delta_means),0))) + " (" + str(int(round(std(delta_means),0))) + ")"
+                strategy_matrix[i][j] += str(float(round(mean(delta_means),1))) + " (" + str(float(round(std(delta_means),1))) + ")"
             else:
                 strategy_matrix[i][j] += "na"
 

@@ -3,6 +3,7 @@ from datetime import datetime
 from glob import glob
 from utils import parse_json_name, parse_article_title
 from csv import writer
+import numpy
 
 verbatim_methods = ["titles",
                     "dois",
@@ -17,19 +18,18 @@ relaxed_methods = ["ned <= 0.2",
                    ]
 
 def median(array):
-    array = sorted(array)
     if len(array) == 0:
         return "n/a"
-    elif len(array)%2 == 1:
-        return array[int(len(array)/2)] / 1
-    else:
-        return (array[int(len(array)/2)] + array[int(len(array)/2) -1]) / 2
+    return int(numpy.median(array))
 
 def mean(array):
     if len(array) > 0:
-        return sum(array)/len(array)
+        return round(numpy.mean(array), 1)
     else:
         return "n/a"
+
+def std(array):
+    return round(numpy.std(array), 1)
 
 def delta(timestamp1, timestamp2):
     date1 = datetime.strptime(timestamp1, "%Y-%m-%d %H:%M:%S")

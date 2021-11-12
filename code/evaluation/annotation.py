@@ -3,6 +3,8 @@ from glob import glob
 from json import load, dumps
 from utils import parse_json_name, parse_article_title
 from csv import reader, writer
+from pprint import pprint
+import numpy
 
 verbatim_methods = ["titles",
                     "dois",
@@ -35,13 +37,15 @@ def concatenate_bibliography_data(title, authors, doi, pmid, year):
 directory = "../../analysis/bibliography/2021_11_03_analysed"
 
 json_paths = sorted([path for path
-                     in glob(directory + "/*/*.json")
+                     in glob(directory + "/publication-events-field/*.json")
                      if not any([path.endswith(suffix) for suffix in ["_correct.json", "_annotated.json", "_reduced.json"]])])
 
 to_label_filepath = directory + "/to_label.csv"
 labelled_filepath = directory + "/labelled.csv"
 
 reference_match_mapping = {}
+
+overview_precisions = {method:[] for method in verbatim_methods + relaxed_methods}
 
 for json_path in json_paths:
 
@@ -161,7 +165,20 @@ for json_path in json_paths:
             with open(json_path.replace(".json", "_precision.csv"), "w") as precision_file:
                 precision_csv_writer = writer(precision_file, delimiter=",")
                 for method, score in precisions.items():
-                    precision_csv_writer.writerow([method, str(score[0]), str(score[1]), str(round(score[0]/score[1], 4)) if score[1] > 0 else "0.000"])
+                    precision = str(round(score[0]/score[1], 4)) if score[1] > 0 else "na"
+                    if score[1] > 0:
+                        overview_precisions[method].append(score[0]/score[1])
+                    precision_csv_writer.writerow([method, str(score[0]), str(score[1]), precision])
+
+pprint(overview_precisions)
+
+with open(dirname(json_path) + sep + "0_precision.csv", "w") as precision_overview_file:
+    precision_overview_csv_writer = writer(precision_overview_file, delimiter=",")
+    for method, values in overview_precisions.items():
+        precision_overview_csv_writer.writerow([method,
+                                                round(numpy.mean(values),4),
+                                                round(numpy.median(values),4),
+                                                round(numpy.std(values),4)])
 
 if not exists(to_label_filepath):
     with open(to_label_filepath, "w") as to_label_file:
