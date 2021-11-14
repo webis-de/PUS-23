@@ -25,7 +25,7 @@ methods = ["titles",
 
 strategies = ["verbatim", "relaxed"]
 
-json_paths = sorted(glob("../../analysis/bibliography/2021_11_03_analysed/publication-events-field/*_correct.json"))
+json_paths = sorted(glob("../../analysis/bibliography/2021_11_03_analysed_2/publication-events-field/*_correct.json"))
 
 relative = True
 
@@ -164,13 +164,15 @@ for i in range(len(strategies)):
     for j in range(len(strategies)):
         if i != j:
             earlier_rates = [matrix[i][j][1] for matrix in strategy_matrices if matrix[i][j][1] != "na"]
-            delta_means = [matrix[i][j][3] for matrix in strategy_matrices if matrix[i][j][3] != "na"]
+            deltas = []
+            for matrix in strategy_matrices:
+                deltas += matrix[i][j][2]
             if earlier_rates:
                 strategy_matrix[i][j] += str(float(round(mean(earlier_rates)*100,1))) + " (" + str(float(round(std(earlier_rates)*100,1))) + ")" + SEPARATOR
             else:
                 strategy_matrix[i][j] += "na"  + SEPARATOR
             if delta_means:
-                strategy_matrix[i][j] += str(float(round(mean(delta_means),1))) + " (" + str(float(round(std(delta_means),1))) + ")"
+                strategy_matrix[i][j] += str(float(round(mean(deltas),1))) + " (" + str(float(round(std(deltas),1))) + ")"
             else:
                 strategy_matrix[i][j] += "na"
 

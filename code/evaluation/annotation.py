@@ -34,7 +34,7 @@ def concatenate_bibliography_data(title, authors, doi, pmid, year):
             "PMID: " + pmid + "\n" +
             "Year: " + year)    
 
-directory = "../../analysis/bibliography/2021_11_03_analysed"
+directory = "../../analysis/bibliography/2021_11_03_analysed_2"
 
 json_paths = sorted([path for path
                      in glob(directory + "/publication-events-field/*.json")
@@ -64,16 +64,28 @@ for json_path in json_paths:
             for strategy in event["trace"][article_title]["first_mentioned"]:
                 for method,result in event["trace"][article_title]["first_mentioned"][strategy].items():
                     if result:
-                        if method in verbatim_methods:
+                        if method in ["dois","pmids"]:
                             continue
-                        else:
-                            match = result["result"][bibkey]["source_text"]["raw"]
-                            if not any([(title and title in match),
-                                        (doi and doi in match),
-                                        (pmid and pmid in match)]):
+                        elif method == "titles":
+                            if (event["trace"][article_title]["first_mentioned"]["verbatim"]["dois"] and
+                                (event["trace"][article_title]["first_mentioned"]["verbatim"]["dois"]["index"] ==
+                                 event["trace"][article_title]["first_mentioned"]["verbatim"]["titles"]["index"]) or
+                                event["trace"][article_title]["first_mentioned"]["verbatim"]["pmids"] and
+                                (event["trace"][article_title]["first_mentioned"]["verbatim"]["pmids"]["index"] ==
+                                 event["trace"][article_title]["first_mentioned"]["verbatim"]["titles"]["index"])):
+                                continue
+                            else:
+                                go_to_link = result["result"][bibkey]
                                 if concatenated_bibliography_data not in reference_match_mapping:
                                     reference_match_mapping[concatenated_bibliography_data] = {}
-                                reference_match_mapping[concatenated_bibliography_data][match] = ""
+                                reference_match_mapping[concatenated_bibliography_data][go_to_link] = ""
+                        else:
+                            raw_reference = result["result"][bibkey]["source_text"]["raw"]
+                            if not any([(doi and doi in raw_reference),
+                                        (pmid and pmid in raw_reference)]):
+                                if concatenated_bibliography_data not in reference_match_mapping:
+                                    reference_match_mapping[concatenated_bibliography_data] = {}
+                                reference_match_mapping[concatenated_bibliography_data][raw_reference] = ""
     else:
         if exists(labelled_filepath):
 
@@ -96,23 +108,32 @@ for json_path in json_paths:
                 for strategy in event["trace"][article_title]["first_mentioned"]:
                     for method,result in event["trace"][article_title]["first_mentioned"][strategy].items():
                         if result:
+                            #add method to result
                             events[index]["trace"][article_title]["first_mentioned"][strategy][method]["method"] = method
-                            if method in verbatim_methods:
-                                precisions[method][0] += 1
-                                precisions[method][1] += 1
-                                events[index]["trace"][article_title]["first_mentioned"][strategy][method]["correct"] = True
-                            else:
-                                match = result["result"][bibkey]["source_text"]["raw"]
-                                if any([(title and title in match),
-                                        (doi and doi in match),
-                                        (pmid and pmid in match)]):
+                            if method in ["dois","pmids"]:
+                                correct = True
+                            elif method == "titles":
+                                if (event["trace"][article_title]["first_mentioned"]["verbatim"]["dois"] and
+                                    (event["trace"][article_title]["first_mentioned"]["verbatim"]["dois"]["index"] ==
+                                     event["trace"][article_title]["first_mentioned"]["verbatim"]["titles"]["index"]) or
+                                    event["trace"][article_title]["first_mentioned"]["verbatim"]["pmids"] and
+                                    (event["trace"][article_title]["first_mentioned"]["verbatim"]["pmids"]["index"] ==
+                                     event["trace"][article_title]["first_mentioned"]["verbatim"]["titles"]["index"])):
                                     correct = True
                                 else:
-                                    correct = reference_match_mapping[concatenated_bibliography_data][match]
-                                if correct:
-                                    precisions[method][0] += 1
-                                precisions[method][1] += 1
-                                events[index]["trace"][article_title]["first_mentioned"][strategy][method]["correct"] = correct
+                                    go_to_link = result["result"][bibkey]
+                                    correct = reference_match_mapping[concatenated_bibliography_data][go_to_link] 
+                            else:
+                                raw_reference = result["result"][bibkey]["source_text"]["raw"]
+                                if any([(doi and doi in raw_reference),
+                                        (pmid and pmid in raw_reference)]):
+                                    correct = True
+                                else:
+                                    correct = reference_match_mapping[concatenated_bibliography_data][raw_reference]
+                            if correct:
+                                precisions[method][0] += 1
+                            precisions[method][1] += 1
+                            events[index]["trace"][article_title]["first_mentioned"][strategy][method]["correct"] = correct
 
             first_event = True
             first_correct_event = True

@@ -290,7 +290,7 @@ def plot_size_and_reference_count(timesliced_data, filepath, article_name, secti
     #plt.title("PCC: " + str(pcc))
     fig.legend(loc="upper left", bbox_to_anchor=(0.1, 0.93), fontsize="xx-large")
     fig.tight_layout()
-    plt.savefig(filepath + "_section_revision_size_vs_reference_length.pdf", transparent=True)
+    plt.savefig(filepath + "_section_revision_size_vs_reference_length.png", transparent=True)
     plt.close('all')
 
 def plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_directory, logger, section_name, differ_name):
@@ -381,9 +381,9 @@ if __name__ == "__main__":
     preprocessor = Preprocessor(language)
 
     articles = (
-##        ("CRISPR",16.5,True,problematic_revids_CRISPR_en),
+        ("CRISPR",16.5,True,problematic_revids_CRISPR_en),
 ##        ("CRISPR_gene_editing",3.5,False,problematic_revids_CRISPR_gene_editing_en),
-        ("Cas9",16.5,True,[]),
+##        ("Cas9",16.5,True,[]),
         )
 
     sections = {"Intro":([""],0),
@@ -402,13 +402,13 @@ if __name__ == "__main__":
     differs = {"custom_differ":custom_differ()}#"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
     articles_directory = "../articles/2021-02-14"
-    analysis_directory = "../analysis/sections/2021_06_28" + sep + str(datetime.now())[:-7].replace(":","_").replace("-","_").replace(" ","_")
+    analysis_directory = "../analysis/development"
 
     if not exists(analysis_directory): makedirs(analysis_directory)
     
     logger = get_logger(analysis_directory)
 
-    for section_name in ["All","Intro","History","Application"]:
+    for section_name in ["NO_SECTION_TREE"]:
 
         timesliced_datasets = {}
         
@@ -422,13 +422,19 @@ if __name__ == "__main__":
             analysis_filepath = analysis_directory + sep + article_name + "_" + language + "_" + section_name.lower()
 
             if not exists(analysis_filepath + "_diff_data.json"):
-                data = calculate_data(articles_filepath, logger, section_strings, section_level, differs, preprocessor, problematic_revids)
+                data = calculate_data(articles_filepath,
+                                      logger,
+                                      section_strings,
+                                      section_level,
+                                      {},#differs,
+                                      preprocessor,
+                                      problematic_revids)
                 save_data(data, analysis_filepath)
             else:
                 data = load_data(analysis_filepath + "_diff_data.json")
 
-            timesliced_datasets[article_name.replace("_", " ")] = timeslice_data(data, 2020, 12)
+            timesliced_datasets[article_name.replace("_", " ")] = timeslice_data(data, 2021, 5)
 
-            #plot_size_and_reference_count(timeslice_data(data, 2021, 2), analysis_filepath, article_name, section_name) #different result compared to previous version due to use of section tree!
+            plot_size_and_reference_count(timeslice_data(data, 2021, 5), analysis_filepath, article_name, section_name) #different result compared to previous version due to use of section tree!
             
-        plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_directory, logger, section_name, differ_name)
+        #plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_directory, logger, section_name, differ_name)
