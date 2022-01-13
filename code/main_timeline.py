@@ -17,6 +17,8 @@ if __name__ == "__main__":
 
     EQUALLING = ["bibentries"]
 
+    eventlists = {}
+
     for eventfilename in glob("../data/CRISPR_publication-events*.csv"):
         print(eventfilename.split("/")[-1] + "\n")
         for equalling in [[], EQUALLING]:
@@ -27,6 +29,8 @@ if __name__ == "__main__":
                 print("NOT EQUALLING EVENTS.")
 
             eventlist = EventList(eventfilename, bibliography, accountlist, conditions, equalling)
+
+            eventlists[eventfilename] = eventlist.events
 
             event_types = {}
 

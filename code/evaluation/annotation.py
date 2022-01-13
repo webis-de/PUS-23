@@ -37,7 +37,7 @@ def concatenate_bibliography_data(title, authors, doi, pmid, year):
 directory = "../../analysis/bibliography/2021_11_03_analysed_2"
 
 json_paths = sorted([path for path
-                     in glob(directory + "/publication-events-field/*.json")
+                     in glob(directory + "/publication-events-highly-cited/*.json")
                      if not any([path.endswith(suffix) for suffix in ["_correct.json", "_annotated.json", "_reduced.json"]])])
 
 to_label_filepath = directory + "/to_label.csv"
@@ -90,7 +90,7 @@ for json_path in json_paths:
         if exists(labelled_filepath):
 
             reference_match_mapping = {}
-            with open(labelled_filepath) as labeled_file:
+            with open(labelled_filepath, encoding="utf-8") as labeled_file:
                 csv_reader = reader(labeled_file, delimiter=",")
                 for concatenated_bibliography_data,match,judgement1,judgement2 in csv_reader:
                     if concatenated_bibliography_data not in reference_match_mapping:

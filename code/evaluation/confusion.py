@@ -25,7 +25,7 @@ methods = ["titles",
 
 strategies = ["verbatim", "relaxed"]
 
-json_paths = sorted(glob("../../analysis/bibliography/2021_11_03_analysed_2/publication-events-field/*_correct.json"))
+json_paths = sorted(glob("../../analysis/bibliography/2021_11_03_analysed_2/publication-events-field-matched/*_correct.json"))
 
 relative = True
 

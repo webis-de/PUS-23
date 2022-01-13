@@ -36,7 +36,7 @@ def delta(timestamp1, timestamp2):
     date2 = datetime.strptime(timestamp2, "%Y-%m-%d %H:%M:%S")
     return (date2 - date1).days
 
-json_paths = sorted(glob("../../analysis/bibliography/2021_11_03_analysed/publication-events-highly-cited/*_correct.json"))
+json_paths = sorted(glob("../../analysis/bibliography/2021_11_03_analysed_2/publication-events-field-matched/*_correct.json"))
 
 for json_path in json_paths:
     method_delays = {"absolute":{},"relative":{}}
