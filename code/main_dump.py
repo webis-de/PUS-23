@@ -185,7 +185,7 @@ def analyse_dump(input_filepath,
         old_title = None
         skip = False
         with WikipediaDumpReader(input_filepath, article_titles) as wdr:
-            for title,revid,timestamp,text in wdr.line_iter():
+            for title,pageid,revid,timestamp,text in wdr.line_iter():
                 revision_count += 1
                 if start_revision_count and revision_count <= start_revision_count:
                     continue

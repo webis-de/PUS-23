@@ -27,7 +27,7 @@ class TestWikipediaDumpReader(unittest.TestCase):
         pmid_count = 0
         revisions = []
         with WikipediaDumpReader(self.input_filepath) as wdr:
-            for title, revid, timestamp, text in wdr.line_iter():
+            for title, pageid, revid, timestamp, text in wdr.line_iter():
                 for event in self.eventlist.events:
                     bibkey = list(event.bibentries.keys())[0]
                     doi = event.dois[bibkey]
@@ -39,16 +39,18 @@ class TestWikipediaDumpReader(unittest.TestCase):
                             pmid_count += 1
                         if doi and (doi in text) \
                            and pmid and (pmid in text):
-                            revisions.append((title, revid, timestamp, text))
+                            revisions.append((title, pageid, revid, timestamp, text))
         
         self.assertEqual(doi_count, 17)
         self.assertEqual(pmid_count, 17)
 
         self.assertEqual(len(revisions), 17)
 
-        self.assertEqual(revisions[0][1], "358506933")
+        self.assertEqual(revisions[0][1], "27121514")
+
+        self.assertEqual(revisions[0][2], "358506933")
         
-        self.assertEqual(revisions[-1][1], "1014921611")
+        self.assertEqual(revisions[-1][2], "1014921611")
 
 if __name__ == "__main__":
     unittest.main()

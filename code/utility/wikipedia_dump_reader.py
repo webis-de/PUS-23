@@ -25,35 +25,44 @@ class WikipediaDumpReader(object):
                 "ns0":"http://www.mediawiki.org/xml/export-0.10/",
                 "xsi":"http://www.w3.org/2001/XMLSchema-instance"}
 
-    def xml_iter(self):
-        read_revisions = False
-        xml = XMLET.iterparse(self.bz2_file)
-        for event, element in xml:
-            if element.tag.split("}")[-1] == "title":
-                title = element.text
-            elif element.tag.split("}")[-1] == "ns":
-                read_revisions = element.text == "0"
-            elif read_revisions:
-                if element.tag.split("}")[-1] == "revision":
-                    for subelement in element:
-                        if subelement.tag.split("}")[-1] == "id":
-                            revid = subelement.text
-                        if subelement.tag.split("}")[-1] == "timestamp":
-                            timestamp = subelement.text
-                        if subelement.tag.split("}")[-1] == "text":
-                            text = subelement.text
-                    yield (title,revid,timestamp,text)
-                    element.clear()
-            else:
-                element.clear()
+##    def xml_iter(self):
+##        read_revisions = False
+##        read_pageid = False
+##        xml = XMLET.iterparse(self.bz2_file)
+##        for event, element in xml:
+##            if element.tag.split("}")[-1] == "title":
+##                title = element.text
+##            elif element.tag.split("}")[-1] == "ns":
+##                read_revisions = element.text == "0"
+##                read_pageid = True
+##            elif element.tag.split("}")[-1] == "id" and read_pageid:
+##                pageid = element.text
+##            elif read_revisions:
+##                if element.tag.split("}")[-1] == "revision":
+##                    read_pageid = False
+##                    for subelement in element:
+##                        if subelement.tag.split("}")[-1] == "id":
+##                            revid = subelement.text
+##                        if subelement.tag.split("}")[-1] == "timestamp":
+##                            timestamp = subelement.text
+##                        if subelement.tag.split("}")[-1] == "text":
+##                            text = subelement.text
+##                    yield (title,pageid,revid,timestamp,text)
+##                    element.clear()
+##            else:
+##                element.clear()
 
     def lxml_iter(self):
         xml = LXMLET().parse(self.bz2_file)
         for page in xml.findall("page", self.namespaces):
             if page.find("ns", self.namespaces).text == "0":
                 title = page.find("title", self.namespaces).text
+                if self.article_titles and title not in self.article_titles:
+                    continue
+                pageid = page.find("id", self.namespaces).text
                 for revision in page.findall("revision", self.namespaces):
                     yield (title,
+                           pageid,
                            revision.find("id", self.namespaces).text,
                            revision.find("timestamp", self.namespaces).text,
                            revision.find("text", self.namespaces).text)
@@ -69,6 +78,7 @@ class WikipediaDumpReader(object):
                 if read_text:
                     if line.startswith("      <sha1"):
                         yield (title,
+                               pageid,
                                revid,
                                timestamp,
                                text)
@@ -79,6 +89,8 @@ class WikipediaDumpReader(object):
                 else:
                     if line.startswith("    <title"):
                         title = line[11:-9]
+                    elif line.startswith("    <id"):
+                        pageid = line[8:-6]
                     elif title and self.article_titles and title not in self.article_titles:
                         continue
                     elif line.startswith("    <ns"):
