@@ -353,7 +353,7 @@ if __name__ == "__main__":
                                  ("../data/CRISPR_articles_844.txt", "_844"),
                                  ("../data/CRISPR_articles_relevant_new.txt","_relevant"),
                                  ("../data/CRISPR_articles_relevant_new_no_persons.txt","_relevant_no_persons")
-                                 ][1]
+                                 ][-1]
 
     with open(relevant_article_filepath[0]) as file:
         relevant_article_names = set([line.strip() for line in file.readlines()])
@@ -402,7 +402,7 @@ if __name__ == "__main__":
        
     cm = mcol.LinearSegmentedColormap.from_list("MyCmapName",["black","r"])    
     fig, ax = plt.subplots()
-    fig.set_dpi(150.0)
+    fig.set_dpi(600.0)
     height = int(len(lines)/4)
     width = len(timeslices[start_index:])/10
     fig.set_figheight(height)
@@ -417,13 +417,13 @@ if __name__ == "__main__":
                 'c': [eval(item) if item == "0/0" else 0.0 for item in line[1:]],
                 'd': [float(item.split("/")[-1]) for item in line[1:]]}
         
-        scatter = ax.scatter('x', 'y', c='c', s='d', data=data, cmap=cm, zorder=1, marker=2, linewidth=1)
+        scatter = ax.scatter('x', 'y', c='c', s='d', data=data, cmap=cm, zorder=1, marker=((0,-5),(0,5)), linewidth=1)
 
         if line[0] == "CRISPR":
             handles, labels = scatter.legend_elements(prop="sizes", alpha=0.6)
             handles = [handles[0], handles[3], handles[-1]]
-            labels = [labels[0], labels[3], labels[-1]]
-            legend = ax.legend(handles, labels, loc="lower left", title="Number of Publications")
+            labels = ["25","100","200"]
+            legend = ax.legend(handles, labels, ncol=3, labelspacing=1, handletextpad=0, loc="lower left", title="Number of Publications")
         
     ax.set(xlabel='', ylabel='')
     ax.tick_params(axis='x', labelsize=10.0, labelrotation=90)
@@ -449,6 +449,6 @@ if __name__ == "__main__":
                      "bottom: " + str(adjustment_bottom),
                      "top: " + str(adjustment_top)]))
     
-    plt.savefig("../analysis/bibliography/2021_10_25" + sep + "transparent_plot" + relevant_article_filepath[1] + ".png", transparent=True)
+    plt.savefig("../analysis/bibliography/2021_10_25" + sep + "transparent_plot" + relevant_article_filepath[1] + ".png", transparent=False)
             
 
