@@ -10,7 +10,7 @@ from datetime import datetime
 def delta(timestamp1, timestamp2):
     date1 = datetime.strptime(timestamp1, "%Y-%m-%d %H:%M:%S")
     date2 = datetime.strptime(timestamp2, "%Y-%m-%d %H:%M:%S")
-    return - (date2 - date1).days
+    return - (((date2 - date1).total_seconds() / 60) / 60) / 24
 
 methods = ["titles",
            "dois",
@@ -25,7 +25,7 @@ methods = ["titles",
 
 strategies = ["verbatim", "relaxed"]
 
-json_paths = sorted(glob("../../analysis/bibliography/2021_11_03_analysed_2/publication-events-field-matched/*_correct.json"))
+json_paths = sorted(glob("../../analysis/bibliography/2021_11_03_analysed_2/publication-events-field/*_correct.json"))
 
 relative = True
 
