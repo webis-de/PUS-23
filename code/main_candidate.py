@@ -160,7 +160,7 @@ def analyse_dump(input_filepath,
                                        duration])
             done_file.flush()
 
-def analyse_article(article_filepath, timeslices, identifier_map, wos_keys):
+def analyse_scrape(article_filepath, timeslices, identifier_map, wos_keys):
     """
     Analyse wikitext of scraped article revisions for DOIs and PMIDs.
 
@@ -183,7 +183,6 @@ def analyse_article(article_filepath, timeslices, identifier_map, wos_keys):
     timeslice_revision_map = {timeslice:False for timeslice in timeslices}
 
     for revision in article.yield_revisions():
-        print(revision.index)
         # Set timeslice this revision pertains to to True
         month = str(revision.timestamp.month).rjust(2, "0")
         year = str(revision.timestamp.year)
@@ -292,7 +291,7 @@ if __name__ == "__main__":
     # The below code is used to analyse the wikitext of scraped articles for DOIs and PMIDs.#
     #########################################################################################
 
-    article_filepaths = sorted(glob("../articles/2021-06-01/en/*_en"))
+    article_filepaths = sorted(glob("../articles/2021-06-01_no_html/*_en"))
     relevant_article_filepath = [("../data/CRISPR_articles_411.txt", "_411"),
                                  ("../data/CRISPR_articles_844.txt", "_844"),
                                  ("../data/CRISPR_articles_relevant_new.txt","_relevant"),
@@ -316,7 +315,7 @@ if __name__ == "__main__":
         with open(csv_data_filepath, "w") as csvfile:
             csv_writer = csv.writer(csvfile, delimiter=",")
             with Pool(8) as pool:
-                lines = [line for line in pool.starmap(analyse_article, [(article_filepath, timeslices, identifier_map, wos_keys)
+                lines = [line for line in pool.starmap(analyse_scrape, [(article_filepath, timeslices, identifier_map, wos_keys)
                                                                          for article_filepath in article_filepaths])]
 
             for line in lines:
