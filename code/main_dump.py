@@ -19,6 +19,10 @@ from socket import gethostname
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcol
 
+#################################################################
+# This file serves as an entry point to analyse Wikipedia dumps.#
+#################################################################
+
 def get_logger(filename):
     """Set up the logger."""
     logger = logging.getLogger("dump_logger")
@@ -29,43 +33,6 @@ def get_logger(filename):
     logging_file_handler.setLevel(logging.DEBUG)
     logger.addHandler(logging_file_handler)
     return logger, logging_file_handler
-
-def read_and_unify_publication_eventlists():
-    start = datetime.now()
-    publication_events = set()
-
-    bibliography = Bibliography("../data/CRISPR_literature.bib")
-    accountlist = AccountList("../data/CRISPR_accounts.csv")
-    publication_events_accounts = set(EventList("../data/CRISPR_publication-events.csv",
-                                                bibliography,
-                                                accountlist,
-                                                [],
-                                                ["bibentries"]).events)
-    publication_events_wos = set(EventList("../data/CRISPR_publication-events-hochzitierte.csv",
-                                           bibliography,
-                                           accountlist,
-                                           [],
-                                           ["bibentries"]).events)
-
-    for publication_event in publication_events_accounts.union(publication_events_wos):
-        publication_event.trace["wos"] = (publication_event in publication_events_wos)
-        publication_event.trace["accounts"] = (publication_event in publication_events_accounts)
-        publication_events.add(publication_event)
-
-    print(len(publication_events), "publication event(s).", datetime.now() - start)
-
-    return publication_events
-
-def read_and_unify_publication_eventlists_for_tests():
-    bibliography = Bibliography("../tests/data/literature.bib")
-    accountlist = AccountList("../tests/data/accounts.csv")
-    eventlist = EventList("../tests/data/events.csv",
-                           bibliography,
-                           accountlist,
-                           [],
-                           ["bibentries"])
-    eventlist.events[0].trace = {"wos":True, "accounts":False}
-    return eventlist.events
 
 def log_handler_host(output_directory, hostname, nodename, input_filepath_index, input_filepath, filesize):
     with open(output_directory + sep + hostname + ".txt", "a") as file:
@@ -78,32 +45,22 @@ def get_timeslices(first_year = 2001, final_year = 2021):
             timeslices.append(str(month).rjust(2, "0") + "/" + str(year))
     return timeslices
 
-def get_publication_data_bib(test = False):
-    identifier_map = {}
-    wos_map = {}
-    dois = []
-    pmids = []
-    bibkeys = []
-    unified_publication_events = eval("read_and_unify_publication_eventlists" + ("_for_tests" if test else "") + "()")
-    for publication_event in unified_publication_events:
-        bibkey = list(publication_event.bibentries.keys())[0]
-        bibkeys.append(bibkey)
-        title = publication_event.titles[bibkey]
-        doi = publication_event.dois[bibkey]
-        pmid = publication_event.pmids[bibkey]
-        wos_key = publication_event.wos_keys
-        wos = publication_event.trace["wos"]
-        accounts = publication_event.trace["accounts"]
-        if doi:
-            dois.append(re.escape(doi))
-            identifier_map[doi] = (title, bibkey, "-", wos, accounts)
-        if pmid:
-            pmids.append(re.escape(pmid))
-            identifier_map[pmid] = (title, bibkey, "-", wos, accounts)
-        wos_map[wos_key] = (title, bibkey, doi, pmid, wos, accounts)
-    return (identifier_map, wos_map, dois, pmids, bibkeys)
-
 def get_publication_data_csv(relevant_wos_keys = []):
+    """
+    Read literature CSV and produce maps and sets of identifiers.
+
+    Args:
+        relevant_wos_keys: List of relevant wos_keys to consider.
+                           (Does not apply if empty list provided.)
+
+    Returns:
+        Tuple of
+            - identifier_map: map DOI and PMID to title and wos_key
+            - wos_map: map wos_key to title, DOI and PMID
+            - dois: set of all DOIs
+            - pmids: set of all PMIDs
+            - wos_keys: set of all wos_keys
+    """
     identifier_map = {}
     wos_map = {}
     dois = set()
@@ -111,41 +68,21 @@ def get_publication_data_csv(relevant_wos_keys = []):
     wos_keys = set()
     with open("../data/CRISPR_literature.csv") as csvfile:
         csv_reader = csv.reader(csvfile, delimiter="|")
-        for wos_key, title, doi, pmid in csv_reader:
+        for wos_key, title, authors, doi, pmid, year in csv_reader:
             if relevant_wos_keys and wos_key not in relevant_wos_keys:
                 continue
             if doi:
                 dois.add(doi)
-                identifier_map[doi] = (title, "-", wos_key, "-", "-")
+                identifier_map[doi] = (title, wos_key)
             if pmid:
                 pmids.add(pmid)
-                identifier_map[pmid] = (title, "-", wos_key, "-", "-")
-            wos_map[wos_key] = (title, "-", doi, pmid, "-", "-")
+                identifier_map[pmid] = (title, wos_key)
+            wos_map[wos_key] = (title, doi, pmid)
             wos_keys.add(wos_key)
     return (identifier_map, wos_map, dois, pmids, wos_keys)
 
-def check_and_write_wos_keys_in_article():
-    with open("../analysis/articles/analysis_from_dump/articles_woskeys.txt") as file:
-        wos_keys = [line.strip() for line in file.readlines()]
-    identifier_map, wos_map_corpora, dois, pmids, bibkeys = get_publication_data_bib(False)
-    wosmap_corpora = {wos_key:["X" if list(wos_map_corpora[wos_key])[-2] else "",
-                               "X" if list(wos_map_corpora[wos_key])[-1] else ""] + list(wos_map_corpora[wos_key])[:4]
-                      for wos_key in wos_map_corpora}
-    identifier_map, wos_map_field, dois, pmids, wos_keys = get_publication_data_csv()
-    wosmap_field = {wos_key:list(wos_map_field[wos_key])[:4] for wos_key in wos_map_field}
-    with open("../analysis/articles/analysis_from_dump/articles_woskeys.csv", "w") as file:
-        csv_writer = csv.writer(file, delimiter=",")
-        csv_writer.writerow([item.upper() for item in
-                             ["wos_key","in_corpora","wos","accounts","title","bibkey","doi","pmid"]])
-        for wos_key in wos_keys:
-            if wos_key in wosmap_corpora:
-                csv_writer.writerow([wos_key] + ["X"] + wosmap_corpora[wos_key])
-            else:
-                csv_writer.writerow([wos_key] + ["","",""] + wosmap_field[wos_key])
-
 def analyse_dump(input_filepath,
                  output_directory,
-                 identifier_map,
                  doi_and_pmid_regex,
                  done_input_filepaths,
                  article_titles,
@@ -200,17 +137,10 @@ def analyse_dump(input_filepath,
                 for match in sorted(set([item.group() for item in re.finditer(doi_and_pmid_regex, text)])):
                     if match:
                         publication_count += 1
-                        #bibkey, wos, accounts = identifier_map[match]
-                        #eventlist = "|".join([key for key,value
-                        #                      in [("wos",wos),
-                        #                          ("accounts",accounts)] if value])
-                        csv_writer.writerow([#bibkey,
-                                             match,
+                        csv_writer.writerow([match,
                                              title,
                                              revid,
-                                             Timestamp(timestamp).string
-                                             #eventlist
-                                             ])
+                                             Timestamp(timestamp).string])
                         csvfile.flush()
                         if quick:
                             skip = True
@@ -231,42 +161,55 @@ def analyse_dump(input_filepath,
             done_file.flush()
 
 def analyse_article(article_filepath, timeslices, identifier_map, wos_keys):
+    """
+    Analyse wikitext of scraped article revisions for DOIs and PMIDs.
+
+    Args:
+        article_filepath: Path to the scraped revision file.
+        timeslices: The timeslices (e.g. months) to analyse.
+        identifier_map: Map of DOIs and PMIDs to titles and wos_keys.
+        wos_keys: Set of wos_keys.
+
+    Returns:
+        A list of the article title and an integer for each timeslice,
+        with the integer representing the matched wos_keys in that timeslice.
+    """
     article = Article(article_filepath)
     article_name = article.name
 
+    # Result map initialised to False for each timeslice and wos_key
     results = {timeslice:{wos_key:False for wos_key in wos_keys} for timeslice in timeslices}
-                
-    revisions = article.yield_revisions()
+    # Map to keep track of whether revision occurred in a specific timeslice         
     timeslice_revision_map = {timeslice:False for timeslice in timeslices}
-    for revision in revisions:
+
+    for revision in article.yield_revisions():
+        print(revision.index)
+        # Set timeslice this revision pertains to to True
         month = str(revision.timestamp.month).rjust(2, "0")
         year = str(revision.timestamp.year)
         timeslice = month + "/" + year
         timeslice_revision_map[timeslice] = True
 
+        # Find all DOIs and PMIDs as per regex in the wikitext, get respective wos_keys and set them to True 
         for match in sorted(set([item.group() for item in re.finditer(doi_and_pmid_regex, revision.get_wikitext())])):
             if not match.startswith("10."):
                 match = "".join([character for character in match if character.isnumeric()])
-            title, bibkey, wos_key, wos, accounts = identifier_map[match]
-            results[timeslice][wos_key] = 1
+            if match in identifier_map:
+                title, wos_key = identifier_map[match]
+                results[timeslice][wos_key] = True
 
+    # Carry result of timeslices to subsequent timeslices without revisions
     for i in range(1, len(timeslices)):
         if not timeslice_revision_map[timeslices[i]] and timeslice_revision_map[timeslices[i-1]]:
             results[timeslices[i]] = results[timeslices[i-1]]
             timeslice_revision_map[timeslices[i]] = True
 
-    line = []
-    for timeslice in timeslices:
-        count = 0
-        for wos_key in results[timeslice]:
-            if results[timeslice][wos_key]:
-                count += 1
-        line.append(str(count))
+    # Return article name and number of matched identifiers per timeslice.
     print(article_name)
-    return [article_name] + line
+    return [article_name] + [str(sum(results[timeslice].values())) for timeslice in timeslices]
 
-#IDENTIFIER_MAP:   title, bibkey, wos_key, wos, accounts
-#WOS_MAP:          title, bibkey, doi, pmid, wos, accounts
+#IDENTIFIER_MAP:   title, wos_key
+#WOS_MAP:          title, doi, pmid
 
 if __name__ == "__main__":
 
@@ -317,8 +260,6 @@ if __name__ == "__main__":
 ##    else:
 ##        corpus_path_prefix = "../../../../../" + \
 ##                             "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210601/"
-##        #input_filepaths = sorted(glob(corpus_path_prefix + "*.bz2"))
-##        #input_filepaths.remove(corpus_path_prefix + "enwiki-20210601-pages-meta-history10.xml-p5128920p5137511.bz2")
 ##        relevant_bz2_files = []
 ##        with open("../analysis/articles/candidates_from_dump/done.csv") as donefile:
 ##            for line in donefile:
@@ -330,7 +271,6 @@ if __name__ == "__main__":
 ##    with open("../data/CRISPR_articles_844.txt") as file:
 ##        relevant_article_names = set([line.strip() for line in file.readlines()])
 ##
-##    #identifier_map, wos_map, dois, pmids, bibkeys = get_publication_data_bib(False)
 ##    identifier_map, wos_map, dois, pmids, wos_keys = get_publication_data_csv()
 ##
 ##    doi_and_pmid_regex = re.compile(eval(pattern))
@@ -342,13 +282,17 @@ if __name__ == "__main__":
 ##        
 ##        analyse_dump(input_filepath=input_filepath,
 ##                     output_directory=output_directory,
-##                     identifier_map={},
 ##                     doi_and_pmid_regex=doi_and_pmid_regex,
 ##                     done_input_filepaths=done_input_filepaths,
 ##                     article_titles=relevant_article_names,
 ##                     quick=quick)
 
-    article_filepaths = sorted(glob("../articles/2021-06-01/*_en"))
+
+    #########################################################################################
+    # The below code is used to analyse the wikitext of scraped articles for DOIs and PMIDs.#
+    #########################################################################################
+
+    article_filepaths = sorted(glob("../articles/2021-06-01/en/*_en"))
     relevant_article_filepath = [("../data/CRISPR_articles_411.txt", "_411"),
                                  ("../data/CRISPR_articles_844.txt", "_844"),
                                  ("../data/CRISPR_articles_relevant_new.txt","_relevant"),
@@ -358,19 +302,20 @@ if __name__ == "__main__":
     with open(relevant_article_filepath[0]) as file:
         relevant_article_names = set([line.strip() for line in file.readlines()])
 
-    with open("../analysis/articles/analysis_from_dump/articles_woskeys.txt") as file:
-        relevant_wos_keys = [line.strip() for line in file.readlines()]
+##    with open("../analysis/articles/analysis_from_dump/articles_woskeys.txt") as file:
+##        relevant_wos_keys = [line.strip() for line in file.readlines()]
+    relevant_wos_keys = []
         
     timeslices = get_timeslices(2001)[:-7]
 
-    csv_data_filepath = "../analysis/bibliography/2021_10_25/dump_analysis_plot_data.csv"
+    csv_data_filepath = "../analysis/bibliography/2022_01_25/dump_analysis_plot_data.csv"
     if not exists(csv_data_filepath):
         identifier_map, wos_map, dois, pmids, wos_keys = get_publication_data_csv(relevant_wos_keys)
         doi_and_pmid_regex = re.compile(eval(pattern))
         
         with open(csv_data_filepath, "w") as csvfile:
             csv_writer = csv.writer(csvfile, delimiter=",")
-            with Pool() as pool:
+            with Pool(8) as pool:
                 lines = [line for line in pool.starmap(analyse_article, [(article_filepath, timeslices, identifier_map, wos_keys)
                                                                          for article_filepath in article_filepaths])]
 

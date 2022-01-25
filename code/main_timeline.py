@@ -4,9 +4,9 @@ from timeline.eventlist import EventList
 from pprint import pprint
 from glob import glob
 
-###############################################################
-# This file serves as an entry point view events and accounts.#
-###############################################################
+##################################################################
+# This file serves as an entry point to view events and accounts.#
+##################################################################
 
 if __name__ == "__main__":
 
