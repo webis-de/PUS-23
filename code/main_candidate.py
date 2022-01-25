@@ -87,13 +87,29 @@ def analyse_dump(input_filepath,
                  done_input_filepaths,
                  article_titles,
                  quick = False):
+    """
+    Analyse dump file and log all matched DOIs and PMIDs as per regex provided.
+    If article_titles is provided, article titles NOT included with be ignored.
+    If quick is set to True, revisions after the first in which an identifier is
+    matched will be skipped.
+
+    Args:
+        input_filepath: Path to dump BZ2 file.
+        output_directory: Directory to which log and results are saved.
+        doi_and_pmid_regex: Regex to match DOIs and PMIDs.
+        done_input_filepaths: Path to file listing completely handled dump files.
+        article_titles: Names of articles to consider if known.
+        quick: Only check for first match and ignore remaining revisions of article.
+    """
     output_file_prefix = output_directory + sep + basename(input_filepath).split(".bz2")[0]
     csv_filepath = output_file_prefix + "_results.csv"
     log_filepath = output_file_prefix + "_log.txt"
+    # Check completed input files
     if basename(input_filepath) in done_input_filepaths:
         with open(output_directory + sep + "done_update.txt", "a") as update_file:
             update_file.write("Analysis of file " + basename(input_filepath) + " already complete.\n")
         return
+    # Recover last revision handled in case of aborted analysis
     start_publication_count = 0
     start_revision_count = 0
     if exists(log_filepath):
@@ -113,6 +129,7 @@ def analyse_dump(input_filepath,
             update_file.write("Analysis of file " + basename(input_filepath) + " already started. " + \
                               "Starting from " + str(start_publication_count) + " publications and " + \
                               str(start_revision_count) + " revisions.\n")
+    # Start analysis of dump file
     with open(csv_filepath, "a", newline="") as csvfile:
         start = datetime.now()
         revision_count = 0
@@ -307,7 +324,7 @@ if __name__ == "__main__":
         
     timeslices = get_timeslices(2001)[:-7]
 
-    csv_data_filepath = "../analysis/bibliography/2022_01_25/dump_analysis_plot_data.csv"
+    csv_data_filepath = "../analysis/bibliography/2021_10_25/dump_analysis_plot_data.csv"
     if not exists(csv_data_filepath):
         identifier_map, wos_map, dois, pmids, wos_keys = get_publication_data_csv(relevant_wos_keys)
         doi_and_pmid_regex = re.compile(eval(pattern))
@@ -328,10 +345,14 @@ if __name__ == "__main__":
             for row in csv_reader:
                 if row[0] in relevant_article_names:
                     lines.append(row)
-                    
+
+    ####################################################################################
+    # The below code is used to plot the publication distribution of the above results.#
+    ####################################################################################
+
+    # sort results according to max number of publications in any timeslice        
     bibkey_max_per_month_count_sort_map = {line[0]:max([int(item.split("/")[-1]) for item in line[1:]])
                                            for line in lines}
-
     lines = sorted(lines, key=lambda line: bibkey_max_per_month_count_sort_map[line[0]])
     
     start_index = 1
@@ -344,7 +365,7 @@ if __name__ == "__main__":
     timeslices = timeslices[start_index-1:]
     lines = [[line[0]] + line[start_index:] for line in lines]
        
-    cm = mcol.LinearSegmentedColormap.from_list("MyCmapName",["black","r"])    
+    #cm = mcol.LinearSegmentedColormap.from_list("MyCmapName",["black","r"])    
     fig, ax = plt.subplots()
     fig.set_dpi(600.0)
     height = int(len(lines)/4)
@@ -355,13 +376,11 @@ if __name__ == "__main__":
     legend = None
     
     for line in lines:
-        #ax.plot(timeslices, [line[0] for _ in timeslices], linewidth=0.3, color="gray", zorder=0)
         data = {'x': timeslices,
                 'y': [line[0].replace("(Scarless Cas9 Assisted Recombineering)", "[...]").replace("knockout screens", "[...]") for _ in timeslices],
-                'c': [eval(item) if item == "0/0" else 0.0 for item in line[1:]],
                 'd': [float(item.split("/")[-1]) for item in line[1:]]}
         
-        scatter = ax.scatter('x', 'y', c='c', s='d', data=data, cmap=cm, zorder=1, marker=((0,-5),(0,5)), linewidth=1)
+        scatter = ax.scatter('x', 'y', s='d', c='black', data=data, zorder=1, marker=((0,-5),(0,5)), linewidth=1)
 
         if line[0] == "CRISPR":
             handles, labels = scatter.legend_elements(prop="sizes", alpha=0.6)
