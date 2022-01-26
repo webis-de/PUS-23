@@ -4,10 +4,10 @@ This repository contains information and code concerning the project 'Tracing In
 
 ## analysis
 - default directory for article analyis runs
+  - articles: candidate retrieval and analysis
   - bibliography: reference matching
   - contributors: editor distribution analysis
   - development: character-reference-time plots
-  - heroes: import researchers
   - sections: section analysis
 - on gitignore
 
@@ -19,6 +19,9 @@ This repository contains information and code concerning the project 'Tracing In
 ##### main_article.py
 - analyse revision as per eventlist and bibliography
 - save to JSON Lines and pretty printed TXT file
+##### main_candidate.py
+- candidate retrieval from revision dumps
+- analysis of candidate files based on revision scrapes
 ##### main_contributors.py
 - analyse editor distribution
 ##### main_diff.py
@@ -34,28 +37,32 @@ This repository contains information and code concerning the project 'Tracing In
 ##### main_timeline.py
 - analyse events and accounts
 ##### article
-- article, revision, section, source
+- classes: Article, Revision, Section, Source, Timestamp
 ##### bibliography
-- bibentry, bibliography
+- classes: Bibentry, Bibliography
 ##### contribution
-- contribution
+- classes: Contribution
 ##### differ
-- custom word-level differ
+- classes: Differ (custom word-level differ)
 ##### evaluation
 - evaluation helper scripts
+- for candidate retrieval (article) and reference matching (bibliography) results
+##### preprocessor
+- classes: Preprocessor, Sentenizer, Tokenizer
 ##### scraper
 - scrape revisions of Wikipedia article up to given date and/or count
 - downloads HTML and extracts MediaWiki text and categories, discarding boilerplate
 - save to JSON Lines file
 ##### timeline
-- account and event
+- classes: Account, AccountList, Event, EventList
 ##### utility
-- logger and other utility functions
+- classes: WikipediaDumpReader
 
 ## data
 - account and event CSVs
-- bibliography BIB
+- bibliography CSV
 - problematic revid JSON
+- relevant article TXTs
 
 ## test
 - test scripts

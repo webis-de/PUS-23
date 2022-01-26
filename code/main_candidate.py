@@ -313,7 +313,7 @@ if __name__ == "__main__":
                                  ("../data/CRISPR_articles_844.txt", "_844"),
                                  ("../data/CRISPR_articles_relevant_new.txt","_relevant"),
                                  ("../data/CRISPR_articles_relevant_new_no_persons.txt","_relevant_no_persons")
-                                 ][-1]
+                                 ][-3]
 
     with open(relevant_article_filepath[0]) as file:
         relevant_article_names = set([line.strip() for line in file.readlines()])
@@ -324,7 +324,8 @@ if __name__ == "__main__":
         
     timeslices = get_timeslices(2001)[:-7]
 
-    csv_data_filepath = "../analysis/bibliography/2021_10_25/dump_analysis_plot_data.csv"
+    dump_analysis_plot_data_directory = "../analysis/bibliography/2022_01_25"
+    csv_data_filepath = dump_analysis_plot_data_directory + sep + "dump_analysis_plot_data.csv"
     if not exists(csv_data_filepath):
         identifier_map, wos_map, dois, pmids, wos_keys = get_publication_data_csv(relevant_wos_keys)
         doi_and_pmid_regex = re.compile(eval(pattern))
@@ -367,7 +368,7 @@ if __name__ == "__main__":
        
     #cm = mcol.LinearSegmentedColormap.from_list("MyCmapName",["black","r"])    
     fig, ax = plt.subplots()
-    fig.set_dpi(600.0)
+    fig.set_dpi(150.0)
     height = int(len(lines)/4)
     width = len(timeslices[start_index:])/10
     fig.set_figheight(height)
@@ -377,7 +378,8 @@ if __name__ == "__main__":
     
     for line in lines:
         data = {'x': timeslices,
-                'y': [line[0].replace("(Scarless Cas9 Assisted Recombineering)", "[...]").replace("knockout screens", "[...]") for _ in timeslices],
+                'y': [line[0].replace("(Scarless Cas9 Assisted Recombineering)",
+                                      "[...]").replace("knockout screens", "[...]") for _ in timeslices],
                 'd': [float(item.split("/")[-1]) for item in line[1:]]}
         
         scatter = ax.scatter('x', 'y', s='d', c='black', data=data, zorder=1, marker=((0,-5),(0,5)), linewidth=1)
@@ -411,7 +413,10 @@ if __name__ == "__main__":
                      "right: " + str(adjustment_right),
                      "bottom: " + str(adjustment_bottom),
                      "top: " + str(adjustment_top)]))
+
+    transparent = False
     
-    plt.savefig("../analysis/bibliography/2021_10_25" + sep + "transparent_plot" + relevant_article_filepath[1] + ".png", transparent=False)
+    plt.savefig(dump_analysis_plot_data_directory + sep + ("transparent_" if transparent else "") + "plot" + relevant_article_filepath[1] + ".png",
+                transparent=transparent)
             
 

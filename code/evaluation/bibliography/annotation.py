@@ -34,7 +34,7 @@ def concatenate_bibliography_data(title, authors, doi, pmid, year):
             "PMID: " + pmid + "\n" +
             "Year: " + year)    
 
-directory = "../../analysis/bibliography/2021_11_03_analysed_2"
+directory = "../../../analysis/bibliography/2021_11_03_evaluated_2"
 
 json_paths = sorted([path for path
                      in glob(directory + "/publication-events-highly-cited/*.json")
