@@ -320,14 +320,13 @@ if __name__ == "__main__":
 
 ##    with open("../analysis/articles/analysis_from_dump/articles_woskeys.txt") as file:
 ##        relevant_wos_keys = [line.strip() for line in file.readlines()]
-    relevant_wos_keys = []
         
     timeslices = get_timeslices(2001)[:-7]
 
     dump_analysis_plot_data_directory = "../analysis/bibliography/2022_01_25"
     csv_data_filepath = dump_analysis_plot_data_directory + sep + "dump_analysis_plot_data.csv"
     if not exists(csv_data_filepath):
-        identifier_map, wos_map, dois, pmids, wos_keys = get_publication_data_csv(relevant_wos_keys)
+        identifier_map, wos_map, dois, pmids, wos_keys = get_publication_data_csv(relevant_wos_keys = [])
         doi_and_pmid_regex = re.compile(eval(pattern))
         
         with open(csv_data_filepath, "w") as csvfile:
