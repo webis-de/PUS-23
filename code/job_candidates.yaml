@@ -5,9 +5,9 @@ metadata:
 spec:
   ttlSecondsAfterFinished: 86400
   backoffLimit: 5
-  completions: 83
+  completions: 118
   completionMode: Indexed
-  parallelism: 83
+  parallelism: 118
   template:
     spec:
       volumes:
@@ -22,9 +22,9 @@ spec:
           - '-c'
           - |
             cd /data/data-in-progress/data-research/computational-social-science/science-analytics-wikipedia
-            pip3 install -r requirements_simple.txt
+            pip3 install -r requirements_no_levenshtein.txt
             cd code
-            python3 main_dump.py
+            python3 main_candidate.py
           env:
           - name: NODE_NAME
             valueFrom:
