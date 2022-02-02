@@ -68,10 +68,12 @@ def get_publication_data_csv(relevant_wos_keys = []):
     wos_keys = set()
     with open("../data/CRISPR_literature.csv") as csvfile:
         csv_reader = csv.reader(csvfile, delimiter="|")
+        next(csv_reader)
         for wos_key, title, authors, doi, pmid, year in csv_reader:
             if relevant_wos_keys and wos_key not in relevant_wos_keys:
                 continue
             if doi:
+                assert(len(doi) > 3)
                 dois.add(doi)
                 identifier_map[doi] = (title, wos_key)
             if pmid:
@@ -79,7 +81,7 @@ def get_publication_data_csv(relevant_wos_keys = []):
                 identifier_map[pmid] = (title, wos_key)
             wos_map[wos_key] = (title, doi, pmid)
             wos_keys.add(wos_key)
-    return (identifier_map, wos_map, dois, pmids, wos_keys)
+    return (identifier_map, wos_map, sorted(dois), sorted(pmids), sorted(wos_keys))
 
 def analyse_dump(input_filepath,
                  output_directory,
@@ -200,6 +202,7 @@ def analyse_scrape(article_filepath, timeslices, identifier_map, wos_keys):
     timeslice_revision_map = {timeslice:False for timeslice in timeslices}
 
     for revision in article.yield_revisions():
+        print(revision.index)
         # Set timeslice this revision pertains to to True
         month = str(revision.timestamp.month).rjust(2, "0")
         year = str(revision.timestamp.year)
@@ -219,7 +222,7 @@ def analyse_scrape(article_filepath, timeslices, identifier_map, wos_keys):
         if not timeslice_revision_map[timeslices[i]] and timeslice_revision_map[timeslices[i-1]]:
             results[timeslices[i]] = results[timeslices[i-1]]
             timeslice_revision_map[timeslices[i]] = True
-
+        
     # Return article name and number of matched identifiers per timeslice.
     print(article_name)
     return [article_name] + [str(sum(results[timeslice].values())) for timeslice in timeslices]
@@ -229,7 +232,7 @@ def analyse_scrape(article_filepath, timeslices, identifier_map, wos_keys):
 
 if __name__ == "__main__":
 
-    MODE = ["DUMP_CANDIDATES","SCRAPE_ANALYSIS","ARTICLE_PLOT"][1]
+    MODE = ["DUMP_CANDIDATES","SCRAPE_ANALYSIS","DOUBLECHECK","ARTICLE_PLOT"][1]
 
     test_files = [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
                   #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
@@ -245,14 +248,8 @@ if __name__ == "__main__":
                       "enwiki-20210601-pages-meta-history21.xml-p38516211p38695815.bz2",
                       "enwiki-20210601-pages-meta-history1.xml-p12505p13384.bz2"]
 
-    pattern = ['"((10\.)(" + "|".join([doi[3:] for doi in dois]) + "))" + "|" + ' + \
-               '"(([pP][mM][iI][dD][ =:]{0,5})(" + ("|".join(pmids)) + "))"',
-               '"(10\.)" + "(" + "|".join([doi[3:] for doi in dois]) + ")"',
-               '"|".join(dois) + "|" + "(([pP][mM][iI][dD][ =:]{0,5})(" + ("|".join(pmids)) + "))"',
-               '"|".join(dois) + "|" + "((pmid = |PMID )(" + ("|".join(pmids)) + "))"',
-               '"|".join(dois) + "|" + "(pmid = (" + ("|".join(pmids)) + "))"',
-               '"|".join(dois)) + "|" + ("|".join(pmids)'
-               ][0]
+    pattern = ('"((10\.)(" + "|".join([doi[3:] for doi in dois]) + "))" + "|" + ' + \
+               '"(([pP][mM][iI][dD][ =:]{0,5})(" + ("|".join(pmids)) + "))"')
 
     article_filepaths = sorted(glob("../articles/2021-06-01_no_html/*_en"))
     relevant_article_filepath = [("../data/CRISPR_articles_411.txt", "_411"),
@@ -261,15 +258,22 @@ if __name__ == "__main__":
                                  ("../data/CRISPR_articles_relevant_new_no_persons.txt","_relevant_no_persons")
                                  ][-3]
 
+    csv_filenames = glob("../analysis/articles/2021_10_22_candidates_from_dump_quick_detailed/*_results.csv")
+
     with open(relevant_article_filepath[0]) as file:
         relevant_article_names = set([line.strip() for line in file.readlines()])
 
-    dump_analysis_plot_data_directory = "../analysis/bibliography/2022_01_25"
-    csv_data_filepath = dump_analysis_plot_data_directory + sep + "dump_analysis_plot_data.csv"
     timeslices = get_timeslices(2001)[:-7]
-
+    
 ##    with open("../analysis/articles/analysis_from_dump/articles_woskeys.txt") as file:
 ##        relevant_wos_keys = [line.strip() for line in file.readlines()]
+    identifier_map, wos_map, dois, pmids, wos_keys = get_publication_data_csv(relevant_wos_keys = [])
+
+    print(len(dois))
+    print(len(pmids))
+    print(len(wos_keys))
+
+    exit()
 
     ########################################################################################
     # The below code is used to analyse the wikitext of wikipedia dumps for DOIs and PMIDs.#
@@ -277,51 +281,56 @@ if __name__ == "__main__":
 
     if MODE == "DUMP_CANDIDATES":
         test = False
-        quick = False
-        slice_size = 5
+        quick = True
+        slice_size = 6
 
         JOB_COMPLETION_INDEX = int(environ.get("JOB_COMPLETION_INDEX"))
 
-        output_directory = "../analysis/articles/TEST"
-        if not exists(output_directory): makedirs(output_directory)
+        dump_analysis_directory = "../analysis/articles/2022_02_02_candidates_from_dump_quick"
+        if not exists(dump_analysis_directory): makedirs(dump_analysis_directory)
 
-        done_filepath = output_directory + sep + "done.csv"
+        # GET DONE BZ2 FILES
+        done_filepath = dump_analysis_directory + sep + "done.csv"
         if exists(done_filepath):
             with open(done_filepath) as file:
                 done_input_filepaths = [line.split(",")[0] for line in file.readlines()]
         else:
             done_input_filepaths = []
 
+        corpus_path_prefix = "../../../../../corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210601/"
         if test:
-            corpus_path_prefix = ("../dumps/")
-            corpus_path_prefix = "../../../../../" + \
-                                 "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210601/"
             input_filepaths = [corpus_path_prefix + input_file for input_file in test_files]
         else:
-            corpus_path_prefix = "../../../../../" + \
-                                 "corpora/corpora-thirdparty/corpus-wikipedia/wikimedia-history-snapshots/enwiki-20210601/"
-            relevant_bz2_files = []
-            with open("../analysis/articles/candidates_from_dump/done.csv") as donefile:
-                for line in donefile:
-                    line = line.split(",")
-                    if line[1] != "0":
-                        relevant_bz2_files.append(line[0])
-            input_filepaths = [corpus_path_prefix + relevant_bz2_file for relevant_bz2_file in relevant_bz2_files]
-
-        with open("../data/CRISPR_articles_844.txt") as file:
-            relevant_article_names = set([line.strip() for line in file.readlines()])
-
-        identifier_map, wos_map, dois, pmids, wos_keys = get_publication_data_csv()
+            if quick:
+                # CHECK ALL BZ2 FILES FOR QUICK CANDIDATE RETRIEVAL
+                input_filepaths = [filename for filename in glob(corpus_path_prefix + "*.bz2")
+                                   if "enwiki-20210601-pages-meta-history10.xml-p5128920p5137511.bz2" # EXCLUDE 55 GB FILE, HANDLE INDIVIDUALLY
+                                   not in filename]
+                # NO RELEVANT ARTICLE TITLES MEANS ALL ARTICLES WILL BE CHECKED
+                relevant_article_names = set()
+            else:
+                # EXCLUDE BZ2 FILES WITHOUT HITS
+                relevant_bz2_files = []
+                with open(PROVIDE_DONE_FILE_PATH_FROM_QUICK_RUN_HERE) as donefile:
+                    for line in donefile:
+                        line = line.split(",")
+                        if line[1] != "0":
+                            relevant_bz2_files.append(line[0])
+                input_filepaths = [corpus_path_prefix + relevant_bz2_file for relevant_bz2_file in relevant_bz2_files]
+                # EXCLUDE ARTICLES WITHOUT HITS
+                with open("../data/CRISPR_articles_844.txt") as file:
+                    relevant_article_names = set([line.strip() for line in file.readlines()])
 
         doi_and_pmid_regex = re.compile(eval(pattern))
 
-        for input_filepath_index, input_filepath in enumerate(input_filepaths[JOB_COMPLETION_INDEX*slice_size:(JOB_COMPLETION_INDEX+1)*slice_size], JOB_COMPLETION_INDEX*slice_size):
+        for input_filepath_index, input_filepath in enumerate(input_filepaths[JOB_COMPLETION_INDEX*slice_size:(JOB_COMPLETION_INDEX+1)*slice_size],
+                                                              JOB_COMPLETION_INDEX*slice_size):
             filesize = getsize(input_filepath)
             hostname = gethostname()
-            log_handler_host(output_directory, hostname, environ.get("NODE_NAME"), input_filepath_index, input_filepath, filesize)
+            log_handler_host(dump_analysis_directory, hostname, environ.get("NODE_NAME"), input_filepath_index, input_filepath, filesize)
             
             analyse_dump(input_filepath=input_filepath,
-                         output_directory=output_directory,
+                         output_directory=dump_analysis_directory,
                          doi_and_pmid_regex=doi_and_pmid_regex,
                          done_input_filepaths=done_input_filepaths,
                          article_titles=relevant_article_names,
@@ -331,16 +340,68 @@ if __name__ == "__main__":
     # The below code is used to analyse the wikitext of scraped articles for DOIs and PMIDs.#
     #########################################################################################
     
+    scrape_analysis_directory = "../analysis/articles/2022_02_03_analysis_from_scrape"
+    if not exists(scrape_analysis_directory): makedirs(scrape_analysis_directory)
+    
+    plot_data_filepath = scrape_analysis_directory + sep + "dump_analysis_plot_data.csv"
+    
     if MODE == "SCRAPE_ANALYSIS":
-        identifier_map, wos_map, dois, pmids, wos_keys = get_publication_data_csv(relevant_wos_keys = [])
+        
         doi_and_pmid_regex = re.compile(eval(pattern))
         
-        with open(csv_data_filepath, "w") as csvfile:
+        with open(plot_data_filepath, "w") as csvfile:
             csv_writer = csv.writer(csvfile, delimiter=",")
-            with Pool(8) as pool:
+            with Pool(16) as pool:
                 lines = [line for line in pool.starmap(analyse_scrape, [(article_filepath, timeslices, identifier_map, wos_keys)
                                                                          for article_filepath in article_filepaths])]
 
+            for line in lines:
+                csv_writer.writerow(line)
+            csv_writer.writerow([""] + timeslices)
+    if MODE == "DOUBLECHECK":
+        
+        # Result map initialised to False for each timeslice and wos_key
+        results = {}
+        # Map to keep track of whether revision occurred in a specific timeslice         
+        timeslice_revision_map = {}
+        for index,csv_filename in enumerate(csv_filenames,1):
+            print(index)
+            with open(csv_filename) as csv_file:
+                csv_reader = csv.reader(csv_file, delimiter=",")
+                for identifier,article_name,revid,timestamp_string in csv_reader:
+                    try:
+                        if article_name not in results:
+                            results[article_name] = {timeslice:set() for timeslice in timeslices}
+                        if article_name not in timeslice_revision_map:
+                            timeslice_revision_map[article_name] = {timeslice:False for timeslice in timeslices}
+                        if not identifier.startswith("10."):
+                            identifier = "".join([character for character in identifier if character.isnumeric()])
+                        year = timestamp_string.split("-")[0]
+                        month = timestamp_string.split("-")[1]
+                        timeslice = month + "/" + year
+                        timeslice_revision_map[timeslice] = True
+                        title, wos_key = identifier_map[identifier]
+                        results[article_name][timeslice].add(wos_key)
+                        timeslice_revision_map[article_name][timeslice] = True
+                    except:
+                        pass
+
+        # Carry result of timeslices to subsequent timeslices without revisions
+        for article_name in results:
+            for i in range(1, len(timeslices)):
+                if not timeslice_revision_map[article_name][timeslices[i]] and timeslice_revision_map[article_name][timeslices[i-1]]:
+                    results[article_name][timeslices[i]] = results[article_name][timeslices[i-1]]
+                    timeslice_revision_map[article_name][timeslices[i]] = True
+
+        # Sort articles alphabetically
+        results = {k:results[k] for k in sorted(results.keys())}
+
+        # Return article name and number of matched identifiers per timeslice.
+        lines = []
+        for article_name in results:
+            lines.append([article_name] + [str(len(results[article_name][timeslice])) for timeslice in timeslices])
+        with open(plot_data_filepath, "w") as csvfile:
+            csv_writer = csv.writer(csvfile, delimiter=",")
             for line in lines:
                 csv_writer.writerow(line)
             csv_writer.writerow([""] + timeslices)
@@ -351,7 +412,7 @@ if __name__ == "__main__":
 
     if MODE == "ARTICLE_PLOT":
         lines = []
-        with open(csv_data_filepath) as csvfile:
+        with open(plot_data_filepath) as csvfile:
             csv_reader = csv.reader(csvfile, delimiter=",")
             for row in csv_reader:
                 if row[0] in relevant_article_names:
@@ -422,7 +483,7 @@ if __name__ == "__main__":
 
         transparent = False
         
-        plt.savefig(dump_analysis_plot_data_directory + sep + ("transparent_" if transparent else "") + "plot" + relevant_article_filepath[1] + ".png",
+        plt.savefig(scrape_analysis_directory + sep + ("transparent_" if transparent else "") + "plot" + relevant_article_filepath[1] + ".png",
                     transparent=transparent)
             
 
