@@ -4,7 +4,7 @@ from os import makedirs
 from json import loads, dump
 import matplotlib.pyplot as plt
 from unicodedata import normalize
-from Levenshtein import distance
+#from Levenshtein import distance
 from urllib.parse import unquote
 
 class Article:

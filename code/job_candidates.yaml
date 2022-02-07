@@ -5,9 +5,9 @@ metadata:
 spec:
   ttlSecondsAfterFinished: 86400
   backoffLimit: 5
-  completions: 118
+  completions: 83
   completionMode: Indexed
-  parallelism: 118
+  parallelism: 83
   template:
     spec:
       volumes:

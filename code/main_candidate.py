@@ -66,7 +66,7 @@ def get_publication_data_csv(relevant_wos_keys = []):
     dois = set()
     pmids = set()
     wos_keys = set()
-    with open("../data/CRISPR_literature.csv") as csvfile:
+    with open("../data/CRISPR_literature_feldkorpus_wos_rp2021_neu.csv") as csvfile:
         csv_reader = csv.reader(csvfile, delimiter="|")
         next(csv_reader)
         for wos_key, title, authors, doi, pmid, year in csv_reader:
@@ -202,7 +202,6 @@ def analyse_scrape(article_filepath, timeslices, identifier_map, wos_keys):
     timeslice_revision_map = {timeslice:False for timeslice in timeslices}
 
     for revision in article.yield_revisions():
-        print(revision.index)
         # Set timeslice this revision pertains to to True
         month = str(revision.timestamp.month).rjust(2, "0")
         year = str(revision.timestamp.year)
@@ -232,7 +231,7 @@ def analyse_scrape(article_filepath, timeslices, identifier_map, wos_keys):
 
 if __name__ == "__main__":
 
-    MODE = ["DUMP_CANDIDATES","SCRAPE_ANALYSIS","DOUBLECHECK","ARTICLE_PLOT"][1]
+    MODE = ["DUMP_CANDIDATES","SCRAPE_ANALYSIS","DOUBLECHECK","ARTICLE_PLOT"][0]
 
     test_files = [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
                   #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
@@ -269,24 +268,19 @@ if __name__ == "__main__":
 ##        relevant_wos_keys = [line.strip() for line in file.readlines()]
     identifier_map, wos_map, dois, pmids, wos_keys = get_publication_data_csv(relevant_wos_keys = [])
 
-    print(len(dois))
-    print(len(pmids))
-    print(len(wos_keys))
-
-    exit()
-
     ########################################################################################
     # The below code is used to analyse the wikitext of wikipedia dumps for DOIs and PMIDs.#
     ########################################################################################
 
     if MODE == "DUMP_CANDIDATES":
         test = False
-        quick = True
-        slice_size = 6
+        quick = False
+        manual = False
+        slice_size = 5
 
-        JOB_COMPLETION_INDEX = int(environ.get("JOB_COMPLETION_INDEX"))
+        JOB_COMPLETION_INDEX = 0 if manual else int(environ.get("JOB_COMPLETION_INDEX"))
 
-        dump_analysis_directory = "../analysis/articles/2022_02_02_candidates_from_dump_quick"
+        dump_analysis_directory = "../analysis/articles/2022_02_06_candidates_from_dump_detailed"
         if not exists(dump_analysis_directory): makedirs(dump_analysis_directory)
 
         # GET DONE BZ2 FILES
@@ -303,15 +297,19 @@ if __name__ == "__main__":
         else:
             if quick:
                 # CHECK ALL BZ2 FILES FOR QUICK CANDIDATE RETRIEVAL
-                input_filepaths = [filename for filename in glob(corpus_path_prefix + "*.bz2")
-                                   if "enwiki-20210601-pages-meta-history10.xml-p5128920p5137511.bz2" # EXCLUDE 55 GB FILE, HANDLE INDIVIDUALLY
-                                   not in filename]
+                MANUAL_FILE = "enwiki-20210601-pages-meta-history10.xml-p5128920p5137511.bz2" # EXCLUDE 55 GB FILE, HANDLE MANUALLY
+                if manual:
+                    input_filepaths = [filename for filename in glob(corpus_path_prefix + "*.bz2")
+                                       if MANUAL_FILE in filename]
+                else:
+                    input_filepaths = [filename for filename in glob(corpus_path_prefix + "*.bz2")
+                                       if not MANUAL_FILE in filename]
                 # NO RELEVANT ARTICLE TITLES MEANS ALL ARTICLES WILL BE CHECKED
                 relevant_article_names = set()
             else:
                 # EXCLUDE BZ2 FILES WITHOUT HITS
                 relevant_bz2_files = []
-                with open(PROVIDE_DONE_FILE_PATH_FROM_QUICK_RUN_HERE) as donefile:
+                with open("../analysis/articles/2022_02_04_candidates_from_dump_quick/done.csv") as donefile: # PROVIDE DONE.CSV FROM PREVIOUS QUICK RUN
                     for line in donefile:
                         line = line.split(",")
                         if line[1] != "0":
@@ -326,8 +324,8 @@ if __name__ == "__main__":
         for input_filepath_index, input_filepath in enumerate(input_filepaths[JOB_COMPLETION_INDEX*slice_size:(JOB_COMPLETION_INDEX+1)*slice_size],
                                                               JOB_COMPLETION_INDEX*slice_size):
             filesize = getsize(input_filepath)
-            hostname = gethostname()
-            log_handler_host(dump_analysis_directory, hostname, environ.get("NODE_NAME"), input_filepath_index, input_filepath, filesize)
+            hostname = "dump-pod-jupyter" if manual else gethostname()
+            log_handler_host(dump_analysis_directory, hostname, "jupyter-kircheis" if manual else environ.get("NODE_NAME"), input_filepath_index, input_filepath, filesize)
             
             analyse_dump(input_filepath=input_filepath,
                          output_directory=dump_analysis_directory,
@@ -340,7 +338,7 @@ if __name__ == "__main__":
     # The below code is used to analyse the wikitext of scraped articles for DOIs and PMIDs.#
     #########################################################################################
     
-    scrape_analysis_directory = "../analysis/articles/2022_02_03_analysis_from_scrape"
+    scrape_analysis_directory = "../analysis/articles/2022_02_06_analysis_from_scrape"
     if not exists(scrape_analysis_directory): makedirs(scrape_analysis_directory)
     
     plot_data_filepath = scrape_analysis_directory + sep + "dump_analysis_plot_data.csv"
