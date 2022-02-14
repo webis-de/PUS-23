@@ -76,12 +76,13 @@ class WikipediaDumpReader(object):
 
             for line in bz2_file:
                 if read_text:
-                    if line.startswith("      <sha1"):
+                    if "</text>" in line:
+                        text += sub("</text.*","",line)
                         yield (title,
                                pageid,
                                revid,
                                timestamp,
-                               text[:-8])
+                               text)
                         read_text = False
                         text = ""
                     else:

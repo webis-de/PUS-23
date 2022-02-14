@@ -74,7 +74,7 @@ class TestWikipediaDumpReader(unittest.TestCase):
         self.assertEqual(pageids[0], "27121496")
         self.assertEqual(revids[0], "358506549")
         with open("tests/data/first_text.txt") as file:
-            self.assertEqual(texts[0], "".join(file.readlines()).strip())
+            self.assertEqual(texts[0], "".join(file.readlines()))
 
 if __name__ == "__main__":
     unittest.main()
