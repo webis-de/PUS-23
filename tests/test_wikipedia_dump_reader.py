@@ -52,6 +52,30 @@ class TestWikipediaDumpReader(unittest.TestCase):
         
         self.assertEqual(revisions[-1][2], "1014921611")
 
+    def test_text_reading(self):
+
+        titles = []
+        pageids = []
+        revids = []
+        texts = []
+        
+        with WikipediaDumpReader(self.input_filepath) as wdr:
+            for title, pageid, revid, timestamp, text in wdr.line_iter():
+                if title not in titles:
+                    titles.append(title)
+                if pageid not in pageids:
+                    pageids.append(pageid)
+                if revid not in revids:
+                    revids.append(revid)
+                texts.append(text)
+        
+        self.maxDiff = None
+        self.assertEqual(titles[0], "1.6 Band")
+        self.assertEqual(pageids[0], "27121496")
+        self.assertEqual(revids[0], "358506549")
+        with open("tests/data/first_text.txt") as file:
+            self.assertEqual(texts[0], "".join(file.readlines()).strip())
+
 if __name__ == "__main__":
     unittest.main()
 

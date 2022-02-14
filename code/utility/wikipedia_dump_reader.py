@@ -1,7 +1,7 @@
 import bz2
 ##from lxml.etree import ElementTree as LXMLET
 ##from xml.etree import ElementTree as XMLET
-from re import findall
+from re import findall, sub
 
 class WikipediaDumpReader(object):
 
@@ -81,7 +81,7 @@ class WikipediaDumpReader(object):
                                pageid,
                                revid,
                                timestamp,
-                               text)
+                               text[:-8])
                         read_text = False
                         text = ""
                     else:
@@ -101,4 +101,5 @@ class WikipediaDumpReader(object):
                         elif line.startswith("      <timestamp"):
                             timestamp = line[17:-13]
                         elif read_revisions and line.startswith("      <text"):
+                            text += sub("      <text.*?>","",line)
                             read_text = True
