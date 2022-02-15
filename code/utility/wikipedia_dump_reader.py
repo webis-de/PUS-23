@@ -76,8 +76,8 @@ class WikipediaDumpReader(object):
 
             for line in bz2_file:
                 if read_text:
-                    if "</text>" in line:
-                        text += sub("</text.*","",line)
+                    if line.startswith("      <sha1"):
+                        text = sub("</text>","",text)
                         yield (title,
                                pageid,
                                revid,
