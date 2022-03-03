@@ -14,7 +14,7 @@ class Tokenizer:
     def tokenize(self, string):
         """
         Tokenises a string by splitting it at the spaces (one or more).
-        ".", "!", "?", ", ", ": ", ";", "(", ")","[", "]", "{", "}", "/", "\\" and " - " are first isolated
+        ".", "!", "?", ", ", ": ", ";", "(", ")","[", "]", "{", "}", "/", "\\", "|" and " - " are first isolated
         from any preceding or following characters by insertion of a space before and after them.
         
         Args:
@@ -34,7 +34,7 @@ class Tokenizer:
             for abbreviation_to_mask in re.findall("[^a-zA-Z]" + abbreviation.replace(".","\."), string):
                 string = string.replace(abbreviation_to_mask, abbreviation_to_mask[0] + self.abbreviation_dictionary[abbreviation_to_mask[1:]])
 
-        for mark in [".","!","?",", ",": ",";", "(", ")","[","]","{","}","/","\\","'","\""]:
+        for mark in [".","!","?",", ",": ",";", "(", ")","[","]","{","}","/","\\","'","\"", "|"]:
             string = string.replace(mark, " " + mark + " ")
 
         tokens = re.split("[ \n]+", string.strip(), flags=re.M)
