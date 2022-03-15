@@ -1,8 +1,7 @@
 /analysis
 /articles
-/citationcorpora
 /dumps
-/ISSI
+/publications
 
 /**/__pycache__
 /**/logs

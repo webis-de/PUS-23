@@ -8,7 +8,7 @@ def scroll_to_url(article_name, revid, string):
             + "&oldid=" + revid
             + "#:~:text=" + quote(string))
 
-directory = "../../../analysis/articles/2022_02_06_candidates_from_dump_detailed/"
+directory = "../../../analysis/articles/2022_02_16_candidates_from_dump_detailed/"
 
 filepaths = glob(directory + "*results.csv")
 
@@ -16,7 +16,7 @@ def get_publication_data_csv():
     dois = set()
     pmids = set()
     publication_map = {}
-    with open("../../../data/CRISPR_literature_feldkorpus_wos_rp2021_neu.csv") as csvfile:
+    with open("../../../data/CRISPR_literature_final.csv") as csvfile:
         csv_reader = reader(csvfile, delimiter="|")
         header = next(csv_reader)
         for wos_uid, title, authors, doi, pmid, year in csv_reader:
@@ -72,11 +72,11 @@ for index, filepath in enumerate(filepaths):
                 results[article_name][bibkey][doi_or_pmid] = set()
             results[article_name][bibkey][doi_or_pmid].add((revid,timestamp))
 
-#sort articles according to descending number of publications found
+#sort articles according to descending number of publications found in first; article_name second
 results = {article_name:results[article_name]
            for article_name in sorted(results.keys(),
-                                      key=lambda article_name: len(results[article_name]),
-                                      reverse=True)}
+                                      key=lambda article_name: (-len(results[article_name]),article_name),
+                                      reverse=False)}
 
 #for each article and bibkey, find latest revision as per DOI or PMID
 first_and_final_revision_for_article_and_bibkey_map = {}

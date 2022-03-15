@@ -45,7 +45,7 @@ def get_timeslices(first_year = 2001, final_year = 2021):
             timeslices.append(str(month).rjust(2, "0") + "/" + str(year))
     return timeslices
 
-def get_publication_data_csv(relevant_wos_keys = []):
+def get_publication_data_csv(literature_path, relevant_wos_keys = []):
     """
     Read literature CSV and produce maps and sets of identifiers.
 
@@ -66,7 +66,7 @@ def get_publication_data_csv(relevant_wos_keys = []):
     dois = set()
     pmids = set()
     wos_keys = set()
-    with open("../data/CRISPR_literature_feldkorpus_wos_rp2021_neu.csv") as csvfile:
+    with open(literature_path) as csvfile:
         csv_reader = csv.reader(csvfile, delimiter="|")
         next(csv_reader)
         for wos_key, title, authors, doi, pmid, year in csv_reader:
@@ -231,7 +231,7 @@ def analyse_scrape(article_filepath, timeslices, identifier_map, wos_keys):
 
 if __name__ == "__main__":
 
-    MODE = ["DUMP_CANDIDATES","SCRAPE_ANALYSIS","DOUBLECHECK","ARTICLE_PLOT"][0]
+    MODE = ["DUMP_CANDIDATES","SCRAPE_ANALYSIS","DOUBLECHECK","ARTICLE_PLOT"][3]
 
     test_files = [#"enwiki-20210601-pages-meta-history18.xml-p27121491p27121850.bz2", # 472KB
                   #"enwiki-20210601-pages-meta-history27.xml-p67791779p67827548.bz2", # 25MB
@@ -266,7 +266,8 @@ if __name__ == "__main__":
     
 ##    with open("../analysis/articles/analysis_from_dump/articles_woskeys.txt") as file:
 ##        relevant_wos_keys = [line.strip() for line in file.readlines()]
-    identifier_map, wos_map, dois, pmids, wos_keys = get_publication_data_csv(relevant_wos_keys = [])
+    identifier_map, wos_map, dois, pmids, wos_keys = get_publication_data_csv("../data/CRISPR_literature_final.csv",
+                                                                              relevant_wos_keys = [])
 
     ########################################################################################
     # The below code is used to analyse the wikitext of wikipedia dumps for DOIs and PMIDs.#
@@ -280,7 +281,7 @@ if __name__ == "__main__":
 
         JOB_COMPLETION_INDEX = 0 if manual else int(environ.get("JOB_COMPLETION_INDEX"))
 
-        dump_analysis_directory = "../analysis/articles/2022_02_06_candidates_from_dump_detailed"
+        dump_analysis_directory = "../analysis/articles/2022_02_14_candidates_from_dump_detailed"
         if not exists(dump_analysis_directory): makedirs(dump_analysis_directory)
 
         # GET DONE BZ2 FILES
@@ -309,14 +310,14 @@ if __name__ == "__main__":
             else:
                 # EXCLUDE BZ2 FILES WITHOUT HITS
                 relevant_bz2_files = []
-                with open("../analysis/articles/2022_02_04_candidates_from_dump_quick/done.csv") as donefile: # PROVIDE DONE.CSV FROM PREVIOUS QUICK RUN
+                with open("../analysis/articles/2022_02_14_candidates_from_dump_quick/done.csv") as donefile: # PROVIDE DONE.CSV FROM PREVIOUS QUICK RUN
                     for line in donefile:
                         line = line.split(",")
                         if line[1] != "0":
                             relevant_bz2_files.append(line[0])
                 input_filepaths = [corpus_path_prefix + relevant_bz2_file for relevant_bz2_file in relevant_bz2_files]
                 # EXCLUDE ARTICLES WITHOUT HITS
-                with open("../data/CRISPR_articles_844.txt") as file:
+                with open("../data/CRISPR_articles_849.txt") as file:
                     relevant_article_names = set([line.strip() for line in file.readlines()])
 
         doi_and_pmid_regex = re.compile(eval(pattern))
@@ -338,12 +339,13 @@ if __name__ == "__main__":
     # The below code is used to analyse the wikitext of scraped articles for DOIs and PMIDs.#
     #########################################################################################
     
-    scrape_analysis_directory = "../analysis/articles/2022_02_06_analysis_from_scrape"
-    if not exists(scrape_analysis_directory): makedirs(scrape_analysis_directory)
+    scrape_analysis_directory = "../analysis/articles/2022_02_08_analysis_from_scrape"
     
     plot_data_filepath = scrape_analysis_directory + sep + "dump_analysis_plot_data.csv"
     
     if MODE == "SCRAPE_ANALYSIS":
+
+        if not exists(scrape_analysis_directory): makedirs(scrape_analysis_directory)
         
         doi_and_pmid_regex = re.compile(eval(pattern))
         
@@ -356,6 +358,7 @@ if __name__ == "__main__":
             for line in lines:
                 csv_writer.writerow(line)
             csv_writer.writerow([""] + timeslices)
+            
     if MODE == "DOUBLECHECK":
         
         # Result map initialised to False for each timeslice and wos_key
@@ -479,7 +482,7 @@ if __name__ == "__main__":
                          "bottom: " + str(adjustment_bottom),
                          "top: " + str(adjustment_top)]))
 
-        transparent = False
+        transparent = True
         
         plt.savefig(scrape_analysis_directory + sep + ("transparent_" if transparent else "") + "plot" + relevant_article_filepath[1] + ".png",
                     transparent=transparent)
