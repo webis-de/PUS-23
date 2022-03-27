@@ -44,7 +44,7 @@ class Section:
         Returns:
             The text of the section a string cleaned of superflous spaces and line breaks.
         """
-        text = "\n\n".join([sub(r" +", " ", element.xpath("string()").replace("\n", ""))
+        text = "\n\n".join([sub(r" +", " ", sub("\n+", "\n", element.xpath("string()")))
                             for element in self.html.iter(include)])
         heading = (self.name + ("\n\n" if text else "")) * with_headings
         if level != 0:
