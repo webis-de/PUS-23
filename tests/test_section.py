@@ -3,7 +3,7 @@ import unittest
 from json import loads
 
 class TestRevision(unittest.TestCase):
-
+    
     @classmethod
     def setUpClass(cls):
         # Revision 51 (index 50) of CRISPR
@@ -98,10 +98,11 @@ class TestRevision(unittest.TestCase):
                          [section.name for section in self.revision1_section_tree.find(strings=["Re", "CRISPR"])])
 
     def test_find_reference_section_revision1(self):
+        self.maxDiff = None
         reference_section_text_of_revision1 = \
           ('^ Sorek R, Kunin V, Hugenholtz P (2008). "CRISPR - a widespread system that provides acquired resistance against phages in bacteria and archaea". Nature Reviews '
           'Microbiology. 6: 181–6. doi:10.1038/nrmicro1793. Unknown parameter |month= ignored (help)CS1 maint: multiple names: authors list (link)\n'
-          '\n'
+          '\n\n'
           '^ Sorek R, Kunin V, Hugenholtz P (2008). "CRISPR - a widespread system that provides acquired resistance against phages in bacteria and archaea". Nature Reviews '
           'Microbiology. 6: 181–6. doi:10.1038/nrmicro1793.CS1 maint: multiple names: authors list (link)\n'
           '\n'
