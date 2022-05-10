@@ -13,6 +13,7 @@ from math import sqrt
 from preprocessor.preprocessor import Preprocessor
 import numpy as np
 import logging
+from csv import reader
 
 #################################################################
 # This file serves as an entry point to diff Wikipedia articles.#
@@ -102,7 +103,7 @@ def generate_annual_timeslice_ticks(timeslices, months = False):
         timeslice_ticks.append(year if year not in timeslice_ticks else "")
     return timeslice_ticks
 
-def calculate_data(filepath, logger, section_strings, section_level, differs, preprocessor = None, problematic_revids = []):
+def calculate_data(filepath, logger, section_strings, section_level, differs, preprocessor = None, problematic_revids = [], name_counts = {}):
     """
     Analyses all revisions, generating diffs for the section as defined by the section strings provided and
     provides a data map containing revision metadata, revision size, reference counts and diffs for each revision.
@@ -136,6 +137,9 @@ def calculate_data(filepath, logger, section_strings, section_level, differs, pr
             logger.info("Blacklisted revid: " + str(revision.revid))
             continue
 
+        if name_counts and revision.index not in name_counts[article.name.replace(" ", "_")]:
+            break
+
         if section_strings != []:
             section_tree = revision.section_tree()
             section = section_tree.find(section_strings, True)
@@ -162,7 +166,9 @@ def calculate_data(filepath, logger, section_strings, section_level, differs, pr
                      "added_characters":sum([len(item[2:]) for item in diff if item[0] == "+"]),
                      "removed_characters":sum([len(item[2:]) for item in diff if item[0] == "-"]),
                      "diff":diff} for differ_name, diff in diffs.items()
-                 }
+                 },
+             "name_counts":{"token_count":name_counts[article.name.replace(" ", "_")][revision.index]["token_count"] if name_counts else None,
+                            "type_count":name_counts[article.name.replace(" ", "_")][revision.index]["type_count"] if name_counts else None}
              }
             )
 
@@ -208,15 +214,19 @@ def plot_diffs(data, filepath, section_name, width, height, article_name):
         plt.legend()
         plt.savefig(filepath + "_section_analysis_" + differ_name + ".png")
 
-def handle_timesliced_data(timesliced_data):
+def handle_timesliced_data(timesliced_data, differ_name):
     sizes = []
     reference_counts = []
     added_characters = []
     removed_characters = []
+    name_counts_tokens = []
+    name_counts_types = []
     timeslice_ticks = [item if item[:2] in ["01","04","07","10"] else "" for index,item in enumerate(generate_annual_timeslice_ticks(timesliced_data, True))]
 
     prev_size = 0
     prev_reference_count = 0
+    prev_name_counts_tokens = 0
+    prev_name_counts_types = 0
     
     for data in timesliced_data.values():       
         try:
@@ -230,14 +240,25 @@ def handle_timesliced_data(timesliced_data):
         except ZeroDivisionError:
             reference_counts.append(prev_reference_count)
         try:
-            added_characters.append(sum([item["diffs"][differ_name]["added_characters"] for item in data]))
+            if differ_name: added_characters.append(sum([item["diffs"][differ_name]["added_characters"] for item in data]))
         except ZeroDivisionError:
             added_characters.append(0)
         try:
-            removed_characters.append(sum([item["diffs"][differ_name]["removed_characters"] for item in data]))
+            if differ_name: removed_characters.append(sum([item["diffs"][differ_name]["removed_characters"] for item in data]))
         except ZeroDivisionError:
             removed_characters.append(0)
-    return sizes, reference_counts, added_characters, removed_characters, timeslice_ticks
+        try:
+            name_counts_tokens.append(sum([item["name_counts"]["token_count"] for item in data])/len(data))
+            prev_name_counts_tokens = name_counts_tokens[-1]
+            name_counts_types.append(sum([item["name_counts"]["type_count"] for item in data])/len(data))
+            prev_name_counts_types = name_counts_types[-1]
+        except ZeroDivisionError:
+            name_counts_tokens.append(prev_name_counts_tokens)
+            name_counts_types.append(prev_name_counts_types)
+        except TypeError:
+            name_counts_tokens.append(None)
+            name_counts_types.append(None)
+    return sizes, reference_counts, added_characters, removed_characters, timeslice_ticks, name_counts_tokens, name_counts_types
 
 def plot_size_and_reference_count(timesliced_data, filepath, article_name, section_name):
     sizes = []
@@ -273,7 +294,7 @@ def plot_size_and_reference_count(timesliced_data, filepath, article_name, secti
     sizes_color = "k"
     sizes_label = "Size of " + article_name + " Article in Characters"
 
-    fig, ax1 = plt.subplots(figsize=(12,6), dpi=500)
+    fig, ax1 = plt.subplots(figsize=(12,6), dpi=600)
     plt.xticks(list(range(len(timeslice_ticks))), timeslice_ticks, rotation=90)
     ax1.plot(list(range(len(reference_counts))), reference_counts, label=reference_counts_label, color=reference_counts_color, linestyle=":")
     ax1.set_ylabel(reference_counts_label, color=reference_counts_color, fontsize="xx-large")
@@ -291,8 +312,60 @@ def plot_size_and_reference_count(timesliced_data, filepath, article_name, secti
     fig.legend(loc="upper left", bbox_to_anchor=(0.1, 0.93), fontsize="xx-large")
     fig.tight_layout()
     plt.savefig(filepath + "_section_revision_size_vs_reference_length.png", transparent=True)
+    plt.savefig(filepath + "_section_revision_size_vs_reference_length.pdf")
     plt.close('all')
 
+def plot_size_and_reference_count_and_names(timesliced_data, filepath, article_name, section_name):
+    
+    sizes, reference_counts, added_characters, removed_characters, timeslice_ticks, name_counts_tokens, name_counts_types = handle_timesliced_data(timesliced_data, None)  
+    print(len(name_counts_tokens))
+    print(len(name_counts_types))
+    print(len(timeslice_ticks))
+    try:
+        pcc = round(corr_coef(sizes, reference_counts), 3)
+    except:
+        pcc = "n/a"
+
+    print("PCC:", pcc)
+    print("Plotting " + article_name)
+
+    reference_counts_color = "k"
+    reference_counts_label = "Number of References in " + article_name + " Article"
+    name_counts_tokens_color = "r"
+    name_counts_tokens_label = "Number of Names in " + article_name + " Article"
+    name_counts_types_color = "b"
+    name_counts_types_label = "Number of Unique Names in " + article_name + " Article"
+
+    sizes_color = "k"
+    sizes_label = "Size of " + article_name + " Article in Characters"
+
+    fig, ax1 = plt.subplots(figsize=(12,6), dpi=600)
+    plt.xticks(list(range(len(timeslice_ticks))), timeslice_ticks, rotation=90)
+    ax1.plot(list(range(len(reference_counts))), [i/10 for i in reference_counts], label=reference_counts_label, color=reference_counts_color, linestyle=":")
+    
+    ax1.plot(list(range(len(name_counts_tokens))), name_counts_tokens, label=name_counts_tokens_label, color=name_counts_tokens_color, linestyle=":")
+    
+    ax1.plot(list(range(len(name_counts_types))), name_counts_types, label=name_counts_types_label, color=name_counts_types_color, linestyle=":")
+
+    ax1.set_ylabel("Number of References in K/\nNames in " + article_name + " Article", color=reference_counts_color, fontsize="xx-large")
+    ax1.tick_params('y', colors=reference_counts_color)
+    
+    ax1.margins(x=0.005)
+    ax2 = ax1.twinx()
+    ax2.plot(list(range(len(sizes))), sizes, label=sizes_label, color=sizes_color)
+    ax2.set_ylabel(sizes_label, color=sizes_color, fontsize="xx-large")
+    ax2.tick_params('y', colors=sizes_color)
+    ax1.set_ylim(ymin=0)
+    ax2.set_ylim(ymin=0)
+    ax2.margins(x=0.005)
+    #plt.subplots_adjust(bottom=0.12, top=0.98, left=0.12, right=0.88)
+    #plt.title("PCC: " + str(pcc))
+    fig.legend(loc="upper left", bbox_to_anchor=(0.1, 0.93), fontsize="xx-large")
+    fig.tight_layout()
+    plt.savefig(filepath + "_section_revision_size_vs_reference_length_vs_names.png", transparent=True)
+    plt.savefig(filepath + "_section_revision_size_vs_reference_length_vs_names.pdf")
+    plt.close('all')
+    
 def plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_directory, logger, section_name, differ_name):
 
     fig = plt.figure(figsize=(30,6), dpi=300)
@@ -307,7 +380,7 @@ def plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_direct
 
     for timesliced_data, ax1 in zip(timesliced_datasets, axs):
         
-        sizes, reference_counts, added_characters, removed_characters, timeslice_ticks = handle_timesliced_data(timesliced_datasets[timesliced_data])
+        sizes, reference_counts, added_characters, removed_characters, timeslice_ticks, name_counts_tokens, name_counts_types = handle_timesliced_data(timesliced_datasets[timesliced_data], differ_name)
 
         if first_plot:
             reference_max = max(reference_counts)
@@ -386,6 +459,15 @@ if __name__ == "__main__":
 ##        ("Cas9",16.5,True,[]),
         )
 
+    name_counts = {list(article)[0]:{} for article in articles}
+
+    for article in [item[0] for item in articles]:
+        with open("../publications/STHV/names_per_revision_" + article + ".csv") as file:
+            csv_reader = reader(file, delimiter=",")
+            header = next(csv_reader)
+            for index, token_count, type_count in csv_reader:
+                name_counts[article][int(index)] = {"token_count":int(token_count), "type_count":int(type_count)}
+
     sections = {"Intro":([""],0),
                 "All":([""],10),
                 "History":(["History",
@@ -401,8 +483,8 @@ if __name__ == "__main__":
 
     differs = {"custom_differ":custom_differ()}#"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
-    articles_directory = "../articles/2021-02-14"
-    analysis_directory = "../analysis/development"
+    articles_directory = "../articles/2021-06-01_with_html/en"#"../articles/2021-02-14"
+    analysis_directory = "../analysis/development/test"
 
     if not exists(analysis_directory): makedirs(analysis_directory)
     
@@ -428,7 +510,8 @@ if __name__ == "__main__":
                                       section_level,
                                       {},#differs,
                                       preprocessor,
-                                      problematic_revids)
+                                      problematic_revids,
+                                      name_counts)
                 save_data(data, analysis_filepath)
             else:
                 data = load_data(analysis_filepath + "_diff_data.json")
