@@ -86,7 +86,7 @@ def timeslice_data(data, FINAL_YEAR, FINAL_MONTH):
 
     return timesliced_data
 
-def generate_annual_timeslice_ticks(timeslices, months = False):
+def generate_timeslice_ticks(timeslices, months = False):
     """
     Convert timeslice ticks by adding leading zeros (months == True)
     or cleaning the months and keeping only the first year (months == False):
@@ -225,7 +225,6 @@ def handle_timesliced_data(timesliced_data, differ_name):
     name_counts_types = []
     added_names = []
     removed_names = []
-    timeslice_ticks = [item if item[:2] in ["01","04","07","10"] else "" for index,item in enumerate(generate_annual_timeslice_ticks(timesliced_data, True))]
 
     prev_size = 0
     prev_reference_count = 0
@@ -275,28 +274,14 @@ def handle_timesliced_data(timesliced_data, differ_name):
         except TypeError:
             added_names.append(None)
             removed_names.append(None)
-    return sizes, reference_counts, added_characters, removed_characters, timeslice_ticks,\
+    return sizes, reference_counts, added_characters, removed_characters,\
            name_counts_tokens, name_counts_types, added_names, removed_names
 
-def plot_size_and_reference_count(timesliced_data, filepath, article_name, section_name):
-    sizes = []
-    reference_counts = []
-    timeslice_ticks = generate_annual_timeslice_ticks(timesliced_data)
+def plot_size_and_reference_count(timesliced_data, filepath, article_name, section_name, name_style):
 
-    prev_size = 0
-    prev_reference_count = 0
-    
-    for data in timesliced_data.values():       
-        try:
-            sizes.append(sum([item["size"] for item in data])/len(data))
-            prev_size = sizes[-1]
-        except ZeroDivisionError:
-            sizes.append(prev_size)
-        try:
-            reference_counts.append(sum([item["refcount"] for item in data])/len(data))
-            prev_reference_count = reference_counts[-1]
-        except ZeroDivisionError:
-            reference_counts.append(prev_reference_count)  
+    sizes, reference_counts, added_characters, removed_characters, timeslice_ticks,\
+            name_counts_tokens, name_counts_types, added_names, removed_names = handle_timesliced_data(timesliced_data, None)
+    timeslice_ticks = generate_timeslice_ticks(timesliced_data, months=False)
 
     try:
         pcc = round(corr_coef(sizes, reference_counts), 3)
@@ -335,8 +320,9 @@ def plot_size_and_reference_count(timesliced_data, filepath, article_name, secti
 
 def plot_size_and_reference_count_and_names(timesliced_data, filepath, article_name, section_name, name_style):
     
-    sizes, reference_counts, added_characters, removed_characters, timeslice_ticks,\
-           name_counts_tokens, name_counts_types, added_names, removed_names = handle_timesliced_data(timesliced_data, None)  
+    sizes, reference_counts, added_characters, removed_characters,\
+           name_counts_tokens, name_counts_types, added_names, removed_names = handle_timesliced_data(timesliced_data, None)
+    timeslice_ticks = [item if item[:2] in ["01","04","07","10"] else "" for index,item in enumerate(generate_timeslice_ticks(timesliced_data, months=True))]
 
     try:
         pcc = round(corr_coef(sizes, reference_counts), 3)
@@ -347,15 +333,15 @@ def plot_size_and_reference_count_and_names(timesliced_data, filepath, article_n
     print("Plotting " + article_name)
 
     reference_counts_color = "k"
-    reference_counts_label = "Number of References in " + article_name + " Article"
+    reference_counts_label = "Number of References in Thousands"
     name_counts_tokens_color = "k"
-    name_counts_tokens_label = "Number of Names in " + article_name + " Article"
+    name_counts_tokens_label = "Number of Names"
     name_counts_types_color = "k"
-    name_counts_types_label = "Number of Unique Names in " + article_name + " Article"
+    name_counts_types_label = "Number of Unique Names"
     added_names_color = "lightgray"
-    added_names_label = "Number of Added Names (" + name_style + ") in " + article_name + " Article"
+    added_names_label = "Number of Added Names"
     removed_names_color = "darkgray"
-    removed_names_label = "Number of Removed Names (" + name_style + ") in " + article_name + " Article"
+    removed_names_label = "Number of Removed Names"
 
     sizes_color = "k"
     sizes_label = "Size of " + article_name + " Article in Characters"
@@ -372,7 +358,7 @@ def plot_size_and_reference_count_and_names(timesliced_data, filepath, article_n
     ax1.bar(np.arange(len(added_names)) - 0.25, added_names, label=added_names_label, color=added_names_color)
     ax1.bar(np.arange(len(removed_names)) + 0.25, removed_names, label=removed_names_label, color=removed_names_color)
         
-    ax1.set_ylabel("Number of References in K/\nNames in " + article_name + " Article", color=reference_counts_color, fontsize="xx-large")
+    ax1.set_ylabel("Number of Unique Names/\nNumber of References in Thousands", color=reference_counts_color, fontsize="xx-large")
     ax1.tick_params('y', colors=reference_counts_color)
     
     ax1.margins(x=0.005)
@@ -405,8 +391,9 @@ def plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_direct
 
     for timesliced_data, ax1 in zip(timesliced_datasets, axs):
         
-        sizes, reference_counts, added_characters, removed_characters, timeslice_ticks,\
+        sizes, reference_counts, added_characters, removed_characters,\
                name_counts_tokens, name_counts_types, added_names, removed_names = handle_timesliced_data(timesliced_datasets[timesliced_data], differ_name)
+        timeslice_ticks = [item if item[:2] in ["01","04","07","10"] else "" for index,item in enumerate(generate_timeslice_ticks(timesliced_data, months=True))]
 
         if first_plot:
             reference_max = max(reference_counts)
@@ -483,7 +470,7 @@ if __name__ == "__main__":
 
     articles = (
         ("CRISPR",16.5,True,problematic_revids_CRISPR_en),
-        ("CRISPR_gene_editing",3.5,False,problematic_revids_CRISPR_gene_editing_en),
+##        ("CRISPR_gene_editing",3.5,False,problematic_revids_CRISPR_gene_editing_en),
 ##        ("Cas9",16.5,True,[]),
         )
 
@@ -519,7 +506,7 @@ if __name__ == "__main__":
     differs = {"custom_differ":custom_differ()}#"difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
 
     articles_directory = "../articles/2021-06-01_with_html/en"#"../articles/2021-02-14"
-    analysis_directory = "../analysis/development/2022_05_10_with_names_bars_" + name_style
+    analysis_directory = "analysis/test2" #"../analysis/development/2022_05_10_with_names_bars_" + name_style
 
     if not exists(analysis_directory): makedirs(analysis_directory)
     
@@ -554,6 +541,6 @@ if __name__ == "__main__":
 
             timesliced_datasets[article_name.replace("_", " ")] = timeslice_data(data, FINAL_YEAR, FINAL_MONTH)
 
-            plot_size_and_reference_count_and_names(timeslice_data(data, FINAL_YEAR, FINAL_MONTH), analysis_filepath, article_name, section_name, name_style) #different result compared to previous version due to use of section tree!
+            plot_size_and_reference_count(timeslice_data(data, FINAL_YEAR, FINAL_MONTH), analysis_filepath, article_name, section_name, name_style) #different result compared to previous version due to use of section tree!
             
         #plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_directory, logger, section_name, differ_name)
