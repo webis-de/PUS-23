@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dump-pod
+spec:
+  ttlSecondsAfterFinished: 86400
+  backoffLimit: 5
+  completions: 118
+  completionMode: Indexed
+  parallelism: 118
+  template:
+    spec:
+      volumes:
+        - name: ceph
+          hostPath:
+            path: /mnt/ceph/storage
+      containers:
+        - name: dump-counts
+          image: python
+          command:
+          - 'sh'
+          - '-c'
+          - |
+            cd /data/data-in-progress/data-research/computational-social-science/science-analytics-wikipedia
+            cd code
+            python3 main_count_articles_and_revisions.py
+          env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          volumeMounts:
+          - name: ceph
+            mountPath: /data
+      restartPolicy: Never
