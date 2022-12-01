@@ -128,13 +128,12 @@ def calculate_data(filepath, logger, section_strings, section_level, differs, pr
 
     logger.info("Calculating diffs for " + article.name +
                 " and sections '" + "', '".join(section_strings) + "'")
-
     data = []
 
     prev_text = ""
 
     start = datetime.now()
-
+    
     for revision in article.yield_revisions():
 
         logger.info(str(revision.index + 1) + " " + str(revision.url))
@@ -142,10 +141,9 @@ def calculate_data(filepath, logger, section_strings, section_level, differs, pr
         if revision.revid in problematic_revids:
             logger.info("Blacklisted revid: " + str(revision.revid))
             continue
-
         if name_counts and revision.index not in name_counts[article.name.replace(" ", "_")]:
             break
-
+        
         if section_strings != []:
             section_tree = revision.section_tree()
             section = section_tree.find(section_strings, True)
@@ -159,7 +157,7 @@ def calculate_data(filepath, logger, section_strings, section_level, differs, pr
         else:
             text = revision.get_text()
             references = revision.get_references() + revision.get_further_reading()
-
+            
         diffs = {differ_name: list(differ.compare(prev_text, text))
                  for differ_name, differ in differs.items()}
 
@@ -184,7 +182,7 @@ def calculate_data(filepath, logger, section_strings, section_level, differs, pr
         )
 
         prev_text = text
-
+        
     logger.info("TOTAL TIME: " + str(datetime.now() - start))
 
     return data
@@ -276,39 +274,39 @@ def handle_timesliced_data(timesliced_data, differ_name):
                     sum([item["diffs"][differ_name]["removed_characters"] for item in data]))
         except ZeroDivisionError:
             removed_characters.append(0)
-        try:
-            name_counts_tokens.append(
-                sum([item["name_counts"]["token_count"] for item in data])/len(data))
-            prev_name_counts_tokens = name_counts_tokens[-1]
-            name_counts_types.append(
-                sum([item["name_counts"]["type_count"] for item in data])/len(data))
-            prev_name_counts_types = name_counts_types[-1]
-        except ZeroDivisionError:
-            name_counts_tokens.append(prev_name_counts_tokens)
-            name_counts_types.append(prev_name_counts_types)
-        except TypeError:
-            name_counts_tokens.append(None)
-            name_counts_types.append(None)
-        try:
-            added_names.append(
-                sum([item["name_diffs"]["added_names"] for item in data]))
-            prev_added_names = added_names[-1]
-            removed_names.append(
-                sum([item["name_diffs"]["removed_names"] for item in data]))
-            prev_removed_names = removed_names[-1]
-        except ZeroDivisionError:
-            added_names.append(prev_added_names)
-            removed_names.append(prev_removed_names)
-        except TypeError:
-            added_names.append(None)
-            removed_names.append(None)
+##        try:
+##            name_counts_tokens.append(
+##                sum([item["name_counts"]["token_count"] for item in data])/len(data))
+##            prev_name_counts_tokens = name_counts_tokens[-1]
+##            name_counts_types.append(
+##                sum([item["name_counts"]["type_count"] for item in data])/len(data))
+##            prev_name_counts_types = name_counts_types[-1]
+##        except ZeroDivisionError:
+##            name_counts_tokens.append(prev_name_counts_tokens)
+##            name_counts_types.append(prev_name_counts_types)
+##        except TypeError:
+##            name_counts_tokens.append(None)
+##            name_counts_types.append(None)
+##        try:
+##            added_names.append(
+##                sum([item["name_diffs"]["added_names"] for item in data]))
+##            prev_added_names = added_names[-1]
+##            removed_names.append(
+##                sum([item["name_diffs"]["removed_names"] for item in data]))
+##            prev_removed_names = removed_names[-1]
+##        except ZeroDivisionError:
+##            added_names.append(prev_added_names)
+##            removed_names.append(prev_removed_names)
+##        except TypeError:
+##            added_names.append(None)
+##            removed_names.append(None)
     return sizes, reference_counts, added_characters, removed_characters,\
         name_counts_tokens, name_counts_types, added_names, removed_names
 
 
 def plot_size_and_reference_count(timesliced_data, filepath, article_name, article_name_plot, section_name, name_style, width, legend):
 
-    sizes, reference_counts, added_characters, removed_characters, timeslice_ticks,\
+    sizes, reference_counts, added_characters, removed_characters,\
         name_counts_tokens, name_counts_types, added_names, removed_names = handle_timesliced_data(
             timesliced_data, None)
     timeslice_ticks = generate_timeslice_ticks(timesliced_data, months=False)
@@ -529,12 +527,12 @@ if __name__ == "__main__":
 
     preprocessor = Preprocessor(language)
 
-    FINAL_YEAR, FINAL_MONTH = (2020, 12)
+    FINAL_YEAR, FINAL_MONTH = (2021, 6)
 
     articles = (
         ("CRISPR", "\"CRISPR\" (C1)", 18, True, problematic_revids_CRISPR_en),
-        ("CRISPR_gene_editing", "\"CRISPR gene editing\" (C2)",
-         4, False, problematic_revids_CRISPR_gene_editing_en),
+        #("CRISPR_gene_editing", "\"CRISPR gene editing\" (C2)",
+        # 4, False, problematic_revids_CRISPR_gene_editing_en),
         # ("Cas9",16.5,True,[]),
     )
 
@@ -542,19 +540,19 @@ if __name__ == "__main__":
     name_diffs = {list(article)[0]: {} for article in articles}
     name_style = "types"
 
-    for article in [item[0] for item in articles]:
-        with open("../publications/STHV/names_per_revision_" + article + ".csv") as file:
-            csv_reader = reader(file, delimiter=",")
-            header = next(csv_reader)
-            for index, token_count, type_count in csv_reader:
-                name_counts[article][int(index)] = {"token_count": int(
-                    token_count), "type_count": int(type_count)}
-        with open("../publications/STHV/namediffs_per_revision_" + name_style + "_" + article + ".csv") as file:
-            csv_reader = reader(file, delimiter=",")
-            header = next(csv_reader)
-            for index, added_names, removed_names in csv_reader:
-                name_diffs[article][int(index)] = {"added_names": int(
-                    added_names), "removed_names": abs(int(removed_names))}
+##    for article in [item[0] for item in articles]:
+##        with open("../publications/STHV/names_per_revision_" + article + ".csv") as file:
+##            csv_reader = reader(file, delimiter=",")
+##            header = next(csv_reader)
+##            for index, token_count, type_count in csv_reader:
+##                name_counts[article][int(index)] = {"token_count": int(
+##                    token_count), "type_count": int(type_count)}
+##        with open("../publications/STHV/namediffs_per_revision_" + name_style + "_" + article + ".csv") as file:
+##            csv_reader = reader(file, delimiter=",")
+##            header = next(csv_reader)
+##            for index, added_names, removed_names in csv_reader:
+##                name_diffs[article][int(index)] = {"added_names": int(
+##                    added_names), "removed_names": abs(int(removed_names))}
 
     sections = {"Intro": ([""], 0),
                 "All": ([""], 10),
@@ -572,8 +570,8 @@ if __name__ == "__main__":
     # "difflib_differ":difflib_differ(),"custom_differ":custom_differ()}
     differs = {"custom_differ": custom_differ()}
 
-    articles_directory = "../articles/2021-06-01_with_html/en"  # "../articles/2021-02-14"
-    analysis_directory = "../analysis/development/2022_05_31_with_names_bars_" + name_style
+    articles_directory = "../articles/2021-08-16/en"
+    analysis_directory = "../analysis/test1"
 
     if not exists(analysis_directory):
         makedirs(analysis_directory)
@@ -599,11 +597,12 @@ if __name__ == "__main__":
                                       logger,
                                       section_strings,
                                       section_level,
-                                      {},  # differs,
+                                      {}, #differs,
                                       preprocessor,
                                       problematic_revids,
-                                      name_counts,
-                                      name_diffs)
+                                      {},  # name_counts,
+                                      {},  # name_diffs)
+                                      )
                 save_data(data, analysis_filepath)
             else:
                 data = load_data(analysis_filepath + "_diff_data.json")
@@ -612,7 +611,8 @@ if __name__ == "__main__":
                 data, FINAL_YEAR, FINAL_MONTH)
 
             # different result compared to previous version due to use of section tree!
-            plot_size_and_reference_count_and_names(timeslice_data(
-                data, FINAL_YEAR, FINAL_MONTH), analysis_filepath, article_name, article_plot_name, section_name, name_style, width, legend)
-
-        #plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_directory, logger, section_name, differ_name)
+            #plot_size_and_reference_count_and_names(timeslice_data(
+            #    data, FINAL_YEAR, FINAL_MONTH), analysis_filepath, article_name, article_plot_name, section_name, name_style, width, legend)
+                                      
+        plot_size_and_reference_count(timesliced_datasets[article_name], analysis_directory, article_name, None, None, None, None, None)
+        plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_directory, logger, section_name, None)
