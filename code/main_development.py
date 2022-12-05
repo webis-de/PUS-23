@@ -180,7 +180,8 @@ def calculate_data(articles_filepath, logger, section_strings, section_level, di
 
 
 def add_names_to_data(data, article_name, names_directory, name_style):
-    
+
+    copy_of_data = data.copy()
     name_counts = {}
     name_diffs = {}
     with open(names_directory + sep + "names_per_revision_" + article_name + ".csv") as file:
@@ -193,16 +194,18 @@ def add_names_to_data(data, article_name, names_directory, name_style):
         header = next(csv_reader)
         for index, added_names, removed_names in csv_reader:
             name_diffs[int(index)] = {"added_names": int(added_names), "removed_names": abs(int(removed_names))}
-    for item in data:
+    new_and_reduced_data = []
+    for item in copy_of_data:
         try:
             item["name_counts"] = {"token_count": name_counts[item["revision_index"]]["token_count"],
-                                    "type_count": name_counts[item["revision_index"]]["type_count"]},
+                                   "type_count": name_counts[item["revision_index"]]["type_count"]}
             item["name_diffs"] = {"added_names": name_diffs[item["revision_index"]]["added_names"],
-                                    "removed_names": name_diffs[item["revision_index"]]["removed_names"]}
+                                  "removed_names": name_diffs[item["revision_index"]]["removed_names"]}
         except KeyError:
-            logger.info("Name data for " + str(item["revision_index"]) + " missing.")
-    return data
-
+            logger.info("No counts and/or diffs for revision index " + str(item["revision_index"]) + "/revision id " + str(item["revision_revid"]) + ".")
+            break
+        new_and_reduced_data.append(item)
+    return new_and_reduced_data
 
 def save_data(data, section_filepath):
     with open(section_filepath + "_diff_data.json", "w") as data_file:
@@ -322,11 +325,12 @@ def handle_timesliced_data(timesliced_data, differ_name):
         except KeyError:
             added_names.append(0)
             removed_names.append(0)
+
     return sizes, reference_counts, added_characters, removed_characters,\
         name_counts_tokens, name_counts_types, added_names, removed_names
 
 
-def plot_size_and_reference_count(timesliced_datasets, analysis_directory, article_name, logger):
+def plot_size_and_reference_count(timesliced_datasets, analysis_directory, article_name, logger, section_name):
 
     sizes, reference_counts, added_characters, removed_characters,\
         name_counts_tokens, name_counts_types, added_names, removed_names = handle_timesliced_data(
@@ -368,8 +372,8 @@ def plot_size_and_reference_count(timesliced_datasets, analysis_directory, artic
     fig.legend(loc="upper left", bbox_to_anchor=(
         0.1, 0.93), fontsize="xx-large")
     fig.tight_layout()
-    plt.savefig(analysis_directory + sep + article_name + "_section_revision_size_vs_reference_length.png", transparent=True)
-    #plt.savefig(analysis_directory + sep + article_name + "_section_revision_size_vs_reference_length.pdf")
+    plt.savefig(analysis_directory + sep + article_name + "_" + section_name.lower() + "_revision_size_vs_reference_count.png", transparent=False)
+    #plt.savefig(analysis_directory + sep + article_name + "_revision_size_vs_reference_count.pdf")
     plt.close('all')
 
 
@@ -455,18 +459,17 @@ def plot_size_and_reference_count_and_diffs(timesliced_datasets, analysis_direct
     plt.subplots_adjust(bottom=0.2, top=0.925, left=0.04, right=0.9925)
 
     plt.savefig(analysis_directory + sep + "_".join(timesliced_datasets.keys()).replace(" ",
-                "_") + "_" + section_name + "_" + "section_revision_size_vs_references_vs_diffs.png")
+                "_") + "_" + section_name.lower() + "_revision_size_vs_references_vs_diffs.png", transparent=False)
     plt.close('all')
     
 
-def plot_size_and_reference_count_and_names(timesliced_datasets, analysis_directory, article_name, logger, article_name_plot, name_style, width, legend):
+def plot_size_and_names(timesliced_datasets, analysis_directory, article_name, logger, section_name, article_name_plot, name_style, width, legend):
 
     sizes, reference_counts, added_characters, removed_characters,\
         name_counts_tokens, name_counts_types, added_names, removed_names = handle_timesliced_data(
             timesliced_datasets[article_name], None)
     timeslice_ticks = [item if item[:2] in ["12", "03", "06", "09"] else "" for index,
                        item in enumerate(generate_timeslice_ticks(timesliced_datasets[article_name], months=True))]
-
     try:
         pcc = round(corr_coef(sizes, reference_counts), 3)
     except:
@@ -475,8 +478,8 @@ def plot_size_and_reference_count_and_names(timesliced_datasets, analysis_direct
     logger.info("PCC:" + str(pcc))
     logger.info("Plotting " + article_name)
 
-    reference_counts_color = "k"
-    reference_counts_label = "Number of References in Thousands"
+##    reference_counts_color = "k"
+##    reference_counts_label = "Number of References in ???"
     name_counts_tokens_color = "k"
     name_counts_tokens_label = "Number of Names"
     name_counts_types_color = "k"
@@ -491,8 +494,8 @@ def plot_size_and_reference_count_and_names(timesliced_datasets, analysis_direct
 
     fig, ax1 = plt.subplots(figsize=(width, 6), dpi=600)
     plt.xticks(list(range(len(timeslice_ticks))), timeslice_ticks, rotation=90)
-    ax1.plot(list(range(len(reference_counts))), [
-             i/10 for i in reference_counts], label=reference_counts_label, color=reference_counts_color, linestyle=":")
+##    ax1.plot(list(range(len(reference_counts))), [
+##             i/10 for i in reference_counts], label=reference_counts_label, color=reference_counts_color, linestyle=":")
 
     if name_style == "types":
         ax1.plot(list(range(len(name_counts_types))), name_counts_types,
@@ -506,9 +509,9 @@ def plot_size_and_reference_count_and_names(timesliced_datasets, analysis_direct
     ax1.bar(np.arange(len(removed_names)) + 0.25, removed_names,
             label=removed_names_label, color=removed_names_color)
 
-    ax1.set_ylabel(name_counts_types_label + "/\n" + reference_counts_label,
-                   color=reference_counts_color, fontsize="xx-large")
-    ax1.tick_params('y', colors=reference_counts_color)
+    ax1.set_ylabel(name_counts_types_label,
+                   color=name_counts_tokens_color, fontsize="xx-large")
+##    ax1.tick_params('y', colors=reference_counts_color)
 
     ax1.margins(x=0.005)
     ax2 = ax1.twinx()
@@ -522,11 +525,16 @@ def plot_size_and_reference_count_and_names(timesliced_datasets, analysis_direct
     #plt.subplots_adjust(bottom=0.12, top=0.98, left=0.12, right=0.88)
     plt.title(article_name_plot, fontsize=20)
     if legend:
-        fig.legend(loc="upper left", bbox_to_anchor=(
-            0.1, 0.93), fontsize="xx-large")
+        handles1, labels1 = ax1.get_legend_handles_labels()
+        handles2, labels2 = ax2.get_legend_handles_labels()
+        handles = handles1 + handles2
+        labels = labels1 + labels2
+        order = [3,0,1,2]
+        fig.legend([handles[idx] for idx in order],[labels[idx] for idx in order],loc="upper left", bbox_to_anchor=(
+            0.1, 0.93), fontsize="xx-large")        
     fig.tight_layout()
-    plt.savefig(analysis_directory + sep + article_name + "_section_revision_size_vs_reference_length_vs_names_" + name_style + ".png", transparent=False)
-    #plt.savefig(filepath + "_section_revision_size_vs_reference_length_vs_names_" + name_style + ".pdf")
+    plt.savefig(analysis_directory + sep + article_name + "_" + section_name.lower() + "_revision_size_vsvs_names_" + name_style + ".png", transparent=False)
+    #plt.savefig(filepath + "_revision_size_vs_reference_count_vs_names_" + name_style + ".pdf")
     plt.close('all')
 
 
@@ -552,8 +560,7 @@ if __name__ == "__main__":
 
     articles = (
         ("CRISPR", "\"CRISPR\" (C1)", 18, True, problematic_revids_CRISPR_en),
-        #("CRISPR_gene_editing", "\"CRISPR gene editing\" (C2)",
-        # 4, False, problematic_revids_CRISPR_gene_editing_en),
+        ("CRISPR_gene_editing", "\"CRISPR gene editing\" (C2)", 5, False, problematic_revids_CRISPR_gene_editing_en),
         # ("Cas9",16.5,True,[]),
     )
 
@@ -578,14 +585,14 @@ if __name__ == "__main__":
     names_style = "types"
     
     articles_directory = "../articles/2021-08-16/en"
-    analysis_directory = "../analysis/test_2"
+    analysis_directory = "../analysis/test"
 
     if not exists(analysis_directory):
         makedirs(analysis_directory)
 
     logger = get_logger(analysis_directory)
 
-    for section_name in ["All"]:
+    for section_name in ["NO_SECTION_TREE"]:
 
         timesliced_datasets = {}
 
@@ -614,16 +621,18 @@ if __name__ == "__main__":
                 
             data = add_names_to_data(data, article_name, "../publications/STHV", names_style)
 
-            timesliced_datasets[article_name.replace("_", " ")] = timeslice_data(
+            timesliced_datasets[article_name] = timeslice_data(
                 data, FINAL_YEAR, FINAL_MONTH)
 
             # different result compared to previous version due to use of section tree!
             #plot_size_and_reference_count_and_names(timeslice_data(
             #    data, FINAL_YEAR, FINAL_MONTH), analysis_filepath, article_name, article_plot_name, section_name, name_style, width, legend       
                  
-        plot_size_and_reference_count(
-            timesliced_datasets, analysis_directory, article_name, logger)
-        plot_size_and_reference_count_and_diffs(
-            timesliced_datasets, analysis_directory, article_name, logger, section_name, None)
-        plot_size_and_reference_count_and_names(
-            timesliced_datasets, analysis_directory, article_name, logger, article_plot_name, names_style, width, legend)
+            '''
+            plot_size_and_reference_count(
+                timesliced_datasets, analysis_directory, article_name, logger, section_name)
+            plot_size_and_reference_count_and_diffs(
+                timesliced_datasets, analysis_directory, article_name, logger, section_name, None)
+            '''
+            plot_size_and_names(
+                timesliced_datasets, analysis_directory, article_name, logger, section_name, article_plot_name, names_style, width, legend)
