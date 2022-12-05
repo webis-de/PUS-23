@@ -11,9 +11,9 @@ from os import makedirs
 rc('xtick', labelsize=15)
 rc('ytick', labelsize=15)
 
-PATH = "../data/"
-df1 = pd.read_pickle(PATH + 'heroes_CRISPR_en.pickle')
-df2 = pd.read_pickle(PATH + 'heroes_CRISPR_gene_editing_en.pickle')
+INPUT_DIRECTORY = "../data/pickles/2021_04_06/"
+df1 = pd.read_pickle(INPUT_DIRECTORY + 'heroes_CRISPR_en.pickle')
+df2 = pd.read_pickle(INPUT_DIRECTORY + 'heroes_CRISPR_gene_editing_en.pickle')
 hero_frames = [df1, df2]
 fig = plt.figure(figsize=(20,9), dpi=400)
 axs = [plt.subplot2grid((10, 20), (0, 0), colspan=15, rowspan=10),
@@ -204,8 +204,10 @@ sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
 sm.set_array([])
 cbar = plt.colorbar(sm, ticks=[]) #ticks=[i for i in np.linspace(cmap_start,cmap_stop,11)]
 
+OUTPUT_DIRECTORY = "../analysis/test2/"
+
 cbar.ax.set_ylabel(hue_label, fontsize="xx-large")
-if not exists('../analysis/heroes'):
-    makedirs('../analysis/heroes')
-plt.savefig('../analysis/heroes/heroes_plot_combined.png')
-plt.savefig('../analysis/heroes/heroes_plot_combined.pdf')
+if not exists(OUTPUT_DIRECTORY):
+    makedirs(OUTPUT_DIRECTORY)
+plt.savefig(OUTPUT_DIRECTORY + "heroes_plot_combined.png")
+plt.savefig(OUTPUT_DIRECTORY + "heroes_plot_combined.pdf")
