@@ -11,6 +11,7 @@ from math import sqrt
 from preprocessor.preprocessor import Preprocessor
 import numpy as np
 import logging
+from matplotlib.ticker import MaxNLocator
 
 #################################################################
 # This file serves as an entry point to diff Wikipedia articles.#
@@ -483,7 +484,7 @@ def plot_size_and_names(timesliced_datasets, analysis_directory, article_name, l
     name_counts_tokens_color = "k"
     name_counts_tokens_label = "Number of Names"
     name_counts_types_color = "k"
-    name_counts_types_label = "Number of Unique Names"
+    name_counts_types_label = "Number of Names"
     added_names_color = "lightgray"
     added_names_label = "Number of Added Names"
     removed_names_color = "darkgray"
@@ -519,6 +520,7 @@ def plot_size_and_names(timesliced_datasets, analysis_directory, article_name, l
              label=sizes_label, color=sizes_color)
     ax2.set_ylabel(sizes_label, color=sizes_color, fontsize="xx-large")
     ax2.tick_params('y', colors=sizes_color)
+    ax1.yaxis.set_major_locator(MaxNLocator(integer=True))
     ax1.set_ylim(ymin=0)
     ax2.set_ylim(ymin=0)
     ax2.margins(x=0.005)
@@ -531,10 +533,10 @@ def plot_size_and_names(timesliced_datasets, analysis_directory, article_name, l
         labels = labels1 + labels2
         order = [3,0,1,2]
         fig.legend([handles[idx] for idx in order],[labels[idx] for idx in order],loc="upper left", bbox_to_anchor=(
-            0.1, 0.93), fontsize="xx-large")        
+            0.045, 0.93), fontsize="xx-large")        
     fig.tight_layout()
-    plt.savefig(analysis_directory + sep + article_name + "_" + section_name.lower() + "_revision_size_vsvs_names_" + name_style + ".png", transparent=False)
-    #plt.savefig(filepath + "_revision_size_vs_reference_count_vs_names_" + name_style + ".pdf")
+    plt.savefig(analysis_directory + sep + article_name + "_" + section_name.lower() + "_revision_size_vsvs_names_" + name_style + ".png", transparent=True)
+    plt.savefig(analysis_directory + sep + article_name + "_" + section_name.lower() + "_revision_size_vsvs_names_" + name_style + ".pdf")
     plt.close('all')
 
 
@@ -585,7 +587,7 @@ if __name__ == "__main__":
     names_style = "types"
     
     articles_directory = "../articles/2021-08-16/en"
-    analysis_directory = "../analysis/test"
+    analysis_directory = "../analysis/development/2022_12_02_size_vs_names"
 
     if not exists(analysis_directory):
         makedirs(analysis_directory)
