@@ -482,16 +482,16 @@ def plot_size_and_names(timesliced_datasets, analysis_directory, article_name, l
 ##    reference_counts_color = "k"
 ##    reference_counts_label = "Number of References in ???"
     name_counts_tokens_color = "k"
-    name_counts_tokens_label = "Number of Names"
+    name_counts_tokens_label = "Names"
     name_counts_types_color = "k"
-    name_counts_types_label = "Number of Names"
+    name_counts_types_label = "Names"
     added_names_color = "lightgray"
-    added_names_label = "Number of Added Names"
+    added_names_label = "Added Names"
     removed_names_color = "darkgray"
-    removed_names_label = "Number of Removed Names"
+    removed_names_label = "Removed Names"
 
     sizes_color = "k"
-    sizes_label = "Number of Characters"
+    sizes_label = "Size of Revision in Characters"
 
     fig, ax1 = plt.subplots(figsize=(width, 6), dpi=600)
     plt.xticks(list(range(len(timeslice_ticks))), timeslice_ticks, rotation=90)

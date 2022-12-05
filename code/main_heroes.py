@@ -11,7 +11,8 @@ from os import makedirs
 rc('xtick', labelsize=15)
 rc('ytick', labelsize=15)
 
-INPUT_DIRECTORY = "../data/pickles/2021_04_06/"
+DATE = "2021_04_06/"
+INPUT_DIRECTORY = "../data/pickles/" + DATE
 df1 = pd.read_pickle(INPUT_DIRECTORY + 'heroes_CRISPR_en.pickle')
 df2 = pd.read_pickle(INPUT_DIRECTORY + 'heroes_CRISPR_gene_editing_en.pickle')
 hero_frames = [df1, df2]
@@ -35,7 +36,7 @@ for i, df in enumerate(hero_frames):
     hue = df['age']
     hue_label = '      older ⟷ younger\nAge' # '      older ⟵ Age ⟶ younger'
     size = df['endurance']    
-    size_label = 'Endurance99'
+    size_label = 'Endurance'
     labels = df['name']
     ax.scatter(
         x=x, y=y, 
@@ -136,7 +137,7 @@ for i, df in enumerate(hero_frames):
                     fontsize=11,
                 )
             elif label == "Haft":
-                xytext = (xi + 0.5, yi + 0.2)
+                xytext = (xi + 0.5, yi + 0.1)
                 ax.annotate(
                     label, # this is the text
                     (xi,yi), # this is the point to label
@@ -203,8 +204,8 @@ norm = colors.Normalize(vmin=cmap_start, vmax=cmap_stop)
 sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
 sm.set_array([])
 cbar = plt.colorbar(sm, ticks=[]) #ticks=[i for i in np.linspace(cmap_start,cmap_stop,11)]
-
-OUTPUT_DIRECTORY = "../analysis/test2/"
+    
+OUTPUT_DIRECTORY = "../analysis/heroes/" + DATE
 
 cbar.ax.set_ylabel(hue_label, fontsize="xx-large")
 if not exists(OUTPUT_DIRECTORY):
