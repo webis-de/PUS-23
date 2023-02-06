@@ -11,10 +11,10 @@ from os import makedirs
 rc('xtick', labelsize=15)
 rc('ytick', labelsize=15)
 
-DATE = "2021_04_06/"
-INPUT_DIRECTORY = "../data/pickles/" + DATE
-df1 = pd.read_pickle(INPUT_DIRECTORY + 'heroes_CRISPR_en.pickle')
-df2 = pd.read_pickle(INPUT_DIRECTORY + 'heroes_CRISPR_gene_editing_en.pickle')
+DATE = "2023_02_06/"
+INPUT_DIRECTORY = "../data/pickles/" + DATE + "input_for_heroes_plot/"
+df1 = pd.read_json(INPUT_DIRECTORY + 'heroes_CRISPR_en.json')
+df2 = pd.read_json(INPUT_DIRECTORY + 'heroes_CRISPR_gene_editing_en.json')
 hero_frames = [df1, df2]
 fig = plt.figure(figsize=(20,9), dpi=400)
 axs = [plt.subplot2grid((10, 20), (0, 0), colspan=15, rowspan=10),
