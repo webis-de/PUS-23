@@ -1,5 +1,6 @@
 from os.path import sep
 
+
 def stopwords(stopwords_filepath):
     """
     Reads a list of stopwords from a file.
@@ -16,14 +17,15 @@ def stopwords(stopwords_filepath):
     if stopwords_filepath == "":
         return stopwords
     try:
-        with open (stopwords_filepath) as file:
+        with open(stopwords_filepath) as file:
             for line in file:
                 line = line.strip()
                 stopwords.add(line)
                 stopwords.add(line[0].upper() + line[1:])
     except FileNotFoundError:
-        print("Stopword file (" + stopwords_filepath +") not found.")
+        print("Stopword file (" + stopwords_filepath + ") not found.")
     return stopwords
+
 
 def abbreviations(abbreviations_filepath):
     """
@@ -41,14 +43,15 @@ def abbreviations(abbreviations_filepath):
     if abbreviations_filepath == "":
         return abbreviations
     try:
-        with open (abbreviations_filepath) as file:
+        with open(abbreviations_filepath) as file:
             for line in file:
                 line = line.strip()
                 abbreviations.add(line)
                 abbreviations.add(line.lower())
     except FileNotFoundError:
-        print("Abbreviations file (" + abbreviations_filepath +") not found.")
+        print("Abbreviations file (" + abbreviations_filepath + ") not found.")
     return abbreviations
+
 
 def contractions(contractions_filepath):
     """
@@ -66,11 +69,12 @@ def contractions(contractions_filepath):
     if contractions_filepath == "":
         return contractions
     try:
-        with open (contractions_filepath) as file:
+        with open(contractions_filepath) as file:
             for line in file:
                 line = line.strip()
                 contractions.add(tuple(line.strip().split("-")))
-                contractions.add(tuple([word[0].upper() + word[1:] for word in line.strip().split("-")]))
+                contractions.add(
+                    tuple([word[0].upper() + word[1:] for word in line.strip().split("-")]))
     except FileNotFoundError:
-        print("Contractions file (" + contractions_filepath +") not found.")
+        print("Contractions file (" + contractions_filepath + ") not found.")
     return contractions
