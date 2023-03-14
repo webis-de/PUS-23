@@ -1,0 +1,5 @@
+{"article_title": "Dummy",
+ "pageid": "0", 
+ "revid": "123456789", 
+ "timestamp": "2022-02-28T17:30:00Z", 
+ "wikitext": "'''Dummy''' is just a dummy article.\n\n==Section 1==\nThis is the section 1 text with some markup &lt;ref&gt; and a ref {{cite ref2}}.\n\n===Section 1.1===\nThis is a subsection.\n\n=====Section 1.1.1=====\nThis is a subsubsection.\n\n==Section 2==\nHere's the rest of the text."}

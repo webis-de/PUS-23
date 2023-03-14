@@ -2,7 +2,7 @@ from code.article.revision.timestamp import Timestamp
 from code.bibliography.bibliography import Bibliography
 from code.timeline.eventlist import EventList
 from code.timeline.accountlist import AccountList
-from code.utility.wikipedia_dump_reader import WikipediaDumpReader
+from code.wikidump.wikipedia_dump_reader import WikipediaDumpReader
 from hashlib import sha256
 from os import remove
 import unittest
@@ -12,21 +12,23 @@ class TestWikipediaDumpReader(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        bibliography = Bibliography("tests/data/literature.csv")
-        accountlist = AccountList("tests/data/accounts.csv")
-        cls.eventlist = EventList("tests/data/events.csv",
+        cls.input_directory = "tests/data/wikipedia_dump_reader/"
+        bibliography = Bibliography(cls.input_directory + "literature.csv")
+        accountlist = AccountList(cls.input_directory + "accounts.csv")
+        cls.eventlist = EventList(cls.input_directory + "events.csv",
                                   bibliography,
                                   accountlist,
                                   [],
                                   ["bibentries"])
-        cls.input_filepath = "tests/data/wikipedia_dump.bz2"
+        cls.input_filepath1 = cls.input_directory + "wikipedia_dump_1.bz2"
+        cls.input_filepath2 = cls.input_directory + "wikipedia_dump_2.bz2"
     
-    def test_iterator(self):
+    def test_iterator_1(self):
 
         doi_count = 0
         pmid_count = 0
         revisions = []
-        with WikipediaDumpReader(self.input_filepath) as wdr:
+        with WikipediaDumpReader(self.input_filepath1) as wdr:
             for title, pageid, revid, timestamp, text in wdr.line_iter():
                 for event in self.eventlist.events:
                     bibkey = list(event.bibentries.keys())[0]
@@ -52,6 +54,40 @@ class TestWikipediaDumpReader(unittest.TestCase):
         
         self.assertEqual(revisions[-1][2], "1014921611")
 
+    def test_iterator_2(self):
+
+        titles = []
+        pageids = []
+        revids = []
+        texts = []
+
+        with WikipediaDumpReader(self.input_filepath2) as wdr:
+            for title, pageid, revid, timestamp, text in wdr.line_iter():
+                if title not in titles:
+                    titles.append(title)
+                if pageid not in pageids:
+                    pageids.append(pageid)
+                if revid not in revids:
+                    revids.append(revid)
+                texts.append(text)
+
+        self.maxDiff = None
+        self.assertEqual(len(titles), 2)
+        self.assertEqual(titles[0], "1.6 Band")
+        self.assertEqual(titles[1], "Derek Panza")
+        self.assertEqual(len(pageids), 2)
+        self.assertEqual(pageids[0], "27121496")
+        self.assertEqual(pageids[1], "27121502")
+        self.assertEqual(len(revids), 193 - 11)
+        self.assertEqual(revids[0], "358506549")
+        self.assertEqual(revids[-1], "918238989")
+        self.assertEqual(len(texts), 193 - 11)
+
+        with open(self.input_directory + "first_text.txt") as file:
+            self.assertEqual(texts[0], "".join(file.readlines()))
+        with open(self.input_directory + "final_text.txt") as file:
+            self.assertEqual(texts[-1], "".join(file.readlines()))
+
     def test_text_reading(self):
 
         titles = []
@@ -59,7 +95,7 @@ class TestWikipediaDumpReader(unittest.TestCase):
         revids = []
         texts = []
         
-        with WikipediaDumpReader(self.input_filepath) as wdr:
+        with WikipediaDumpReader(self.input_filepath1) as wdr:
             for title, pageid, revid, timestamp, text in wdr.line_iter():
                 if title not in titles:
                     titles.append(title)
@@ -73,7 +109,7 @@ class TestWikipediaDumpReader(unittest.TestCase):
         self.assertEqual(titles[0], "1.6 Band")
         self.assertEqual(pageids[0], "27121496")
         self.assertEqual(revids[0], "358506549")
-        with open("tests/data/first_text.txt") as file:
+        with open(self.input_directory + "first_text.txt") as file:
             self.assertEqual(texts[0], "".join(file.readlines()))
 
 if __name__ == "__main__":

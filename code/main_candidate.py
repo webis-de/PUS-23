@@ -3,7 +3,7 @@ from bibliography.bibliography import Bibliography
 from timeline.eventlist import EventList
 from timeline.accountlist import AccountList
 from article.revision.timestamp import Timestamp
-from utility.wikipedia_dump_reader import WikipediaDumpReader
+from wikidump.wikipedia_dump_reader import WikipediaDumpReader
 import csv
 import logging
 import regex as re

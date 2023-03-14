@@ -1,4 +1,4 @@
-from utility.wikipedia_dump_reader import WikipediaDumpReader
+from wikidump.wikipedia_dump_reader import WikipediaDumpReader
 import csv
 import logging
 
