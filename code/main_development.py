@@ -488,9 +488,9 @@ def plot_size_and_names(timesliced_datasets, analysis_directory, article_name, l
 ##    reference_counts_color = "k"
 ##    reference_counts_label = "Number of References in ???"
     name_counts_tokens_color = "k"
-    name_counts_tokens_label = "Names"
+    name_counts_tokens_label = "Unique Names"
     name_counts_types_color = "k"
-    name_counts_types_label = "Names"
+    name_counts_types_label = "Unique Names"
     added_names_color = "lightgray"
     added_names_label = "Added Names"
     removed_names_color = "darkgray"
@@ -594,7 +594,7 @@ if __name__ == "__main__":
     diff_name_style = "tokens"
     
     articles_directory = "../articles/2021-08-16/en"
-    analysis_directory = "../analysis/development/2023_02_06_size_vs_names"
+    analysis_directory = "../analysis/development/2023_03_17_size_vs_names"
 
     if not exists(analysis_directory):
         makedirs(analysis_directory)
