@@ -426,6 +426,33 @@ class TestWikitextReader(unittest.TestCase):
         self.assertEqual(wtr.has_category(
             "Reasoning", extracted_categories), True)
 
+    def test_get_references(self):
+        with open(self.input_directory + "Axiom.json") as file:
+            data = load(file)
+
+        wtr = WikitextReader(*data.values())
+        references = wtr.get_references()
+        self.assertEqual(len(references), 3)
+        self.assertEqual(references[0],
+                         {"cite":"journal",
+                          "first":"Penelope",
+                          "last":"Maddy",
+                          "journal":"Journal of Symbolic Logic",
+                          "title":"Believing the Axioms, I",
+                          "volume":"53",
+                          "issue":"2",
+                          "date":"Jun 1988",
+                          "pages":"481\u2013511",
+                          "doi":"10.2307/2274520",
+                          "jstor":"2274520"})
+        self.assertEqual(references[1],
+                         {"Cite":"web",
+                          "url":"http://www.ptta.pl/pef/haslaen/a/axiom.pdf",
+                          "title":"Axiom \u2014 Powszechna Encyklopedia Filozofii",
+                          "website":"Polskie Towarzystwo Tomasza z Akwinu"})
+        self.assertEqual(references[2],
+                         {"cite":"Q",
+                          "Q26720682":""})
 
 # def test_iterator(self):
 ##

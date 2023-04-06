@@ -11,14 +11,16 @@ analyse = True
 verbose = False
 doi_map = {}
 
+start = datetime.now()
+
 with open("../analysis/citations/citations_from_wikitext_test.csv", "w") as citation_file:
     with open("../analysis/citations/latency_from_wikitext_test.csv", "w") as latency_file:
         citation_csv_writer = writer(citation_file, delimiter="|")
         latency_csv_writer = writer(latency_file, delimiter="|")
         citation_csv_writer.writerow(["title", "title_year", "revision_index", "revid", "doi", "reference_year", "revision_year", "citation_latency"])
         latency_csv_writer.writerow(["title", "pageid", "number of dois", "mean citation latency", "standard deviation"])
-        with WikipediaDumpReader(("/media/wolfgang/Data/Work/git/code-research/computational-social-science/" +
-                                  "science-analytics-wikipedia/dumps/enwiki-20230301-pages-meta-history10.xml-p5382015p5399366.bz2")) as wdr:
+        with WikipediaDumpReader(("/home/kircheis/Work/git/code-research/computational-social-science/conf20-science-analytics-wikipedia/dumps/" +
+                                  "enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2")) as wdr:
             old_title = None
             revision_index = 0
             title_year = None
@@ -41,7 +43,7 @@ with open("../analysis/citations/citations_from_wikitext_test.csv", "w") as cita
                     revision_year = datetime.strptime(wtr.timestamp, "%Y-%m-%dT%H:%M:%SZ").year
                     if not title_year:
                         title_year = revision_year
-                    for reference in wtr.references():
+                    for reference in wtr.get_references():
                         doi = reference.get("doi", None)
                         if doi:
                             doi_found = True
@@ -74,3 +76,5 @@ with open("../analysis/citations/citations_from_wikitext_test.csv", "w") as cita
                         doi_found = False
 
                 revision_index += 1   
+
+print(datetime.now() - start)

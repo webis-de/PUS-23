@@ -214,14 +214,13 @@ class WikitextReader:
     def has_category(self, string, categories):
         return any([string.lower() in category for category in categories])
 
-    def references(self):
+    def get_references(self):
         """
         Extract cited references from Wikitext and
         return as list of dictionaries.
         """
-        return [{item.split("=" if "=" in item else " ")[0].strip():
-                 ("=" if "=" in item else " ").join(item.split("=" if "=" in item else " ")[1:]).strip()
-                 for item in [item.strip() for item in citation[2:-3].strip().split("|")]}
+        return [{key_and_value[0].strip():"".join(key_and_value[1:]).strip() for
+                 key_and_value in [item.strip().split("=" if "=" in item else " ", 1) for item in citation[2:-2].strip().split("|")]}
                 for citation in findall("{{[cC]ite.*?}}", self.wikitext)]
 
     def debug(self):
