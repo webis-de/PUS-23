@@ -5,12 +5,13 @@ from html import unescape
 
 class WikitextReader:
 
-    def __init__(self, article_title, pageid, revid, timestamp, wikitext):
+    def __init__(self, article_title, pageid, revid, timestamp, wikitext, fix_introduction_heading = False):
         self.article_title = article_title
         self.pageid = pageid
         self.revid = revid
         self.timestamp = timestamp
         self.wikitext = wikitext
+        self.fix_introduction_heading = fix_introduction_heading
 
     def process(self):
         """
@@ -29,7 +30,7 @@ class WikitextReader:
         Returns:
             Tuple of list of heading-level-wikitext lists and list of category strings.
         """
-        headings = [[self.article_title, 1, ""]]
+        sections = [[(self.article_title + (" --- Introduction ---" if self.fix_introduction_heading else "")), 1, ""]]
         categories = []
         previous_level = 1
         for line in self.wikitext.split("\n"):
@@ -48,27 +49,31 @@ class WikitextReader:
                     previous_level = level
                 section_heading = line.replace("=", "")
                 section_heading = sub("&lt;.*&gt;", "", section_heading)
-                headings.append([unescape(section_heading.strip()), level, ""])
+                sections.append([unescape(section_heading.strip()), level, ""])
             else:
-                headings[-1][-1] += line + "\n"
-        return headings, categories
+                sections[-1][-1] += line + "\n"
+        return sections, categories
 
-    def heading_tree(self, section_headings):
+    def heading_tree(self, sections):
         """
         Build tree of section headings.
 
         Args:
-            section_headings: Lists of heading-level-tuples.
-            current_level: Recursive call parameter for level.
+            sections: Lists of heading-level-tuples.
 
         Returns:
             Section heading tree as nested dictionary.
         """
-        def recursive_heading_tree(section_headings, current_level):
+        def recursive_heading_tree(sections, current_level):
+            """
+            Args:
+                sections: Lists of heading-level-tuples.
+                current_level: Recursive call parameter for level.
+            """
             heading_tree = {}
-            if section_headings:
+            if sections:
                 super_section_heading = None
-                for section_heading, level, text in section_headings:
+                for section_heading, level, text in sections:
                     if level == current_level:
                         heading_tree[section_heading] = []
                         super_section_heading = section_heading
@@ -81,10 +86,12 @@ class WikitextReader:
                 for section_heading in heading_tree:
                     heading_tree[section_heading] = recursive_heading_tree(
                         heading_tree[section_heading], current_level + 1)
-            return {self.article_title: heading_tree[self.article_title]} if current_level == 1 else heading_tree
-        return recursive_heading_tree(section_headings, 1)
+            return ({(self.article_title + (" --- Introduction ---" if self.fix_introduction_heading else "")):
+                     heading_tree[self.article_title + (" --- Introduction ---" if self.fix_introduction_heading else "")]}
+                    if current_level == 1 else heading_tree)
+        return recursive_heading_tree(sections, 1)
 
-    def section_tree(self, section_headings, clean_text):
+    def section_tree(self, sections, clean_text):
         """
         Build tree of section, nested with the below keys per section:
 
@@ -96,10 +103,8 @@ class WikitextReader:
         'subsections': list of subsection which in turn are section trees themselves
 
         Args:
-            section_headings: Lists of heading-level-wikitext lists.
-            current_level: Recursive call parameter for level.
-            parent: Recursive call parameter for parent.
-            path: Recursive call parameter for path.
+            sections: Lists of heading-level-wikitext lists.
+            clean_text: Flag to clean wikitext.
 
         Returns:
             Section tree as nested dictionary.
@@ -111,13 +116,21 @@ class WikitextReader:
             string = sub("{{.*?}}", "", string)
             string = sub(" +", " ", string)
             string = sub("http.*? ", " ", string)
-            string = sub("[[File:.*?]]", " ", string)
+            string = sub("\[\[File:.*?\]\]", " ", string)
             return unescape(string).strip()
 
-        def recursive_section_tree(section_headings, current_level, parent, path, clean_text):
+        def recursive_section_tree(sections, current_level, parent, path, clean_text):
+            """
+            Args:
+                sections: Lists of heading-level-wikitext lists.
+                current_level: Recursive call parameter for level.
+                parent: Recursive call parameter for parent.
+                path: Recursive call parameter for path.
+                clean_text: Flag to clean wikitext.
+            """
             section_tree = {}
-            if section_headings:
-                for section_heading, level, text in section_headings:
+            if sections:
+                for section_heading, level, text in sections:
                     cleaned_text = clean(text) if clean_text else text
                     if level == current_level:
                         section_tree["name"] = section_heading
@@ -144,7 +157,7 @@ class WikitextReader:
                                                                                 clean_text)
 
             return section_tree
-        return recursive_section_tree(section_headings, 1, None, "", clean_text)
+        return recursive_section_tree(sections, 1, None, "", clean_text)
 
     def find_heading(self, string, node):
         """
@@ -153,12 +166,18 @@ class WikitextReader:
         Args:
             string: The string to identify.
             node: The section tree as dictionary to check.
-            path: Recursive call parameter for path.
 
         Returns:
-            List of str[] path, bol string_in_path, bol path_segment_is_string lists.
+            List of str[] path.
         """
         def recursive_find_heading(string, node, path, results=[]):
+            """
+            Args:
+                string: The string to identify.
+                node: The section tree as dictionary to check.
+                path: Recursive call parameter for path.
+                results: Container for recursive result collection.
+            """
             for key in node:
                 if string.lower() in key.lower():
                     results.append(path + [key])
@@ -204,6 +223,11 @@ class WikitextReader:
                 self.string = ""
 
         def recursive_get_text_of_section(node, level, text):
+            """
+            Args:
+                node: The section tree as dictionary to check.
+                level: Depth up to which text will be retrieved.
+            """
             text.string += node["text"] + " "
             if node["level"] < level:
                 for subsection in node["subsections"]:
@@ -214,13 +238,14 @@ class WikitextReader:
     def has_category(self, string, categories):
         return any([string.lower() in category for category in categories])
 
-    def get_references(self):
+    def references(self):
         """
         Extract cited references from Wikitext and
         return as list of dictionaries.
         """
-        return [{key_and_value[0].strip():"".join(key_and_value[1:]).strip() for
-                 key_and_value in [item.strip().split("=" if "=" in item else " ", 1) for item in citation[2:-2].strip().split("|")]}
+        return [{item.split("=" if "=" in item else " ")[0].strip():
+                 ("=" if "=" in item else " ").join(item.split("=" if "=" in item else " ")[1:]).strip()
+                 for item in [item.strip() for item in citation[2:-3].strip().split("|")]}
                 for citation in findall("{{[cC]ite.*?}}", self.wikitext)]
 
     def debug(self):
