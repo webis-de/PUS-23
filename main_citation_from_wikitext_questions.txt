@@ -1,0 +1,10 @@
+1. Nur Artikel mit einer bestimmten Menge von Publikationen? (z.B. mind. 10 Publikationen)
+    -> Publikationsmenge insgesamt einfach; etwas komplizierter mit Mindestmenge an Publikationen in einer Revision (Threshold bezogen auf Revisionsindex ggf. problematisch)
+2. Nur Artikel mit bestimmten Alter? (z.B. 10+ Jahre)
+    -> besonders relevant in Bezug auf normalisierte Citation Latency
+3. Nur Publikationen, die nach der Erstellung des Artikels eingepflegt wurden
+    -> andernfalls ggf. Verzerrung durch Normalisierung (siehe auch 2.)
+4. Nur Publikationen, die bestimmte Kriterien erfüllen (vgl. Arnos Metriken im PUS-Paper)
+    -> deutlich erhöhter Aufwand für erste Analyse, erfordert ggf. genaue Planung und deutliche Anpassung der Metriken da Wechsel von Autor- zu Publikationsebene
+5. Artikel mittels Kategorien filtern? Nur Artikel in Wiki-Sci-Tech-Korpus (für den Anfang)?
+    -> nur S&T-Bezug, jedoch kein Vergleich zu anderen Fachgebieten

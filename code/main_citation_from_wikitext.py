@@ -6,6 +6,8 @@ from datetime import datetime
 from regex import search
 from csv import writer
 from numpy import mean, std
+from os.path import exists, sep
+from os import makedirs
 
 analyse = True
 verbose = False
@@ -13,17 +15,26 @@ results = {}
 
 start = datetime.now()
 
-with open("../analysis/citations/citations_from_wikitext_test.csv", "w") as citation_file:
-    with open("../analysis/citations/latency_from_wikitext_test.csv", "w") as latency_file:
+dump_analysis_directory = "../analysis/citations/" + str(datetime.now()).split(" ")[0] + sep
+if not exists(dump_analysis_directory): makedirs(dump_analysis_directory)
+
+corpus_path_prefix = "/media/wolfgang/Data/Work/git/code-research/computational-social-science/science-analytics-wikipedia/dumps/"
+corpus_batch = "enwiki-20210601-pages-meta-history11.xml-p6324364p6396854.bz2"
+
+with open(dump_analysis_directory + corpus_batch + ".citations.csv", "w") as citation_file:
+    with open(dump_analysis_directory + corpus_batch + ".latencies.csv", "w") as latencies_file:
         citations_csv_writer = writer(citation_file, delimiter="|")
-        latencies_csv_writer = writer(latency_file, delimiter="|")
+        latencies_csv_writer = writer(latencies_file, delimiter="|")
         citations_csv_writer.writerow(["title", "pageid", "title_creation_year", "revid", "doi", "reference_year", "revision_year", "citation_latency"])
         latencies_csv_writer.writerow(["title", "pageid", "title_creation_year", "number of unique dois over revision history", "mean citation latency", "standard deviation"])
-        with WikipediaDumpReader(("/mnt/Data/work/git/code-research/computational-social-sience/conf20-science-analytics-wikipedia/dumps/" +
-        "enwiki-20220101-pages-meta-history10.xml-p5392815p5399366.bz2")) as wdr: #"enwiki-20210601-pages-meta-history21.xml-p39974744p39996245.bz2
+        with WikipediaDumpReader(corpus_path_prefix + corpus_batch) as wdr:
             revision_index = 0
             title_creation_year = None
+            i = 0
             for title,pageid,revid,timestamp,wikitext in wdr.line_iter():
+                i += 1
+                if i % 1000 == 0:
+                    print(i)
                 # collect doi hits for title
                 if title not in results:
                     results[title] = {"pageid":pageid,
@@ -79,6 +90,6 @@ with open("../analysis/citations/citations_from_wikitext_test.csv", "w") as cita
                 if len(result["citations"]) >= 10:
                     latencies = [citation[-1] for citation in result["citations"].values()]
                     latencies_csv_writer.writerow([title, result["pageid"], results[title]["title_creation_year"], len(latencies), round(mean(latencies), 2), round(std(latencies), 2)])
-                    latency_file.flush()
+                    latencies_file.flush()
 
 print(datetime.now() - start)
