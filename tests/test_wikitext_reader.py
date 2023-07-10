@@ -426,12 +426,12 @@ class TestWikitextReader(unittest.TestCase):
         self.assertEqual(wtr.has_category(
             "Reasoning", extracted_categories), True)
 
-    def test_get_references(self):
+    def test_references(self):
         with open(self.input_directory + "Axiom.json") as file:
             data = load(file)
 
         wtr = WikitextReader(*data.values())
-        references = wtr.get_references()
+        references = wtr.references()
         self.assertEqual(len(references), 3)
         self.assertEqual(references[0],
                          {"cite":"journal",

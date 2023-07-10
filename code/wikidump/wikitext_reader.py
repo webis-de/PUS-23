@@ -245,7 +245,7 @@ class WikitextReader:
         """
         return [{item.split("=" if "=" in item else " ")[0].strip():
                  ("=" if "=" in item else " ").join(item.split("=" if "=" in item else " ")[1:]).strip()
-                 for item in [item.strip() for item in citation[2:-3].strip().split("|")]}
+                 for item in [item.strip() for item in citation[2:-2].strip().split("|")]}
                 for citation in findall("{{[cC]ite.*?}}", self.wikitext)]
 
     def debug(self):
