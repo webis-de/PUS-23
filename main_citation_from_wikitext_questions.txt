@@ -1,26 +1,28 @@
+Motivation:
+
+Citation latency analysis of CRISPR/Cas-9 articles has revealed that relevant publications can successfully be matched in the most relevant articles using publications' titles, DOIs, and PMIDs. While Wikidata offers a database to add, edit and link publications, even highly relevant publications only link to some articles (cf. https://www.wikidata.org/wiki/Q21508827). A complete citation network linking publications and articles could help populate Wikidata, but first bibliometrics would need to know if our study's findings also apply to other fields or subdomains of scientific research. Analysing citation latency would help bibliometrics glean an insight into general citation practices on Wikipedia.
+
 Fragen:
 
-1. Was ist die Zitationslatenz auf Wikipedia bezogen auf den Fachbereich?
-2. Wie verhält sich lange vs. kurze Zitationslatenz (mittlere eher uninteressant)?
-3. Korreliert Latenz mit a) Social Domain, b) Scientific (Sub)domain, c) Kontroversalität, d) Timing, e) ...?
+1. How does citation latency differ depending on the field of research?
+2. Are there extreme phenomena, i.e. very short or very long latencies (medium latency less interesting)?
+3. Does citation latency correlate with a) social domain, b) scientific (sub)domain, c) controversiality of the research, d) timing, e) ...?
 
 Ansätze:
 
-1. Nur Artikel mit einer bestimmten Menge von Publikationen? (z.B. mind. 10 Publikationen)
-    ->  Publikationsmenge insgesamt einfach; etwas komplizierter 
-        mit Mindestmenge an Publikationen in einer Revision 
-        (Thresholdbezogen auf Revisionsindex ggf. problematisch)
+1. Only articles with a certain number of publications? (e.g. 10+)
+    ->  total number of publications easy; minimum number of publications
+        in revision more complicated (threshold vs. revision index/age of article)
 
-2. Nur Artikel mit bestimmten Alter? (z.B. 10+ Jahre)
-    ->  besonders relevant in Bezug auf normalisierte Citation Latency
+2. Only articles that have existed for several years? (z.B. 10+)
+    ->  especially relevant in relation to normalised citation latency
 
-3. Nur Publikationen, die nach der Erstellung des Artikels eingepflegt wurden
-    ->  andernfalls ggf. Verzerrung durch Normalisierung (siehe auch 2.)
+3. Only publications published after the article was created?
+    ->  otherwise distortion due to normalisation (cf. 2)
 
-4. Nur Publikationen, die bestimmte Kriterien erfüllen (vgl. Arnos Metriken im PUS-Paper)
-    ->  deutlich erhöhter Aufwand für erste Analyse, erfordert  
-        ggf. genaue Planung und deutliche Anpassung der Metriken 
-        da Wechsel von Autor- zu Publikationsebene
+4. Only publications matching certain criteria (cf. metrics in PUS-Paper)
+    ->  considerably more effort for preliminary analysis; metrics might
+        have to be adjusted from author to paper level
 
-5. Artikel mittels Kategorien filtern? Nur Artikel in Wiki-Sci-Tech-Korpus (für den Anfang)?
-    ->  nur S&T-Bezug, jedoch kein Vergleich zu anderen Fachgebieten
+5. Only articles in Wiki-Sci-Tech-Corpus? Filter articles by more category?
+    ->  only S&T, no top level differentiation between research fields
