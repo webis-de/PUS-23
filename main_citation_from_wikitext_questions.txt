@@ -2,13 +2,13 @@ Motivation:
 
 Citation latency analysis of CRISPR/Cas-9 articles has revealed that relevant publications can successfully be matched in the most relevant articles using publications' titles, DOIs, and PMIDs. While Wikidata offers a database to add, edit and link publications, even highly relevant publications only link to some articles (cf. https://www.wikidata.org/wiki/Q21508827). A complete citation network linking publications and articles could help populate Wikidata, but first bibliometrics would need to know if our study's findings also apply to other fields or subdomains of scientific research. Analysing citation latency would help bibliometrics glean an insight into general citation practices on Wikipedia.
 
-Fragen:
+Questions:
 
 1. How does citation latency differ depending on the field of research?
 2. Are there extreme phenomena, i.e. very short or very long latencies (medium latency less interesting)?
 3. Does citation latency correlate with a) social domain, b) scientific (sub)domain, c) controversiality of the research, d) timing, e) ...?
 
-Ansätze:
+Approaches:
 
 1. Only articles with a certain number of publications? (e.g. 10+)
     ->  total number of publications easy; minimum number of publications
