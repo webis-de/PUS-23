@@ -1,4 +1,4 @@
-# Science Analytics Wikipedia
+# Wikipedia CRISPR Innovation Tracing Code
 
 This repository contains information and code concerning the project 'Tracing Innovations on Wikipedia'.
 
