@@ -69,10 +69,6 @@ This repository contains information and code concerning the project 'Tracing In
 
 ## NOT IN REPOSITORY
 ### FILES
-- https://files.webis.de/wikipedia-tracing-innovations
+- https://doi.org/10.5281/zenodo.10507820
 - articles and analysis
-
-### CVS
-- proposals-in-progress/BMBF-indikatorik-19-today
-- research-in-progress/computational-social-science/CONF-20/science-analytics-wikipedia
 
